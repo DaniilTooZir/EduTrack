@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -59,7 +60,7 @@ class WelcomeScreen extends StatelessWidget {
                         width: size.width * 0.6,
                         child: OutlinedButton(
                           onPressed: () {
-                            // Навигация на экран регистрации
+                            context.push('/institution-request');
                           },
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 40),
