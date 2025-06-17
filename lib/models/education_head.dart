@@ -4,8 +4,10 @@ class EducationHead {
   final String name;
   final String surname;
   final String email;
+  final String login;
   final String password;
   final String institutionId;
+  final String phone;
   final DateTime createdAt;
 
   EducationHead({
@@ -13,8 +15,10 @@ class EducationHead {
     required this.name,
     required this.surname,
     required this.email,
+    required this.login,
     required this.password,
     required this.institutionId,
+    required this.phone,
     required this.createdAt,
   });
 
@@ -24,8 +28,10 @@ class EducationHead {
       name: map['name'] as String,
       surname: map['surname'] as String,
       email: map['email'] as String,
+      login: map['login'] as String,
       password: map['password'] as String,
       institutionId: map['institution_id'] as String,
+      phone: map['phone'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -36,8 +42,10 @@ class EducationHead {
       'name': name,
       'surname': surname,
       'email': email,
+      'login': login,
       'password': password,
       'institution_id': institutionId,
+      'phone': phone,
       'created_at': createdAt.toIso8601String(),
     };
   }

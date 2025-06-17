@@ -2,13 +2,13 @@
 class Institution {
   final String id;
   final String name;
-  final String city;
+  final String address;
   final DateTime createdAt;
 
   Institution({
     required this.id,
     required this.name,
-    required this.city,
+    required this.address,
     required this.createdAt,
   });
 
@@ -16,7 +16,7 @@ class Institution {
     return Institution(
       id: map['id'] as String,
       name: map['name'] as String,
-      city: map['city'] as String,
+      address: map['address'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -25,7 +25,7 @@ class Institution {
     return {
       'id': id,
       'name': name,
-      'city': city,
+      'address': address,
       'created_at': createdAt.toIso8601String(),
     };
   }

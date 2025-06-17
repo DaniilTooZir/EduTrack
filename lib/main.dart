@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/routes/route.dart';
+import 'package:edu_track/data/services/moderation_timer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await SupabaseConnection.initializeSupabase();
+  ModerationTimer.start();
   runApp(const MyApp());
 }
 
