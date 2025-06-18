@@ -70,6 +70,20 @@ class WelcomeScreen extends StatelessWidget {
                           child: const Text('Зарегистрировать ОО'),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: size.width * 0.6,
+                        child: TextButton(
+                          onPressed: () {
+                            context.push('/check-status');
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            textStyle: const TextStyle(fontSize: 14),
+                          ),
+                          child: const Text('Проверить статус заявки'),
+                        ),
+                      ),
                       const Spacer(flex: 3),
                     ],
                   ),

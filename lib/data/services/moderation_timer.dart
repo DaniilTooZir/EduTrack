@@ -5,7 +5,7 @@ class ModerationTimer {
   static Timer? _timer;
   static void start() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(minutes: 1), (timer) async {
+    _timer = Timer.periodic(const Duration(minutes: 10), (timer) async {
       await InstitutionModerationService.processPendingRequests();
     });
   }
