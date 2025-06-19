@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:edu_track/data/services/institution_request_status_service.dart';
+import 'package:go_router/go_router.dart';
 
 class CheckRequestStatusScreen extends StatefulWidget {
   const CheckRequestStatusScreen({super.key});
@@ -111,7 +112,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Навигация на экран авторизации
+                          context.go('/login');
                         },
                         child: const Text('Перейти к авторизации'),
                       ),

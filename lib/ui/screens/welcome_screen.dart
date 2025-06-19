@@ -40,13 +40,11 @@ class WelcomeScreen extends StatelessWidget {
                         style: subtitleStyle,
                       ),
                       const SizedBox(height: 48),
-
-                      // Кнопка "Войти"
                       SizedBox(
                         width: buttonWidth,
                         child: ElevatedButton(
                           onPressed: () {
-                            // TODO: Навигация на экран входа
+                            context.push('/login');
                           },
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -56,8 +54,6 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // Кнопка "Зарегистрировать ОО"
                       SizedBox(
                         width: buttonWidth,
                         child: OutlinedButton(
@@ -72,8 +68,6 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // Кнопка "Проверить статус заявки"
                       SizedBox(
                         width: buttonWidth,
                         child: TextButton(
