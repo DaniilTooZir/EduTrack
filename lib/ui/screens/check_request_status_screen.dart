@@ -24,37 +24,49 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
     });
 
     final email = _emailController.text.trim();
-    final result = await InstitutionRequestStatusService.getRequestDetailsByEmail(email);
 
-    setState(() {
-      _isLoading = false;
-      if (result == null) {
-        _statusMessage = 'Заявка с таким email не найдена.';
-        return;
-      }
+    try {
+      final result = await InstitutionRequestStatusService.getRequestDetailsByEmail(email);
 
-      final status = result['status'] as String;
-
-      if (status == 'pending') {
-        _statusMessage = 'Заявка находится на рассмотрении.';
-      } else if (status == 'approved') {
-        _statusMessage = 'Заявка одобрена!';
-
-        _login = result['login'] as String?;
-        _password = result['password'] as String?;
-      } else if (status == 'rejected') {
-        _statusMessage = 'Заявка отклонена.';
-      } else {
-        _statusMessage = 'Статус заявки: $status';
-      }
-    });
+      setState(() {
+        _isLoading = false;
+        if (result == null) {
+          _statusMessage = 'Заявка с таким email не найдена.';
+        } else {
+          final status = result['status'] as String;
+          switch (status) {
+            case 'pending':
+              _statusMessage = 'Заявка находится на рассмотрении.';
+              break;
+            case 'approved':
+              _statusMessage = 'Заявка одобрена!';
+              _login = result['login'] as String?;
+              _password = result['password'] as String?;
+              break;
+            case 'rejected':
+              _statusMessage = 'Заявка отклонена.';
+              break;
+            default:
+              _statusMessage = 'Статус заявки: $status';
+          }
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _statusMessage = 'Ошибка при проверке: $e';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final textStyle = const TextStyle(fontSize: 16);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Проверка статуса заявки')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -62,35 +74,47 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
               controller: _emailController,
               decoration: const InputDecoration(
                 labelText: 'Email руководителя',
+                border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _checkStatus,
-              child: const Text('Проверить статус'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _checkStatus,
+                child: _isLoading
+                    ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+                    : const Text('Проверить статус'),
+              ),
             ),
-            const SizedBox(height: 20),
-            if (_isLoading) const CircularProgressIndicator(),
+            const SizedBox(height: 24),
             if (_statusMessage != null)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     _statusMessage!,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                   ),
                   if (_login != null && _password != null) ...[
-                    const SizedBox(height: 16),
-                    Text('Логин: $_login', style: const TextStyle(fontSize: 16)),
+                    const SizedBox(height: 20),
+                    Text('Логин: $_login', style: textStyle),
                     const SizedBox(height: 8),
-                    Text('Пароль: $_password', style: const TextStyle(fontSize: 16)),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Переход на экран авторизации
-                      },
-                      child: const Text('Перейти к авторизации'),
+                    Text('Пароль: $_password', style: textStyle),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Навигация на экран авторизации
+                        },
+                        child: const Text('Перейти к авторизации'),
+                      ),
                     ),
                   ],
                 ],

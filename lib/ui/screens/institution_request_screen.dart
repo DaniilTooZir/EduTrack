@@ -18,11 +18,14 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _commentController = TextEditingController();
+
   bool _isSubmitting = false;
 
   void _submitRequest() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isSubmitting = true);
+
     try {
       await InstitutionRequestService().submitInstitutionRequest(
         name: _nameController.text.trim(),
@@ -33,14 +36,25 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
         phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
         comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
       );
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Заявка успешно отправлена!')),
       );
-      Navigator.of(context).pop(); // Возврат назад после успешной отправки
 
-    } catch (e) {
+      Navigator.of(context).pop(); // Возврат назад после успешной отправки
+    } catch (e, stackTrace) {
+      debugPrint('[InstitutionRequestScreen] Ошибка: $e');
+      debugPrint('[InstitutionRequestScreen] StackTrace: $stackTrace');
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при отправке заявки: $e')),
+        SnackBar(
+          content: Text('Произошла ошибка при отправке заявки. Попробуйте позже.'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     } finally {
       setState(() => _isSubmitting = false);
@@ -71,30 +85,10 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
             key: _formKey,
             child: Column(
               children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Название организации'),
-                  validator: (v) => v == null || v.isEmpty ? 'Введите название организации' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _addressController,
-                  decoration: const InputDecoration(labelText: 'Адрес организации'),
-                  validator: (v) => v == null || v.isEmpty ? 'Введите адрес организации' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _headNameController,
-                  decoration: const InputDecoration(labelText: 'Имя руководителя'),
-                  validator: (v) => v == null || v.isEmpty ? 'Введите имя руководителя' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _headSurnameController,
-                  decoration: const InputDecoration(labelText: 'Фамилия руководителя'),
-                  validator: (v) => v == null || v.isEmpty ? 'Введите фамилию руководителя' : null,
-                ),
-                const SizedBox(height: 12),
+                _buildTextField(_nameController, 'Название организации', true),
+                _buildTextField(_addressController, 'Адрес организации', true),
+                _buildTextField(_headNameController, 'Имя руководителя', true),
+                _buildTextField(_headSurnameController, 'Фамилия руководителя', true),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(labelText: 'Email'),
@@ -107,17 +101,8 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: const InputDecoration(labelText: 'Телефон (необязательно)'),
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _commentController,
-                  decoration: const InputDecoration(labelText: 'Комментарий (необязательно)'),
-                  maxLines: 3,
-                ),
+                _buildTextField(_phoneController, 'Телефон (необязательно)', false, inputType: TextInputType.phone),
+                _buildTextField(_commentController, 'Комментарий (необязательно)', false, maxLines: 3),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -136,6 +121,27 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      TextEditingController controller,
+      String label,
+      bool required, {
+        int maxLines = 1,
+        TextInputType inputType = TextInputType.text,
+      }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(labelText: label),
+        keyboardType: inputType,
+        maxLines: maxLines,
+        validator: required
+            ? (v) => v == null || v.isEmpty ? 'Поле "$label" обязательно' : null
+            : null,
       ),
     );
   }
