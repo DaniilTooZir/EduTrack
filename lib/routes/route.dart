@@ -4,6 +4,9 @@ import 'package:edu_track/ui/screens/splash_screen.dart';
 import 'package:edu_track/ui/screens/institution_request_screen.dart';
 import 'package:edu_track/ui/screens/check_request_status_screen.dart';
 import 'package:edu_track/ui/screens/login_screen.dart';
+import 'package:edu_track/ui/screens/admin_home_screen.dart';
+import 'package:edu_track/ui/screens/teacher_home_screen.dart';
+import 'package:edu_track/ui/screens/student_home_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/splash',
@@ -27,6 +30,18 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/admin-home',
+      builder: (context, state) => const AdminHomeScreen(),
+    ),
+    GoRoute(
+      path: '/teacher-home',
+      builder: (context, state) => const TeacherHomeScreen(),
+    ),
+    GoRoute(
+      path: '/student-home',
+      builder: (context, state) => const StudentHomeScreen(),
     ),
   ],
 );

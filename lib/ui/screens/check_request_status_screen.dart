@@ -112,7 +112,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          context.go('/login');
+                          context.push('/login');
                         },
                         child: const Text('Перейти к авторизации'),
                       ),

@@ -4,6 +4,7 @@ class Student {
   final String name;
   final String surname;
   final String email;
+  final String login;
   final String password;
   final String institutionId;
   final int classNumber;
@@ -14,6 +15,7 @@ class Student {
     required this.name,
     required this.surname,
     required this.email,
+    required this.login,
     required this.password,
     required this.institutionId,
     required this.classNumber,
@@ -26,6 +28,7 @@ class Student {
       name: map['name'] as String,
       surname: map['surname'] as String,
       email: map['email'] as String,
+      login: map['login'] as String,
       password: map['password'] as String,
       institutionId: map['institution_id'] as String,
       classNumber: map['class_number'] as int,
@@ -39,6 +42,7 @@ class Student {
       'name': name,
       'surname': surname,
       'email': email,
+      'login': login,
       'password': password,
       'institution_id': institutionId,
       'class_number': classNumber,
