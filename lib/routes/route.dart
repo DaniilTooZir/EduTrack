@@ -1,4 +1,7 @@
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/welcome_screen.dart';
 import 'package:edu_track/ui/screens/splash_screen.dart';
 import 'package:edu_track/ui/screens/institution_request_screen.dart';
@@ -44,4 +47,30 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const StudentHomeScreen(),
     ),
   ],
+  redirect: (context, state) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final loggedIn = userProvider.userId != null && userProvider.role != null;
+
+    final publicPaths = ['/', '/login', '/splash', '/institution-request', '/check-status'];
+
+    if (!loggedIn && !publicPaths.contains(state.matchedLocation)) {
+      return '/';
+    }
+
+    if (loggedIn) {
+      if (publicPaths.contains(state.matchedLocation)) {
+        switch (userProvider.role) {
+          case 'admin':
+            return '/admin-home';
+          case 'teacher':
+            return '/teacher-home';
+          case 'student':
+            return '/student-home';
+          default:
+            return '/';
+        }
+      }
+    }
+    return null;
+  },
 );

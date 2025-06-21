@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:edu_track/data/services/session_service.dart';
+import 'package:go_router/go_router.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
@@ -9,6 +11,16 @@ class AdminHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Главная — Администратор'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Выйти',
+            onPressed: () async {
+              await SessionService.clearSession();
+              context.go('/login');
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

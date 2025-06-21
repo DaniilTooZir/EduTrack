@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/data/services/moderation_timer.dart';
+import 'package:edu_track/data/services/session_service.dart';
+import 'package:edu_track/providers/user_provider.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await SupabaseConnection.initializeSupabase();
   ModerationTimer.start();
-  runApp(const MyApp());
+
+  final savedUserId = await SessionService.getUserId();
+  final savedRole = await SessionService.getRole();
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => UserProvider()..loadSession(savedUserId, savedRole),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -24,7 +37,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      routerConfig: router, // наш GoRouter
+      routerConfig: router,
     );
   }
 }

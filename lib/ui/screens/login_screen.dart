@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:edu_track/data/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:edu_track/data/services/auth_service.dart';
+import 'package:edu_track/data/services/session_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,6 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authResult == null) {
         setState(() => _errorMessage = 'Неверный логин или пароль.');
       } else {
+        await SessionService.saveSession(authResult.userId, authResult.role);
+
         switch (authResult.role) {
           case 'admin':
             context.go('/admin-home');
