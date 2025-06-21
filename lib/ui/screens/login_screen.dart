@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/data/services/session_service.dart';
 
@@ -36,21 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authResult == null) {
         setState(() => _errorMessage = 'Неверный логин или пароль.');
       } else {
-        await SessionService.saveSession(authResult.userId, authResult.role);
-
-        switch (authResult.role) {
-          case 'admin':
-            context.go('/admin-home');
-            break;
-          case 'teacher':
-            context.go('/teacher-home');
-            break;
-          case 'student':
-            context.go('/student-home');
-            break;
-          default:
-            setState(() => _errorMessage = 'Неизвестная роль пользователя.');
-        }
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        userProvider.setUser(authResult.userId, authResult.role);
+        context.go('/admin-home');
       }
     } catch (e) {
       setState(() => _errorMessage = 'Ошибка при авторизации: $e');

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:edu_track/providers/user_provider.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
@@ -17,7 +19,9 @@ class AdminHomeScreen extends StatelessWidget {
             tooltip: 'Выйти',
             onPressed: () async {
               await SessionService.clearSession();
-              context.go('/login');
+              final userProvider = Provider.of<UserProvider>(context, listen: false);
+              userProvider.clearUser();
+              context.go('/');
             },
           ),
         ],
