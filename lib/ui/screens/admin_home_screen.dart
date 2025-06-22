@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/add_user_screen.dart';
+import 'package:edu_track/ui/screens/user_list_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -32,7 +33,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         bodyContent = _buildDashboard();
         break;
       case 1:
-        bodyContent = Center(child: Text('Здесь будет список пользователей'));
+        bodyContent = const UserListScreen();
         break;
       case 2:
         bodyContent = const AddUserScreen();
