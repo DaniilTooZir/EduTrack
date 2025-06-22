@@ -16,10 +16,11 @@ void main() async {
 
   final savedUserId = await SessionService.getUserId();
   final savedRole = await SessionService.getRole();
+  final institutionId = await SessionService.getInstitutionId();
 
   runApp(
     ChangeNotifierProvider(
-      create: (_) => UserProvider()..loadSession(savedUserId, savedRole),
+      create: (_) => UserProvider()..loadSession(savedUserId, savedRole, institutionId),
       child: const MyApp(),
     ),
   );

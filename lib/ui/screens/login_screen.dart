@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _errorMessage = 'Неверный логин или пароль.');
       } else {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.setUser(authResult.userId, authResult.role);
+        userProvider.setUser(authResult.userId, authResult.role, authResult.institutionId);
         context.go('/admin-home');
       }
     } catch (e) {
