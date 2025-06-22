@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:edu_track/data/services/institution_request_status_service.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,7 +7,8 @@ class CheckRequestStatusScreen extends StatefulWidget {
   const CheckRequestStatusScreen({super.key});
 
   @override
-  State<CheckRequestStatusScreen> createState() => _CheckRequestStatusScreenState();
+  State<CheckRequestStatusScreen> createState() =>
+      _CheckRequestStatusScreenState();
 }
 
 class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
@@ -27,7 +29,8 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
     final email = _emailController.text.trim();
 
     try {
-      final result = await InstitutionRequestStatusService.getRequestDetailsByEmail(email);
+      final result =
+          await InstitutionRequestStatusService.getRequestDetailsByEmail(email);
 
       setState(() {
         _isLoading = false;
@@ -60,6 +63,13 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
     }
   }
 
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$label скопирован в буфер обмена')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -84,13 +94,17 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _checkStatus,
-                child: _isLoading
-                    ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-                    : const Text('Проверить статус'),
+                child:
+                    _isLoading
+                        ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text('Проверить статус'),
               ),
             ),
             const SizedBox(height: 24),
@@ -100,13 +114,39 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                 children: [
                   Text(
                     _statusMessage!,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   if (_login != null && _password != null) ...[
                     const SizedBox(height: 20),
-                    Text('Логин: $_login', style: textStyle),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Логин: $_login', style: textStyle),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy),
+                          tooltip: 'Копировать логин',
+                          onPressed: () => _copyToClipboard(_login!, 'Логин'),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
-                    Text('Пароль: $_password', style: textStyle),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Пароль: $_password', style: textStyle),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy),
+                          tooltip: 'Копировать пароль',
+                          onPressed:
+                              () => _copyToClipboard(_password!, 'Пароль'),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
