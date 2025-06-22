@@ -6,6 +6,7 @@ import 'package:edu_track/data/services/dashboard_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/add_user_screen.dart';
 import 'package:edu_track/ui/screens/user_list_screen.dart';
+import 'package:edu_track/ui/screens/schedule_admin_screen.dart';
 
 
 class AdminHomeScreen extends StatefulWidget {
@@ -41,7 +42,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         bodyContent = const AddUserScreen();
         break;
       case 3:
-        bodyContent = Center(child: Text('Здесь расписание'));
+        bodyContent = const ScheduleAdminScreen();
         break;
       case 4:
         bodyContent = Center(child: Text('Здесь список предметов'));

@@ -1,0 +1,67 @@
+import 'package:edu_track/models/schedule.dart';
+import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class ScheduleService {
+  final SupabaseClient _client;
+  ScheduleService({SupabaseClient? client})
+      : _client = client ?? SupabaseConnection.client;
+  Future<List<Schedule>> getScheduleForInstitution(String institutionId) async {
+    try {
+      final response = await _client
+          .from('schedule')
+          .select()
+          .eq('institution_id', institutionId)
+          .order('weekday')
+          .order('start_time');
+
+      if (response == null) {
+        throw Exception('Пустой ответ при загрузке расписания');
+      }
+      final List<dynamic> data = response as List<dynamic>;
+      return data.map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw Exception('Ошибка загрузки расписания: $e');
+    }
+  }
+
+  Future<void> addScheduleEntry({
+    required String institutionId,
+    required String subjectId,
+    required int weekday,
+    required String startTime,
+    required String endTime,
+    required String classGroup,
+  }) async {
+    try {
+      final response = await _client
+          .from('schedule')
+          .insert({
+        'institution_id': institutionId,
+        'subject_id': subjectId,
+        'weekday': weekday,
+        'start_time': startTime,
+        'end_time': endTime,
+        'class_group': classGroup,
+      })
+          .select()
+          .single();
+      if (response == null) {
+        throw Exception('Пустой ответ при добавлении расписания');
+      }
+    } catch (e) {
+      throw Exception('Ошибка добавления расписания: $e');
+    }
+  }
+
+  Future<void> deleteScheduleEntry(String id) async {
+    try {
+      final response = await _client.from('schedule').delete().eq('id', id);
+      if (response == null) {
+        throw Exception('Пустой ответ при удалении записи расписания');
+      }
+    } catch (e) {
+      throw Exception('Ошибка удаления записи расписания: $e');
+    }
+  }
+}
