@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
-import 'package:edu_track/providers/user_provider.dart';
 
 class ScheduleAdminScreen extends StatefulWidget {
   const ScheduleAdminScreen({super.key});
