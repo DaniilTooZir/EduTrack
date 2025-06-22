@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:edu_track/data/services/session_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:edu_track/data/services/session_service.dart';
+import 'package:edu_track/data/services/dashboard_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/add_user_screen.dart';
 import 'package:edu_track/ui/screens/user_list_screen.dart';
+
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -113,24 +115,48 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   Widget _buildDashboard() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final institutionId = userProvider.institutionId;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Общая статистика по вашему учреждению',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 24),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
+    return FutureBuilder<Map<String, int>>(
+      future: _fetchStats(institutionId!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Ошибка при загрузке статистики: ${snapshot.error}'));
+        }
+
+        final data = snapshot.data!;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _statCard('Преподаватели', 'N'),
-            _statCard('Студенты', 'N'),
+            const Text(
+              'Общая статистика по вашему учреждению',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                _statCard('Преподаватели', data['teachers'].toString()),
+                _statCard('Студенты', data['students'].toString()),
+              ],
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
+  }
+
+  Future<Map<String, int>> _fetchStats(String institutionId) async {
+    final dashboardService = DashboardService();
+    final studentCount = await dashboardService.getStudentCount(institutionId);
+    final teacherCount = await dashboardService.getTeacherCount(institutionId);
+    return {
+      'students': studentCount,
+      'teachers': teacherCount,
+    };
   }
 
   Widget _statCard(String title, String value) {
