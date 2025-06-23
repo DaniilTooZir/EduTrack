@@ -23,7 +23,7 @@ class InstitutionRequestStatusService {
 
       final head = await Supabase.instance.client
           .from('education_heads')
-          .select('email, password')
+          .select('login, password')
           .eq('email', email)
           .maybeSingle();
 
@@ -34,7 +34,7 @@ class InstitutionRequestStatusService {
 
       return {
         'status': status,
-        'login': head['email'],
+        'login': head['login'],
         'password': head['password'],
       };
     } catch (e, stackTrace) {

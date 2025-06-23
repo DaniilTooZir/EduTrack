@@ -72,95 +72,115 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     final textStyle = const TextStyle(fontSize: 16);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Проверка статуса заявки')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email руководителя',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _checkStatus,
-                child:
-                    _isLoading
-                        ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email руководителя',
+                            border: OutlineInputBorder(),
                           ),
-                        )
-                        : const Text('Проверить статус'),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (_statusMessage != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _statusMessage!,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _checkStatus,
+                          child:
+                              _isLoading
+                                  ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : const Text('Проверить статус'),
+                        ),
+                        const SizedBox(height: 24),
+                        if (_statusMessage != null)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _statusMessage!,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (_login != null && _password != null) ...[
+                                const SizedBox(height: 20),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Логин: $_login',
+                                        style: textStyle,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.copy),
+                                      tooltip: 'Копировать логин',
+                                      onPressed:
+                                          () => _copyToClipboard(
+                                            _login!,
+                                            'Логин',
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Пароль: $_password',
+                                        style: textStyle,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.copy),
+                                      tooltip: 'Копировать пароль',
+                                      onPressed:
+                                          () => _copyToClipboard(
+                                            _password!,
+                                            'Пароль',
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    context.push('/login');
+                                  },
+                                  child: const Text('Перейти к авторизации'),
+                                ),
+                              ],
+                            ],
+                          ),
+                      ],
                     ),
                   ),
-                  if (_login != null && _password != null) ...[
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text('Логин: $_login', style: textStyle),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.copy),
-                          tooltip: 'Копировать логин',
-                          onPressed: () => _copyToClipboard(_login!, 'Логин'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text('Пароль: $_password', style: textStyle),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.copy),
-                          tooltip: 'Копировать пароль',
-                          onPressed:
-                              () => _copyToClipboard(_password!, 'Пароль'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          context.push('/login');
-                        },
-                        child: const Text('Перейти к авторизации'),
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
-          ],
+            );
+          },
         ),
       ),
     );
