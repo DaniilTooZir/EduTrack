@@ -22,4 +22,27 @@ class TeacherService {
       throw Exception('Ошибка загрузки преподавателей: $e');
     }
   }
+  Future<Teacher?> getTeacherById(String id) async {
+    try {
+      final response = await _client
+          .from('teachers')
+          .select()
+          .eq('id', id)
+          .single();
+      if (response == null) return null;
+      return Teacher.fromMap(response as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Ошибка загрузки данных преподавателя: $e');
+    }
+  }
+  Future<void> updateTeacherData(String id, Map<String, dynamic> updatedData) async {
+    try {
+      await _client
+          .from('teachers')
+          .update(updatedData)
+          .eq('id', id);
+    } catch (e) {
+      throw Exception('Ошибка обновления данных преподавателя: $e');
+    }
+  }
 }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/teatcher/teacher_profile_screen.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -41,7 +42,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         bodyContent = const Center(child: Text('Расписание (в разработке)'));
         break;
       case 4:
-        bodyContent = const Center(child: Text('Профиль (в разработке)'));
+        bodyContent = const TeacherProfileScreen();
         break;
       default:
         bodyContent = const SizedBox.shrink();
