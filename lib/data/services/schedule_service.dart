@@ -31,7 +31,7 @@ class ScheduleService {
     required int weekday,
     required String startTime,
     required String endTime,
-    required String classGroup,
+    required String groupId,
   }) async {
     try {
       final response = await _client
@@ -42,7 +42,7 @@ class ScheduleService {
         'weekday': weekday,
         'start_time': startTime,
         'end_time': endTime,
-        'class_group': classGroup,
+        'group_id': groupId,
       })
           .select()
           .single();
