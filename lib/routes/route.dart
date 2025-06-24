@@ -7,7 +7,7 @@ import 'package:edu_track/ui/screens/institution_request_screen.dart';
 import 'package:edu_track/ui/screens/check_request_status_screen.dart';
 import 'package:edu_track/ui/screens/login_screen.dart';
 import 'package:edu_track/ui/screens/admin/admin_home_screen.dart';
-import 'package:edu_track/ui/screens/teatcher/teacher_home_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_home_screen.dart';
 import 'package:edu_track/ui/screens/student/student_home_screen.dart';
 import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
 

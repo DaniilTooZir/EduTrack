@@ -7,6 +7,22 @@ class SubjectService {
 
   SubjectService({SupabaseClient? client})
       : _client = client ?? SupabaseConnection.client;
+  Future<List<Subject>> getSubjectsByTeacherId(String teacherId) async {
+    try {
+      final response = await _client
+          .from('subjects')
+          .select()
+          .eq('teacher_id', teacherId)
+          .order('created_at');
+
+      final List<dynamic> data = response as List<dynamic>;
+      return data
+          .map((e) => Subject.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Ошибка при загрузке предметов: $e');
+    }
+  }
   Future<List<Subject>> getSubjectsForInstitution(String institutionId) async {
     try {
       final response = await _client
