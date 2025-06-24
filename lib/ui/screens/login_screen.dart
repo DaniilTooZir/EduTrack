@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/data/services/auth_service.dart';
-import 'package:edu_track/data/services/session_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,7 +39,20 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         userProvider.setUser(authResult.userId, authResult.role, authResult.institutionId);
-        context.go('/admin-home');
+        switch (authResult.role) {
+          case 'admin':
+            context.go('/admin-home');
+            break;
+          case 'teacher':
+            context.go('/teacher-home');
+            break;
+          case 'student':
+            context.go('/student-home');
+            break;
+          default:
+            context.go('/');
+            break;
+        }
       }
     } catch (e) {
       setState(() => _errorMessage = 'Ошибка при авторизации: $e');

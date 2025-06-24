@@ -4,12 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/data/services/dashboard_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/ui/screens/add_user_screen.dart';
-import 'package:edu_track/ui/screens/user_list_screen.dart';
-import 'package:edu_track/ui/screens/schedule_admin_screen.dart';
-import 'package:edu_track/ui/screens/subject_admin_screen.dart';
-import 'package:edu_track/ui/screens/admin_profile_screen.dart';
-import 'package:edu_track/ui/screens/group_admin_screen.dart';
+import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
+import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
+import 'package:edu_track/ui/screens/admin/schedule_admin_screen.dart';
+import 'package:edu_track/ui/screens/admin/subject_admin_screen.dart';
+import 'package:edu_track/ui/screens/admin/admin_profile_screen.dart';
+import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
 
 
 class AdminHomeScreen extends StatefulWidget {

@@ -1,16 +1,15 @@
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/material.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/welcome_screen.dart';
 import 'package:edu_track/ui/screens/splash_screen.dart';
 import 'package:edu_track/ui/screens/institution_request_screen.dart';
 import 'package:edu_track/ui/screens/check_request_status_screen.dart';
 import 'package:edu_track/ui/screens/login_screen.dart';
-import 'package:edu_track/ui/screens/admin_home_screen.dart';
-import 'package:edu_track/ui/screens/teacher_home_screen.dart';
-import 'package:edu_track/ui/screens/student_home_screen.dart';
-import 'package:edu_track/ui/screens/add_user_screen.dart';
+import 'package:edu_track/ui/screens/admin/admin_home_screen.dart';
+import 'package:edu_track/ui/screens/teatcher/teacher_home_screen.dart';
+import 'package:edu_track/ui/screens/student/student_home_screen.dart';
+import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/splash',
