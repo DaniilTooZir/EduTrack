@@ -13,7 +13,7 @@ class UserAddService {
     required String login,
     required String password,
     required String institutionId,
-    required int classNumber,
+    required String groupId,
   }) async {
     try {
       final response = await _client.from('students').insert({
@@ -23,7 +23,7 @@ class UserAddService {
         'login': login,
         'password': password,
         'institution_id': institutionId,
-        'class_number': classNumber,
+        'group_id': groupId,
       }).select().single();
 
       if (response == null) {

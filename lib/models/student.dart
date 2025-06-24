@@ -1,4 +1,4 @@
-// Модель для учеников
+// Модель для студента
 class Student {
   final String id;
   final String name;
@@ -7,7 +7,7 @@ class Student {
   final String login;
   final String password;
   final String institutionId;
-  final int classNumber;
+  final String? groupId;
   final DateTime createdAt;
 
   Student({
@@ -18,7 +18,7 @@ class Student {
     required this.login,
     required this.password,
     required this.institutionId,
-    required this.classNumber,
+    this.groupId,
     required this.createdAt,
   });
 
@@ -31,7 +31,7 @@ class Student {
       login: map['login'] as String,
       password: map['password'] as String,
       institutionId: map['institution_id'] as String,
-      classNumber: map['class_number'] as int,
+      groupId: map['group_id'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -45,7 +45,7 @@ class Student {
       'login': login,
       'password': password,
       'institution_id': institutionId,
-      'class_number': classNumber,
+      'group_id': groupId,
       'created_at': createdAt.toIso8601String(),
     };
   }

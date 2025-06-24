@@ -9,6 +9,7 @@ import 'package:edu_track/ui/screens/user_list_screen.dart';
 import 'package:edu_track/ui/screens/schedule_admin_screen.dart';
 import 'package:edu_track/ui/screens/subject_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin_profile_screen.dart';
+import 'package:edu_track/ui/screens/group_admin_screen.dart';
 
 
 class AdminHomeScreen extends StatefulWidget {
@@ -28,6 +29,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     'Расписание',
     'Предметы',
     'Профиль',
+    'Группы',
   ];
 
   @override
@@ -52,6 +54,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         break;
       case 5:
         bodyContent = const AdminProfileScreen();
+        break;
+      case 6:
+        bodyContent = const GroupAdminScreen();
         break;
       default:
         bodyContent = const SizedBox.shrink();
@@ -89,6 +94,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             _buildDrawerItem(Icons.schedule, 'Расписание', 3),
             _buildDrawerItem(Icons.book, 'Предметы', 4),
             _buildDrawerItem(Icons.person, 'Профиль', 5),
+            _buildDrawerItem(Icons.group, 'Группы', 6),
           ],
         ),
       ),

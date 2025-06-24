@@ -160,7 +160,7 @@ class _UserListScreenState extends State<UserListScreen> {
     final isTeacher = role == 'teacher';
     final subtitle = isTeacher
         ? '${user['email']} • ${user['login']}'
-        : '${user['email']} • ${user['login']} • Группа ${user['class_number']}';
+        : '${user['email']} • ${user['login']} • Группа ${user['group_name']}';
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: ListTile(

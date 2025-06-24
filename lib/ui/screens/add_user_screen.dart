@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/models/group.dart';
 import 'package:edu_track/data/services/user_add_service.dart';
+import 'package:edu_track/data/services/group_service.dart';
 
 class AddUserScreen extends StatefulWidget {
   const AddUserScreen({super.key});
@@ -16,20 +18,31 @@ class _AddUserScreenState extends State<AddUserScreen> {
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _classNumberController = TextEditingController();
+
   String? _selectedRole;
+  List<Group> _groups = [];
+  Group? _selectedGroup;
+
   bool _isLoading = false;
   String? _errorMessage;
 
+  final _groupService = GroupService();
+
   @override
-  void dispose() {
-    _loginController.dispose();
-    _passwordController.dispose();
-    _nameController.dispose();
-    _surnameController.dispose();
-    _emailController.dispose();
-    _classNumberController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadGroups();
+  }
+
+  Future<void> _loadGroups() async {
+    final institutionId =
+        Provider.of<UserProvider>(context, listen: false).institutionId;
+    if (institutionId == null) return;
+
+    final groups = await _groupService.getGroups(institutionId);
+    setState(() {
+      _groups = groups;
+    });
   }
 
   Future<void> _addUser() async {
@@ -38,7 +51,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final name = _nameController.text.trim();
     final surname = _surnameController.text.trim();
     final email = _emailController.text.trim();
-    final classNumberText = _classNumberController.text.trim();
     final role = _selectedRole;
 
     if (login.isEmpty ||
@@ -51,8 +63,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
       return;
     }
 
-    if (role == 'student' && classNumberText.isEmpty) {
-      setState(() => _errorMessage = 'Введите номер класса');
+    if (role == 'student' && _selectedGroup == null) {
+      setState(() => _errorMessage = 'Пожалуйста, выберите группу');
       return;
     }
 
@@ -69,9 +81,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
       }
       final service = UserAddService();
       if (role == 'student') {
-        final classNumber = int.tryParse(classNumberText);
-        if (classNumber == null) {
-          setState(() => _errorMessage = 'Неверный номер класса');
+        if (_selectedGroup == null) {
+          setState(() => _errorMessage = 'Пожалуйста, выберите группу');
           return;
         }
         await service.addStudent(
@@ -81,7 +92,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           surname: surname,
           email: email,
           institutionId: institutionId,
-          classNumber: classNumber,
+          groupId: _selectedGroup!.id.toString(),
         );
       } else if (role == 'teacher') {
         await service.addTeacher(
@@ -96,14 +107,15 @@ class _AddUserScreenState extends State<AddUserScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Пользователь успешно добавлен')),
       );
-
       _loginController.clear();
       _passwordController.clear();
       _nameController.clear();
       _surnameController.clear();
       _emailController.clear();
-      _classNumberController.clear();
-      setState(() => _selectedRole = null);
+      setState(() {
+        _selectedRole = null;
+        _selectedGroup = null;
+      });
     } catch (e) {
       setState(() => _errorMessage = 'Ошибка: $e');
     } finally {
@@ -112,76 +124,99 @@ class _AddUserScreenState extends State<AddUserScreen> {
   }
 
   @override
+  void dispose() {
+    _loginController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    _surnameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final buttonStyle = ElevatedButton.styleFrom(
       minimumSize: const Size.fromHeight(44),
     );
-    return Column(
-      children: [
-        TextField(
-          controller: _nameController,
-          decoration: const InputDecoration(labelText: 'Имя'),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _surnameController,
-          decoration: const InputDecoration(labelText: 'Фамилия'),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _emailController,
-          decoration: const InputDecoration(labelText: 'Email'),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _loginController,
-          decoration: const InputDecoration(labelText: 'Логин'),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _passwordController,
-          decoration: const InputDecoration(labelText: 'Пароль'),
-          obscureText: true,
-        ),
-        const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          value: _selectedRole,
-          items: const [
-            DropdownMenuItem(value: 'student', child: Text('Студент')),
-            DropdownMenuItem(value: 'teacher', child: Text('Преподаватель')),
-          ],
-          onChanged: (value) => setState(() => _selectedRole = value),
-          decoration: const InputDecoration(labelText: 'Роль'),
-        ),
-        if (_selectedRole == 'student') ...[
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: 'Имя'),
+          ),
           const SizedBox(height: 12),
           TextField(
-            controller: _classNumberController,
-            decoration: const InputDecoration(labelText: 'Номер класса'),
-            keyboardType: TextInputType.number,
+            controller: _surnameController,
+            decoration: const InputDecoration(labelText: 'Фамилия'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _emailController,
+            decoration: const InputDecoration(labelText: 'Email'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _loginController,
+            decoration: const InputDecoration(labelText: 'Логин'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _passwordController,
+            decoration: const InputDecoration(labelText: 'Пароль'),
+            obscureText: true,
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _selectedRole,
+            items: const [
+              DropdownMenuItem(value: 'student', child: Text('Студент')),
+              DropdownMenuItem(value: 'teacher', child: Text('Преподаватель')),
+            ],
+            onChanged:
+                (value) => setState(() {
+                  _selectedRole = value;
+                  _selectedGroup = null;
+                }),
+            decoration: const InputDecoration(labelText: 'Роль'),
+          ),
+          if (_selectedRole == 'student') ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<Group>(
+              value: _selectedGroup,
+              items:
+                  _groups
+                      .map(
+                        (g) => DropdownMenuItem(value: g, child: Text(g.name)),
+                      )
+                      .toList(),
+              onChanged: (group) => setState(() => _selectedGroup = group),
+              decoration: const InputDecoration(labelText: 'Группа'),
+            ),
+          ],
+          const SizedBox(height: 24),
+          if (_errorMessage != null) ...[
+            Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 12),
+          ],
+          ElevatedButton(
+            style: buttonStyle,
+            onPressed: _isLoading ? null : _addUser,
+            child:
+                _isLoading
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : const Text('Добавить'),
           ),
         ],
-        const SizedBox(height: 24),
-        if (_errorMessage != null) ...[
-          Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-          const SizedBox(height: 12),
-        ],
-        ElevatedButton(
-          style: buttonStyle,
-          onPressed: _isLoading ? null : _addUser,
-          child:
-              _isLoading
-                  ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                  : const Text('Добавить'),
-        ),
-      ],
+      ),
     );
   }
 }
