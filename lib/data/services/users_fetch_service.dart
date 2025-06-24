@@ -21,4 +21,9 @@ class UsersFetchService {
         .eq('institution_id', institutionId);
     return List<Map<String, dynamic>>.from(response);
   }
+
+  Future<void> deleteUserById(String id, String role) async {
+    final table = role == 'teacher' ? 'teachers' : 'students';
+    await _client.from(table).delete().eq('id', id);
+  }
 }
