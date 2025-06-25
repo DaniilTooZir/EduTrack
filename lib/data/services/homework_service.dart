@@ -47,6 +47,19 @@ class HomeworkService {
       throw Exception('Ошибка загрузки домашних заданий по группе: $e');
     }
   }
+  Future<Map<String, dynamic>?> getGroupByStudentId(String studentId) async {
+    try {
+      final response = await _client
+          .from('students')
+          .select('groups(id, name)')
+          .eq('id', studentId)
+          .single();
+      if (response == null) return null;
+      return response['groups'] as Map<String, dynamic>?;
+    } catch (e) {
+      throw Exception('Ошибка получения группы студента: $e');
+    }
+  }
   Future<void> addHomework({
     required String institutionId,
     required String subjectId,
