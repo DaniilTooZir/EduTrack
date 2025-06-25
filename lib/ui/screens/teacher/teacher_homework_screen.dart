@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/subject.dart';
+import 'package:edu_track/models/group.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
+import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 
 class TeacherHomeworkScreen extends StatefulWidget {
@@ -18,14 +20,17 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
 
   final HomeworkService _homeworkService = HomeworkService();
   final SubjectService _subjectService = SubjectService();
+  final GroupService _groupService = GroupService();
 
   bool _isLoading = true;
   bool _isSaving = false;
 
   List<Homework> _homeworks = [];
   List<Subject> _subjects = [];
+  List<Group> _groups = [];
 
   String? _selectedSubjectId;
+  String? _selectedGroupId;
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime? _dueDate;
@@ -44,13 +49,19 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
       _error = null;
     });
     try {
-      final userId = Provider.of<UserProvider>(context, listen: false).userId!;
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final userId = userProvider.userId!;
+      final institutionId = userProvider.institutionId!;
+
       final subjects = await _subjectService.getSubjectsByTeacherId(userId);
+      final groups = await _groupService.getGroups(institutionId);
       final homeworks = await _homeworkService.getHomeworkByTeacherId(userId);
       setState(() {
         _subjects = subjects;
+        _groups = groups;
         _homeworks = homeworks;
         _selectedSubjectId = subjects.isNotEmpty ? subjects.first.id : null;
+        _selectedGroupId = groups.isNotEmpty ? groups.first.id : null;
       });
     } catch (e) {
       setState(() {
@@ -76,22 +87,27 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   }
 
   Future<void> _addHomework() async {
-    if (_selectedSubjectId == null || _titleController.text.trim().isEmpty) {
+    if (_selectedSubjectId == null ||
+        _selectedGroupId == null ||
+        _titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Пожалуйста, выберите предмет и заполните заголовок'),
+          content: Text(
+            'Пожалуйста, выберите предмет, группу и заполните заголовок',
+          ),
         ),
       );
       return;
     }
     setState(() => _isSaving = true);
     try {
-      final userId = Provider.of<UserProvider>(context, listen: false).userId!;
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
       final institutionId =
           Provider.of<UserProvider>(context, listen: false).institutionId!;
       await _homeworkService.addHomework(
-        institutionId: institutionId,
+        institutionId: userProvider.institutionId!,
         subjectId: _selectedSubjectId!,
+        groupId: _selectedGroupId!,
         title: _titleController.text.trim(),
         description:
             _descriptionController.text.trim().isEmpty
@@ -128,6 +144,8 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
       text: hw.description ?? '',
     );
     DateTime? _editDueDate = hw.dueDate;
+    String? _editSelectedGroupId = hw.group?.id;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -151,6 +169,25 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    DropdownButtonFormField<String>(
+                      value: _editSelectedGroupId,
+                      decoration: const InputDecoration(
+                        labelText: 'Выберите группу',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _groups
+                          .map((group) => DropdownMenuItem(
+                        value: group.id,
+                        child: Text(group.name),
+                      ))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _editSelectedGroupId = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: _editTitleController,
                       decoration: const InputDecoration(labelText: 'Заголовок'),
@@ -196,12 +233,21 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                       );
                       return;
                     }
+                    if (_editSelectedGroupId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Пожалуйста, выберите группу'),
+                        ),
+                      );
+                      return;
+                    }
                     try {
                       await _homeworkService.updateHomework(
                         id: hw.id,
                         title: newTitle,
                         description: _editDescriptionController.text.trim(),
                         dueDate: _editDueDate,
+                        groupId: _editSelectedGroupId!,
                       );
                       Navigator.of(context).pop();
                       await _loadData();
@@ -285,15 +331,15 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
             const Text('У вас пока нет домашних заданий.')
           else
             ..._homeworks.map((hw) {
-              final dueDateText =
-                  hw.dueDate != null
-                      ? 'До ${hw.dueDate!.toLocal().toString().split(' ')[0]}'
-                      : 'Без срока';
+              final dueDateText = hw.dueDate != null
+                  ? 'До ${hw.dueDate!.toLocal().toString().split(' ')[0]}'
+                  : 'Без срока';
+              final groupName = hw.group?.name ?? 'Группа не указана';
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 6),
                 child: ListTile(
                   title: Text(hw.title),
-                  subtitle: Text(dueDateText),
+                  subtitle: Text('$dueDateText • $groupName'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -317,20 +363,40 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
+            value: _selectedGroupId,
+            decoration: const InputDecoration(
+              labelText: 'Выберите группу',
+              border: OutlineInputBorder(),
+            ),
+            items: _groups
+                .map(
+                  (group) => DropdownMenuItem(
+                value: group.id,
+                child: Text(group.name),
+              ),
+            )
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedGroupId = value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
             value: _selectedSubjectId,
             decoration: const InputDecoration(
               labelText: 'Выберите предмет',
               border: OutlineInputBorder(),
             ),
-            items:
-                _subjects
-                    .map(
-                      (subj) => DropdownMenuItem(
-                        value: subj.id,
-                        child: Text(subj.name),
-                      ),
-                    )
-                    .toList(),
+            items: _subjects
+                .map(
+                  (subj) => DropdownMenuItem(
+                value: subj.id,
+                child: Text(subj.name),
+              ),
+            )
+                .toList(),
             onChanged: (value) {
               setState(() {
                 _selectedSubjectId = value;
@@ -375,17 +441,16 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _isSaving ? null : _addHomework,
-              child:
-                  _isSaving
-                      ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                      : const Text('Добавить домашнее задание'),
+              child: _isSaving
+                  ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+                  : const Text('Добавить домашнее задание'),
             ),
           ),
         ],

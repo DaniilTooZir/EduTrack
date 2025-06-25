@@ -1,3 +1,4 @@
+import 'package:edu_track/models/group.dart';
 // Модель для домашнего задания
 class Homework {
   final String id;
@@ -7,15 +8,19 @@ class Homework {
   final String? description;
   final DateTime? dueDate;
   final DateTime createdAt;
+  final String groupId;
+  final Group? group;
 
   Homework({
     required this.id,
     required this.institutionId,
     required this.subjectId,
+    required this.groupId,
     required this.title,
     this.description,
     this.dueDate,
     required this.createdAt,
+    this.group,
   });
 
   factory Homework.fromMap(Map<String, dynamic> map) {
@@ -23,10 +28,12 @@ class Homework {
       id: map['id'] as String,
       institutionId: map['institution_id'] as String,
       subjectId: map['subject_id'] as String,
+      groupId: map['group_id'] as String,
       title: map['title'] as String,
       description: map['description'] as String?,
       dueDate: map['due_date'] != null ? DateTime.parse(map['due_date']) : null,
       createdAt: DateTime.parse(map['created_at'] as String),
+      group: map['group'] != null ? Group.fromMap(map['group']) : null,
     );
   }
 
@@ -35,6 +42,7 @@ class Homework {
       'id': id,
       'institution_id': institutionId,
       'subject_id': subjectId,
+      'group_id': groupId,
       'title': title,
       'description': description,
       'due_date': dueDate?.toIso8601String(),
