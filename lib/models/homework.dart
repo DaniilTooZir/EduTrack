@@ -1,4 +1,5 @@
 import 'package:edu_track/models/group.dart';
+import 'package:edu_track/models/subject.dart';
 // Модель для домашнего задания
 class Homework {
   final String id;
@@ -9,6 +10,7 @@ class Homework {
   final DateTime? dueDate;
   final DateTime createdAt;
   final String groupId;
+  final Subject? subject;
   final Group? group;
 
   Homework({
@@ -20,6 +22,7 @@ class Homework {
     this.description,
     this.dueDate,
     required this.createdAt,
+    this.subject,
     this.group,
   });
 
@@ -33,6 +36,7 @@ class Homework {
       description: map['description'] as String?,
       dueDate: map['due_date'] != null ? DateTime.parse(map['due_date']) : null,
       createdAt: DateTime.parse(map['created_at'] as String),
+      subject: map['subject'] != null ? Subject.fromMap(map['subject'] as Map<String, dynamic>) : null,
       group: map['group'] != null ? Group.fromMap(map['group']) : null,
     );
   }

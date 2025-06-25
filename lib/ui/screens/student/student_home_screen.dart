@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
+import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -31,9 +32,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         bodyContent = _buildDashboard();
         break;
       case 1:
-        bodyContent = const Center(
-          child: Text('Домашние задания (в разработке)'),
-        );
+        bodyContent = const StudentHomeworkScreen();
         break;
       case 2:
         bodyContent = const Center(child: Text('Расписание (в разработке)'));
