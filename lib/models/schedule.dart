@@ -7,6 +7,8 @@ class Schedule {
   final int weekday;
   final String startTime;
   final String endTime;
+  final String? subjectName;
+  final String? groupName;
 
   Schedule({
     required this.id,
@@ -16,9 +18,13 @@ class Schedule {
     required this.weekday,
     required this.startTime,
     required this.endTime,
+    this.subjectName,
+    this.groupName,
   });
 
   factory Schedule.fromMap(Map<String, dynamic> map) {
+    final subject = map['subject'] as Map<String, dynamic>?;
+    final group = map['group'] as Map<String, dynamic>?;
     return Schedule(
       id: map['id'] as String,
       institutionId: map['institution_id'] as String,
@@ -27,6 +33,8 @@ class Schedule {
       weekday: map['weekday'] as int,
       startTime: map['start_time'] as String,
       endTime: map['end_time'] as String,
+      subjectName: subject != null ? subject['name'] as String? : null,
+      groupName: group != null ? group['name'] as String? : null,
     );
   }
 
