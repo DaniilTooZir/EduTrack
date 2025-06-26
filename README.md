@@ -1,5 +1,5 @@
 # edu_track
-
+EduTrack
 A new Flutter project.
 
 ## Getting Started
