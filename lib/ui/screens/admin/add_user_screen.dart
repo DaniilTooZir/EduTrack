@@ -136,86 +136,160 @@ class _AddUserScreenState extends State<AddUserScreen> {
   @override
   Widget build(BuildContext context) {
     final buttonStyle = ElevatedButton.styleFrom(
-      minimumSize: const Size.fromHeight(44),
+      minimumSize: const Size.fromHeight(48),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Имя'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _surnameController,
-            decoration: const InputDecoration(labelText: 'Фамилия'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _loginController,
-            decoration: const InputDecoration(labelText: 'Логин'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _passwordController,
-            decoration: const InputDecoration(labelText: 'Пароль'),
-            obscureText: true,
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _selectedRole,
-            items: const [
-              DropdownMenuItem(value: 'student', child: Text('Студент')),
-              DropdownMenuItem(value: 'teacher', child: Text('Преподаватель')),
-            ],
-            onChanged:
-                (value) => setState(() {
-                  _selectedRole = value;
-                  _selectedGroup = null;
-                }),
-            decoration: const InputDecoration(labelText: 'Роль'),
-          ),
-          if (_selectedRole == 'student') ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<Group>(
-              value: _selectedGroup,
-              items:
-                  _groups
-                      .map(
-                        (g) => DropdownMenuItem(value: g, child: Text(g.name)),
-                      )
-                      .toList(),
-              onChanged: (group) => setState(() => _selectedGroup = group),
-              decoration: const InputDecoration(labelText: 'Группа'),
-            ),
-          ],
-          const SizedBox(height: 24),
-          if (_errorMessage != null) ...[
-            Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 12),
-          ],
-          ElevatedButton(
-            style: buttonStyle,
-            onPressed: _isLoading ? null : _addUser,
-            child:
-                _isLoading
-                    ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+      child: Card(
+        elevation: 5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Добавить пользователя',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5E35B1),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Имя',
+                        prefixIcon: Icon(Icons.person),
+                        border: OutlineInputBorder(),
                       ),
-                    )
-                    : const Text('Добавить'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: _surnameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Фамилия',
+                        prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _loginController,
+                decoration: const InputDecoration(
+                  labelText: 'Логин',
+                  prefixIcon: Icon(Icons.account_circle),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Пароль',
+                  prefixIcon: Icon(Icons.lock),
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedRole,
+                decoration: const InputDecoration(
+                  labelText: 'Роль',
+                  prefixIcon: Icon(Icons.group),
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'student', child: Text('Студент')),
+                  DropdownMenuItem(
+                    value: 'teacher',
+                    child: Text('Преподаватель'),
+                  ),
+                ],
+                onChanged:
+                    (value) => setState(() {
+                      _selectedRole = value;
+                      _selectedGroup = null;
+                    }),
+              ),
+              if (_selectedRole == 'student') ...[
+                const SizedBox(height: 16),
+                DropdownButtonFormField<Group>(
+                  value: _selectedGroup,
+                  decoration: const InputDecoration(
+                    labelText: 'Группа',
+                    prefixIcon: Icon(Icons.group_work),
+                    border: OutlineInputBorder(),
+                  ),
+                  items:
+                      _groups
+                          .map(
+                            (g) =>
+                                DropdownMenuItem(value: g, child: Text(g.name)),
+                          )
+                          .toList(),
+                  onChanged: (group) => setState(() => _selectedGroup = group),
+                ),
+              ],
+              const SizedBox(height: 24),
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ElevatedButton(
+                style: buttonStyle,
+                onPressed: _isLoading ? null : _addUser,
+                child:
+                    _isLoading
+                        ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text(
+                          'Добавить пользователя',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

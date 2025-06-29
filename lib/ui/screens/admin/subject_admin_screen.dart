@@ -109,91 +109,145 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Предметы')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Название предмета',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator:
-                        (val) =>
-                            val == null || val.isEmpty
-                                ? 'Введите название'
-                                : null,
+      body: Container(
+        constraints: const BoxConstraints.expand(),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _selectedTeacherId,
-                    decoration: const InputDecoration(
-                      labelText: 'Преподаватель',
-                      border: OutlineInputBorder(),
-                    ),
-                    items:
-                        _teachers.map((teacher) {
-                          final fullName = '${teacher.surname} ${teacher.name}';
-                          return DropdownMenuItem(
-                            value: teacher.id,
-                            child: Text(fullName),
-                          );
-                        }).toList(),
-                    onChanged:
-                        (val) => setState(() => _selectedTeacherId = val),
-                    validator:
-                        (val) => val == null ? 'Выберите преподавателя' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _addSubject,
-                    child: const Text('Добавить предмет'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: FutureBuilder<List<Subject>>(
-                future: _subjectFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Ошибка: ${snapshot.error}'));
-                  }
-                  final subjects = snapshot.data ?? [];
-                  if (subjects.isEmpty) {
-                    return const Center(child: Text('Список предметов пуст'));
-                  }
-                  return ListView.builder(
-                    itemCount: subjects.length,
-                    itemBuilder: (context, index) {
-                      final subject = subjects[index];
-                      return Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        child: ListTile(
-                          title: Text(subject.name),
-                          subtitle: Text(
-                            'Преподаватель: ${_getTeacherName(subject.teacherId)}',
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Название предмета',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator:
+                                (val) =>
+                                    val == null || val.isEmpty
+                                        ? 'Введите название'
+                                        : null,
                           ),
-                        ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: _selectedTeacherId,
+                            decoration: const InputDecoration(
+                              labelText: 'Преподаватель',
+                              border: OutlineInputBorder(),
+                            ),
+                            items:
+                                _teachers.map((teacher) {
+                                  final fullName =
+                                      '${teacher.surname} ${teacher.name}';
+                                  return DropdownMenuItem(
+                                    value: teacher.id,
+                                    child: Text(fullName),
+                                  );
+                                }).toList(),
+                            onChanged:
+                                (val) =>
+                                    setState(() => _selectedTeacherId = val),
+                            validator:
+                                (val) =>
+                                    val == null
+                                        ? 'Выберите преподавателя'
+                                        : null,
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: _addSubject,
+                              child: const Text('Добавить предмет'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: FutureBuilder<List<Subject>>(
+                    future: _subjectFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Ошибка: ${snapshot.error}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                        );
+                      }
+                      final subjects = snapshot.data ?? [];
+                      if (subjects.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'Список предметов пуст',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.separated(
+                        itemCount: subjects.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final subject = subjects[index];
+                          return Card(
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: ListTile(
+                              title: Text(subject.name),
+                              subtitle: Text(
+                                'Преподаватель: ${_getTeacherName(subject.teacherId)}',
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

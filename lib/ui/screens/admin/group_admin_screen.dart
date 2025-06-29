@@ -52,61 +52,135 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Группы')),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Form(
-                      key: _formKey,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _nameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Название группы',
+      body: Container(
+        constraints: const BoxConstraints.expand(),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child:
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Form(
+                              key: _formKey,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _nameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Название группы',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      validator:
+                                          (value) =>
+                                              value == null || value.isEmpty
+                                                  ? 'Введите название'
+                                                  : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: _addGroup,
+                                    child: const Text('Добавить'),
+                                  ),
+                                ],
                               ),
-                              validator:
-                                  (value) =>
-                                      value == null || value.isEmpty
-                                          ? 'Введите название'
-                                          : null,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          ElevatedButton(
-                            onPressed: _addGroup,
-                            child: const Text('Добавить'),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Список групп',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepPurple[700],
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child:
+                              _groups.isEmpty
+                                  ? Center(
+                                    child: Text(
+                                      'Группы не найдены',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(color: Colors.grey[600]),
+                                    ),
+                                  )
+                                  : ListView.separated(
+                                    itemCount: _groups.length,
+                                    separatorBuilder:
+                                        (_, __) => const SizedBox(height: 8),
+                                    itemBuilder: (context, index) {
+                                      final group = _groups[index];
+                                      return Card(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                        ),
+                                        elevation: 3,
+                                        child: ListTile(
+                                          leading: CircleAvatar(
+                                            backgroundColor:
+                                                Colors.deepPurple[200],
+                                            child: Text(
+                                              group.name.isNotEmpty
+                                                  ? group.name[0].toUpperCase()
+                                                  : '?',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          title: Text(
+                                            group.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Список групп',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _groups.length,
-                        itemBuilder: (context, index) {
-                          final group = _groups[index];
-                          return Card(child: ListTile(title: Text(group.name)));
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+        ),
+      ),
     );
   }
 }

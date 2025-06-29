@@ -59,14 +59,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   Future<void> _saveChanges() async {
     if (_admin == null) return;
     setState(() => _isSaving = true);
-    final updatedData = <String, dynamic>{};
 
+    final updatedData = <String, dynamic>{};
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
+
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пароли не совпадают')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
       setState(() => _isSaving = false);
       return;
     }
@@ -83,8 +84,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     if (_loginController.text.trim().isNotEmpty) {
       updatedData['login'] = _loginController.text.trim();
     }
-    if (_passwordController.text.trim().isNotEmpty) {
-      updatedData['password'] = _passwordController.text.trim();
+    if (password.isNotEmpty) {
+      updatedData['password'] = password;
     }
 
     try {
@@ -131,7 +132,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Профиль администратора')),
+      backgroundColor: Colors.transparent,
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -142,91 +143,61 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 500),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _infoRow('Имя', _admin!.name),
-                              _infoRow('Фамилия', _admin!.surname),
-                              _infoRow('Телефон', _admin!.phone),
-                              _infoRow('Логин', _admin!.login),
-                              _infoRow('Email', _admin!.email),
-                              _infoRow('Учреждение', _institution?.name ?? '—'),
-                              const SizedBox(height: 24),
-                              if (_isEditing)
-                                Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    children: [
-                                      _buildField(_nameController, 'Имя'),
-                                      _buildField(
-                                        _surnameController,
-                                        'Фамилия',
+                          constraints: const BoxConstraints(maxWidth: 600),
+                          child: Card(
+                            elevation: 8,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildAvatar(),
+                                  const SizedBox(height: 16),
+                                  Center(
+                                    child: Text(
+                                      '${_admin!.name} ${_admin!.surname}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.deepPurple,
                                       ),
-                                      _buildField(
-                                        _phoneController,
-                                        'Телефон',
-                                        type: TextInputType.phone,
-                                      ),
-                                      _buildField(_loginController, 'Логин'),
-                                      _buildField(
-                                        _passwordController,
-                                        'Пароль',
-                                        obscure: true,
-                                      ),
-                                      if (_passwordController.text.isNotEmpty)
-                                        _buildField(
-                                          _confirmPasswordController,
-                                          'Подтвердите пароль',
-                                          obscure: true,
-                                        ),
-                                      const SizedBox(height: 24),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: ElevatedButton(
-                                              onPressed:
-                                                  _isSaving
-                                                      ? null
-                                                      : _saveChanges,
-                                              child:
-                                                  _isSaving
-                                                      ? const SizedBox(
-                                                        height: 20,
-                                                        width: 20,
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                              strokeWidth: 2,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                      )
-                                                      : const Text('Сохранить'),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: OutlinedButton(
-                                              onPressed: _resetChanges,
-                                              child: const Text('Сбросить'),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                )
-                              else
-                                Center(
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      _resetChanges(); // очистим поля
-                                      setState(() => _isEditing = true);
-                                    },
-                                    child: const Text('Изменить данные'),
+                                  const SizedBox(height: 8),
+                                  Center(
+                                    child: Text(
+                                      _institution?.name ?? '',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(
+                                        color: Colors.deepPurple.shade300,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                            ],
+                                  const Divider(height: 32),
+                                  _sectionTitle('Данные профиля'),
+                                  const SizedBox(height: 8),
+                                  _infoRow('Телефон', _admin!.phone),
+                                  _infoRow('Логин', _admin!.login),
+                                  _infoRow('Email', _admin!.email),
+                                  const SizedBox(height: 24),
+                                  AnimatedCrossFade(
+                                    firstChild: _editButton(),
+                                    secondChild: _editForm(),
+                                    crossFadeState:
+                                        _isEditing
+                                            ? CrossFadeState.showSecond
+                                            : CrossFadeState.showFirst,
+                                    duration: const Duration(milliseconds: 300),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -234,6 +205,33 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   },
                 ),
               ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    final initials = '${_admin!.name[0]}${_admin!.surname[0]}';
+    return CircleAvatar(
+      radius: 40,
+      backgroundColor: Colors.deepPurple.shade200,
+      child: Text(
+        initials.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Colors.deepPurple,
+      ),
     );
   }
 
@@ -250,6 +248,70 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     );
   }
 
+  Widget _editButton() {
+    return Center(
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.edit),
+        label: const Text('Изменить данные'),
+        onPressed: () {
+          _resetChanges();
+          setState(() => _isEditing = true);
+        },
+      ),
+    );
+  }
+
+  Widget _editForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          _buildField(_nameController, 'Имя'),
+          _buildField(_surnameController, 'Фамилия'),
+          _buildField(_phoneController, 'Телефон', type: TextInputType.phone),
+          _buildField(_loginController, 'Логин'),
+          _buildField(_passwordController, 'Пароль', obscure: true),
+          if (_passwordController.text.isNotEmpty)
+            _buildField(
+              _confirmPasswordController,
+              'Подтвердите пароль',
+              obscure: true,
+            ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label:
+                      _isSaving
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Text('Сохранить'),
+                  onPressed: _isSaving ? null : _saveChanges,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Отменить'),
+                  onPressed: _resetChanges,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildField(
     TextEditingController controller,
     String label, {
@@ -260,7 +322,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
         keyboardType: type,
         obscureText: obscure,
       ),

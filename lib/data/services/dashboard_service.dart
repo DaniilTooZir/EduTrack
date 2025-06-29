@@ -20,4 +20,19 @@ class DashboardService {
         .eq('institution_id', institutionId);
     return (response as List).length;
   }
+  Future<int> getGroupCount(String institutionId) async {
+    final response = await _client
+        .from('groups')
+        .select('id')
+        .eq('institution_id', institutionId);
+    return (response as List).length;
+  }
+
+  Future<int> getSubjectCount(String institutionId) async {
+    final response = await _client
+        .from('subjects')
+        .select('id')
+        .eq('institution_id', institutionId);
+    return (response as List).length;
+  }
 }

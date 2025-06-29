@@ -77,14 +77,10 @@ class _UserListScreenState extends State<UserListScreen> {
     final service = UsersFetchService();
     try {
       await service.deleteUserById(id, role);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пользователь удалён')),
-      );
+      ScaffoldMessenger.of(context,).showSnackBar(const SnackBar(content: Text('Пользователь удалён')));
       await _loadUsers();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при удалении: $e')),
-      );
+      ScaffoldMessenger.of(context,).showSnackBar(SnackBar(content: Text('Ошибка при удалении: $e')));
     }
   }
 
@@ -92,51 +88,79 @@ class _UserListScreenState extends State<UserListScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text(_error!));
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          _buildFilters(),
-          const SizedBox(height: 12),
-          Expanded(
-            child: _filteredUsers.isEmpty
-                ? const Center(child: Text('Нет пользователей'))
-                : ListView.builder(
-              itemCount: _filteredUsers.length,
-              itemBuilder: (context, index) {
-                final user = _filteredUsers[index];
-                return _buildUserCard(user);
-              },
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildFilters(),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: _filteredUsers.isEmpty
+                      ? const Center(child: Text('Пользователи не найдены'))
+                      : ListView.separated(
+                    itemCount: _filteredUsers.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final user = _filteredUsers[index];
+                      return _buildUserCard(user);
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildFilters() {
-    return Column(
-      children: [
-        TextField(
-          decoration: const InputDecoration(
-            labelText: 'Поиск',
-            prefixIcon: Icon(Icons.search),
-          ),
-          onChanged: (value) {
-            _searchQuery = value;
-            _applyFilters();
-          },
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Column(
           children: [
-            _filterChip('Все', 'all'),
-            _filterChip('Преподаватели', 'teacher'),
-            _filterChip('Студенты', 'student'),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Поиск пользователей',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                isDense: true,
+              ),
+              onChanged: (value) {
+                _searchQuery = value;
+                _applyFilters();
+              },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _filterChip('Все', 'all'),
+                const SizedBox(width: 10),
+                _filterChip('Преподаватели', 'teacher'),
+                const SizedBox(width: 10),
+                _filterChip('Студенты', 'student'),
+              ],
+            ),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -145,6 +169,12 @@ class _UserListScreenState extends State<UserListScreen> {
     return ChoiceChip(
       label: Text(label),
       selected: selected,
+      selectedColor: const Color(0xFF9575CD),
+      backgroundColor: Colors.grey.shade200,
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : Colors.black87,
+        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+      ),
       onSelected: (_) {
         setState(() {
           _selectedRole = value;
@@ -158,17 +188,31 @@ class _UserListScreenState extends State<UserListScreen> {
     final fullName = '${user['surname']} ${user['name']}';
     final role = user['role'] as String;
     final isTeacher = role == 'teacher';
-    final subtitle = isTeacher
-        ? '${user['email']} • ${user['login']}'
-        : '${user['email']} • ${user['login']} • Группа ${user['group_name']}';
+    final subtitle =
+        isTeacher
+            ? '${user['email']} • ${user['login']}'
+            : '${user['email']} • ${user['login']} • Группа ${user['group_name']}';
+
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
-        leading: Icon(isTeacher ? Icons.person : Icons.school),
-        title: Text(fullName),
+        leading: CircleAvatar(
+          backgroundColor:
+              isTeacher ? const Color(0xFF9575CD) : const Color(0xFF673AB7),
+          child: Icon(
+            isTeacher ? Icons.person : Icons.school,
+            color: Colors.white,
+          ),
+        ),
+        title: Text(
+          fullName,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: Text(subtitle),
         trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
+          icon: const Icon(Icons.delete, color: Colors.redAccent),
+          tooltip: 'Удалить пользователя',
           onPressed: () => _confirmDelete(user),
         ),
       ),
@@ -179,23 +223,27 @@ class _UserListScreenState extends State<UserListScreen> {
     final fullName = '${user['surname']} ${user['name']}';
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Удаление пользователя'),
-        content: Text('Вы уверены, что хотите удалить $fullName?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Удаление пользователя'),
+            content: Text('Вы уверены, что хотите удалить $fullName?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _deleteUser(user['id'], user['role']);
+                },
+                child: const Text(
+                  'Удалить',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _deleteUser(user['id'], user['role']);
-            },
-            child: const Text('Удалить', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 }
