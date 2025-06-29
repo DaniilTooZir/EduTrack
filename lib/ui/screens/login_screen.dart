@@ -38,7 +38,11 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _errorMessage = 'Неверный логин или пароль.');
       } else {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.setUser(authResult.userId, authResult.role, authResult.institutionId);
+        userProvider.setUser(
+          authResult.userId,
+          authResult.role,
+          authResult.institutionId,
+        );
         switch (authResult.role) {
           case 'admin':
             context.go('/admin-home');
@@ -71,73 +75,122 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final maxWidth = (size.width * 0.85).clamp(300.0, 450.0);
     return Scaffold(
-      appBar: AppBar(title: const Text('Вход')),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Center(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Color(0xFF5E35B1)),
+                  onPressed: () {
+                    context.go('/');
+                  },
+                ),
+              ),
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: IntrinsicHeight(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          TextField(
-                            controller: _loginController,
-                            decoration: const InputDecoration(labelText: 'Логин'),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _passwordController,
-                            decoration: const InputDecoration(labelText: 'Пароль'),
-                            obscureText: true,
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _login,
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(0, 44),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                textStyle: const TextStyle(fontSize: 16),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                                  : const Text('Войти'),
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 6,
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.lock_outline,
+                              size: 48,
+                              color: Color(0xFF5E35B1),
                             ),
-                          ),
-                          if (_errorMessage != null) ...[
                             const SizedBox(height: 16),
                             Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: Colors.red,
+                              'Вход в систему',
+                              style: TextStyle(
+                                fontSize: size.width.clamp(20.0, 28.0),
                                 fontWeight: FontWeight.bold,
+                                color: const Color(0xFF453190),
                               ),
-                              textAlign: TextAlign.center,
                             ),
+                            const SizedBox(height: 24),
+                            TextField(
+                              controller: _loginController,
+                              decoration: const InputDecoration(
+                                labelText: 'Логин',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _passwordController,
+                              decoration: const InputDecoration(
+                                labelText: 'Пароль',
+                                border: OutlineInputBorder(),
+                              ),
+                              obscureText: true,
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _login,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF5E35B1),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 16),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                    : const Text('Войти'),
+                              ),
+                            ),
+                            if (_errorMessage != null) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );

@@ -13,25 +13,23 @@ class CheckRequestStatusScreen extends StatefulWidget {
 
 class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   String? _statusMessage;
   String? _login;
   String? _password;
   bool _isLoading = false;
-
   Future<void> _checkStatus() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
       _statusMessage = null;
       _login = null;
       _password = null;
     });
-
     final email = _emailController.text.trim();
-
     try {
       final result =
           await InstitutionRequestStatusService.getRequestDetailsByEmail(email);
-
       setState(() {
         _isLoading = false;
         if (result == null) {
@@ -65,124 +63,205 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('$label скопирован в буфер обмена')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label скопирован в буфер обмена'),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF5E35B1),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final maxWidth = (size.width * 0.85).clamp(320.0, 600.0);
     final textStyle = const TextStyle(fontSize: 16);
     return Scaffold(
-      appBar: AppBar(title: const Text('Проверка статуса заявки')),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+      appBar: AppBar(
+        title: const Text('Проверка статуса заявки'),
+        backgroundColor: const Color(0xFFBC9BF3),
+        elevation: 4,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 500),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email руководителя',
-                            border: OutlineInputBorder(),
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Введите email руководителя для проверки статуса заявки',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF5E35B1),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _checkStatus,
-                          child:
-                              _isLoading
-                                  ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                  : const Text('Проверить статус'),
-                        ),
-                        const SizedBox(height: 24),
-                        if (_statusMessage != null)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _statusMessage!,
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                          const SizedBox(height: 24),
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'Email руководителя',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: Color(0xFF5E35B1),
                               ),
-                              if (_login != null && _password != null) ...[
-                                const SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Логин: $_login',
-                                        style: textStyle,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.copy),
-                                      tooltip: 'Копировать логин',
-                                      onPressed:
-                                          () => _copyToClipboard(
-                                            _login!,
-                                            'Логин',
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Пароль: $_password',
-                                        style: textStyle,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.copy),
-                                      tooltip: 'Копировать пароль',
-                                      onPressed:
-                                          () => _copyToClipboard(
-                                            _password!,
-                                            'Пароль',
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    context.push('/login');
-                                  },
-                                  child: const Text('Перейти к авторизации'),
-                                ),
-                              ],
-                            ],
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Введите email';
+                              }
+                              final emailReg = RegExp(
+                                r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                              );
+                              if (!emailReg.hasMatch(value)) {
+                                return 'Введите корректный email';
+                              }
+                              return null;
+                            },
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                           ),
-                      ],
+                          const SizedBox(height: 20),
+                          ElevatedButton.icon(
+                            icon:
+                                _isLoading
+                                    ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white70,
+                                      ),
+                                    )
+                                    : const Icon(
+                                      Icons.search,
+                                      color: Colors.white70,
+                                    ),
+                            label: const Text(
+                              'Проверить статус',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            onPressed: _isLoading ? null : _checkStatus,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF5E35B1),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          if (_statusMessage != null)
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: _buildStatusResult(textStyle),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatusResult(TextStyle textStyle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      key: ValueKey(_statusMessage),
+      children: [
+        Text(
+          _statusMessage!,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF4A148C),
+          ),
+        ),
+        if (_login != null && _password != null) ...[
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: SelectableText('Логин: $_login', style: textStyle),
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy, color: Color(0xFF5E35B1)),
+                tooltip: 'Копировать логин',
+                onPressed: () => _copyToClipboard(_login!, 'Логин'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SelectableText('Пароль: $_password', style: textStyle),
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy, color: Color(0xFF5E35B1)),
+                tooltip: 'Копировать пароль',
+                onPressed: () => _copyToClipboard(_password!, 'Пароль'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              context.push('/login');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7E57C2),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Перейти к авторизации',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white70,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

@@ -84,94 +84,137 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final maxWidth = (size.width * 0.85).clamp(320.0, 600.0);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Регистрация образовательной организации'),
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        _buildTextField(
-                          _nameController,
-                          'Название организации',
-                          true,
-                        ),
-                        _buildTextField(
-                          _addressController,
-                          'Адрес организации',
-                          true,
-                        ),
-                        _buildTextField(
-                          _headNameController,
-                          'Имя руководителя',
-                          true,
-                        ),
-                        _buildTextField(
-                          _headSurnameController,
-                          'Фамилия руководителя',
-                          true,
-                        ),
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(labelText: 'Email'),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Введите email';
-                            final emailReg = RegExp(
-                              r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                            );
-                            if (!emailReg.hasMatch(v))
-                              return 'Введите корректный email';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTextField(
-                          _phoneController,
-                          'Телефон (необязательно)',
-                          false,
-                          inputType: TextInputType.phone,
-                        ),
-                        _buildTextField(
-                          _commentController,
-                          'Комментарий (необязательно)',
-                          false,
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isSubmitting ? null : _submitRequest,
-                            child:
-                                _isSubmitting
-                                    ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                    : const Text('Отправить заявку'),
+      appBar: AppBar(title: const Text('Регистрация организации'),
+          backgroundColor: const Color(0xFFBC9BF3)),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 6,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Заполните информацию об организации',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF5E35B1),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+                          _buildTextField(
+                            _nameController,
+                            'Название организации',
+                            true,
+                          ),
+                          _buildTextField(
+                            _addressController,
+                            'Адрес организации',
+                            true,
+                          ),
+                          _buildTextField(
+                            _headNameController,
+                            'Имя руководителя',
+                            true,
+                          ),
+                          _buildTextField(
+                            _headSurnameController,
+                            'Фамилия руководителя',
+                            true,
+                          ),
+                          TextFormField(
+                            controller: _emailController,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Введите email';
+                              }
+                              final emailReg = RegExp(
+                                r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                              );
+                              if (!emailReg.hasMatch(v)) {
+                                return 'Введите корректный email';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTextField(
+                            _phoneController,
+                            'Телефон (необязательно)',
+                            false,
+                            inputType: TextInputType.phone,
+                          ),
+                          _buildTextField(
+                            _commentController,
+                            'Комментарий (необязательно)',
+                            false,
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _isSubmitting ? null : _submitRequest,
+                              icon:
+                                  _isSubmitting
+                                      ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                      : const Icon(Icons.send),
+                              label: const Text('Отправить заявку'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF5E35B1),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                textStyle: const TextStyle(fontSize: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
     );
@@ -188,7 +231,10 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
         keyboardType: inputType,
         maxLines: maxLines,
         validator:
