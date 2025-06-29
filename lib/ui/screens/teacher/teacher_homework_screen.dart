@@ -175,12 +175,15 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                         labelText: 'Выберите группу',
                         border: OutlineInputBorder(),
                       ),
-                      items: _groups
-                          .map((group) => DropdownMenuItem(
-                        value: group.id,
-                        child: Text(group.name),
-                      ))
-                          .toList(),
+                      items:
+                          _groups
+                              .map(
+                                (group) => DropdownMenuItem(
+                                  value: group.id,
+                                  child: Text(group.name),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (value) {
                         setState(() {
                           _editSelectedGroupId = value;
@@ -318,142 +321,153 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
     if (_error != null) {
       return Center(child: Text('Ошибка: $_error'));
     }
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Ваши домашние задания',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          if (_homeworks.isEmpty)
-            const Text('У вас пока нет домашних заданий.')
-          else
-            ..._homeworks.map((hw) {
-              final dueDateText = hw.dueDate != null
-                  ? 'До ${hw.dueDate!.toLocal().toString().split(' ')[0]}'
-                  : 'Без срока';
-              final groupName = hw.group?.name ?? 'Группа не указана';
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                child: ListTile(
-                  title: Text(hw.title),
-                  subtitle: Text('$dueDateText • $groupName'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _showEditHomeworkDialog(hw),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _confirmDeleteHomework(hw),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          const Divider(height: 32),
-          const Text(
-            'Добавить новое домашнее задание',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _selectedGroupId,
-            decoration: const InputDecoration(
-              labelText: 'Выберите группу',
-              border: OutlineInputBorder(),
-            ),
-            items: _groups
-                .map(
-                  (group) => DropdownMenuItem(
-                value: group.id,
-                child: Text(group.name),
-              ),
-            )
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedGroupId = value;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _selectedSubjectId,
-            decoration: const InputDecoration(
-              labelText: 'Выберите предмет',
-              border: OutlineInputBorder(),
-            ),
-            items: _subjects
-                .map(
-                  (subj) => DropdownMenuItem(
-                value: subj.id,
-                child: Text(subj.name),
-              ),
-            )
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedSubjectId = value;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Заголовок задания',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _descriptionController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Описание (необязательно)',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        color: Colors.transparent,
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  _dueDate == null
-                      ? 'Дата сдачи не выбрана'
-                      : 'Дата сдачи: ${_dueDate!.toLocal().toString().split(' ')[0]}',
+              const Text(
+                'Ваши домашние задания',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              if (_homeworks.isEmpty)
+                const Text('У вас пока нет домашних заданий.')
+              else
+                ..._homeworks.map((hw) {
+                  final dueDateText =
+                      hw.dueDate != null
+                          ? 'До ${hw.dueDate!.toLocal().toString().split(' ')[0]}'
+                          : 'Без срока';
+                  final groupName = hw.group?.name ?? 'Группа не указана';
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    child: ListTile(
+                      title: Text(hw.title),
+                      subtitle: Text('$dueDateText • $groupName'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () => _showEditHomeworkDialog(hw),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _confirmDeleteHomework(hw),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              const Divider(height: 32),
+              const Text(
+                'Добавить новое домашнее задание',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _selectedGroupId,
+                decoration: const InputDecoration(
+                  labelText: 'Выберите группу',
+                  border: OutlineInputBorder(),
+                ),
+                items:
+                    _groups
+                        .map(
+                          (group) => DropdownMenuItem(
+                            value: group.id,
+                            child: Text(group.name),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedGroupId = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _selectedSubjectId,
+                decoration: const InputDecoration(
+                  labelText: 'Выберите предмет',
+                  border: OutlineInputBorder(),
+                ),
+                items:
+                    _subjects
+                        .map(
+                          (subj) => DropdownMenuItem(
+                            value: subj.id,
+                            child: Text(subj.name),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSubjectId = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Заголовок задания',
+                  border: OutlineInputBorder(),
                 ),
               ),
-              TextButton(
-                onPressed: _selectDueDate,
-                child: const Text('Выбрать дату'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _descriptionController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Описание (необязательно)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _dueDate == null
+                          ? 'Дата сдачи не выбрана'
+                          : 'Дата сдачи: ${_dueDate!.toLocal().toString().split(' ')[0]}',
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _selectDueDate,
+                    child: const Text('Выбрать дату'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _addHomework,
+                  child:
+                      _isSaving
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Text('Добавить домашнее задание'),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : _addHomework,
-              child: _isSaving
-                  ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-                  : const Text('Добавить домашнее задание'),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
