@@ -33,13 +33,13 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
   TimeOfDay? _endTime;
 
   static const List<String> _weekdays = [
+    'Воскресенье',
     'Понедельник',
     'Вторник',
     'Среда',
     'Четверг',
     'Пятница',
     'Суббота',
-    'Воскресенье',
   ];
 
   List<Subject> _subjects = [];

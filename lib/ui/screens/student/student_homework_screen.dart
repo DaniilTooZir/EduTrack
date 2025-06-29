@@ -28,6 +28,9 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
   Future<void> _loadHomework() async {
     final studentId = Provider.of<UserProvider>(context, listen: false).userId;
     if (studentId == null) return;
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final homeworks = await _homeworkService.getHomeworksByStudentGroup(
         studentId,
@@ -44,9 +47,14 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка загрузки домашних заданий: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка загрузки домашних заданий: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -63,64 +71,152 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
       );
       await _loadHomework();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка обновления статуса: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка обновления статуса: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_homeworks.isEmpty) {
-      return const Center(child: Text('Нет домашних заданий.'));
+      return Center(
+        child: Text(
+          'Нет домашних заданий.',
+          style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey[700]),
+        ),
+      );
     }
-    return ListView.builder(
-      itemCount: _homeworks.length,
-      itemBuilder: (context, index) {
-        final hw = _homeworks[index];
-        final isDone = _statuses[hw.id]?.isCompleted ?? false;
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: ListTile(
-            title: Text(hw.title),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (hw.description?.isNotEmpty == true) Text(hw.description!),
-                if (hw.dueDate != null)
-                  Text(
-                    'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                if (hw.subject != null)
-                  Text(
-                    'Предмет: ${hw.subject!.name}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                if (hw.group != null)
-                  Text(
-                    'Группа: ${hw.group!.name}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-              ],
-            ),
-            trailing: IconButton(
-              icon: Icon(
-                isDone ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: isDone ? Colors.green : Colors.grey,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          itemCount: _homeworks.length,
+          itemBuilder: (context, index) {
+            final hw = _homeworks[index];
+            final isDone = _statuses[hw.id]?.isCompleted ?? false;
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              onPressed: () => _toggleCompletion(hw),
-              tooltip:
-                  isDone
-                      ? 'Отметить как невыполненное'
-                      : 'Отметить как выполненное',
+              color: Colors.white.withOpacity(0.85),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                splashColor: Colors.purple.withOpacity(0.3),
+                onTap: () => _toggleCompletion(hw),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 16,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        isDone
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        color: isDone ? Colors.green : Colors.grey,
+                        size: 32,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              hw.title,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                decoration:
+                                    isDone ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                            if (hw.description?.isNotEmpty == true) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                hw.description!,
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 4,
+                              children: [
+                                if (hw.dueDate != null)
+                                  _InfoChip(
+                                    icon: Icons.calendar_today,
+                                    label:
+                                        'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
+                                  ),
+                                if (hw.subject != null)
+                                  _InfoChip(
+                                    icon: Icons.book,
+                                    label: 'Предмет: ${hw.subject!.name}',
+                                  ),
+                                if (hw.group != null)
+                                  _InfoChip(
+                                    icon: Icons.group,
+                                    label: 'Группа: ${hw.group!.name}',
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _InfoChip({Key? key, required this.icon, required this.label})
+    : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.purple.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.purple[700]),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.purple,
+              fontWeight: FontWeight.w500,
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
