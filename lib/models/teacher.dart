@@ -7,6 +7,7 @@ class Teacher {
   final String login;
   final String password;
   final String institutionId;
+  final String? department;
   final DateTime createdAt;
 
   Teacher({
@@ -17,19 +18,23 @@ class Teacher {
     required this.login,
     required this.password,
     required this.institutionId,
+    this.department,
     required this.createdAt,
   });
 
   factory Teacher.fromMap(Map<String, dynamic> map) {
     return Teacher(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      surname: map['surname'] as String,
-      email: map['email'] as String,
-      login: map['login'] as String,
-      password: map['password'] as String,
-      institutionId: map['institution_id'] as String,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      id: map['id']?.toString() ?? '',
+      name: map['name'] ?? '',
+      surname: map['surname'] ?? '',
+      email: map['email'] ?? '',
+      login: map['login'] ?? '',
+      password: map['password'] ?? '',
+      institutionId: map['institution_id']?.toString() ?? '',
+      department: map['department'] as String?,
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 
@@ -42,6 +47,7 @@ class Teacher {
       'login': login,
       'password': password,
       'institution_id': institutionId,
+      'department': department,
       'created_at': createdAt.toIso8601String(),
     };
   }

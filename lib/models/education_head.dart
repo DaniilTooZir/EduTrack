@@ -24,15 +24,17 @@ class EducationHead {
 
   factory EducationHead.fromMap(Map<String, dynamic> map) {
     return EducationHead(
-      id: map['id'] ?? '',
+      id: map['id']?.toString() ?? '',
       name: map['name'] ?? '',
       surname: map['surname'] ?? '',
       email: map['email'] ?? '',
       login: map['login'] ?? '',
       password: map['password'] ?? '',
-      institutionId: map['institution_id'] ?? '',
-      phone: map['phone'] ?? '',
-      createdAt: DateTime.tryParse(map['created_at'] ?? '') ?? DateTime.now(),
+      institutionId: map['institution_id']?.toString() ?? '',
+      phone: map['phone']?.toString() ?? '',
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 

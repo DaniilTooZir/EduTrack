@@ -26,16 +26,18 @@ class InstitutionRequest {
 
   factory InstitutionRequest.fromMap(Map<String, dynamic> map) {
     return InstitutionRequest(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      address: map['address'] as String,
-      headName: map['head_name'] as String,
-      headSurname: map['head_surname'] as String,
-      email: map['email'] as String,
-      phone: map['phone'] as String?,
-      comment: map['comment'] as String?,
-      status: map['status'] as String,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      id: map['id']?.toString() ?? '',
+      name: map['name'] ?? '',
+      address: map['address'] ?? '',
+      headName: map['head_name'] ?? '',
+      headSurname: map['head_surname'] ?? '',
+      email: map['email'] ?? '',
+      phone: map['phone']?.toString(),
+      comment: map['comment']?.toString(),
+      status: map['status'] ?? '',
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 

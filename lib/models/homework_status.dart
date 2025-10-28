@@ -16,11 +16,13 @@ class HomeworkStatus {
 
   factory HomeworkStatus.fromMap(Map<String, dynamic> map) {
     return HomeworkStatus(
-      id: map['id'] as String,
-      homeworkId: map['homework_id'] as String,
-      studentId: map['student_id'] as String,
-      isCompleted: map['is_completed'] as bool,
-      updatedAt: DateTime.parse(map['updated_at'] as String),
+      id: map['id']?.toString() ?? '',
+      homeworkId: map['homework_id']?.toString() ?? '',
+      studentId: map['student_id']?.toString() ?? '',
+      isCompleted: map['is_completed'] ?? false,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.tryParse(map['updated_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 

@@ -6,7 +6,7 @@ class ModerationTimer {
 
   static void start() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(minutes: 50), (timer) async {
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) async {
       try {
         print('[ModerationTimer] Проверка новых заявок...');
         await InstitutionModerationService.processPendingRequests();

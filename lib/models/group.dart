@@ -13,17 +13,22 @@ class Group {
 
   factory Group.fromMap(Map<String, dynamic> map) {
     return Group(
-      id: map['id'] as String,
-      name: map['name'] as String,
-      institutionId: map['institution_id'] as String,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      id: map['id']?.toString(),
+      name: map['name'] ?? '',
+      institutionId: map['institution_id']?.toString() ?? '',
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString())
+              : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      if (id != null) 'id': id,
       'name': name,
       'institution_id': institutionId,
+      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
   }
 }

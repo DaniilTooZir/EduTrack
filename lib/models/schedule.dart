@@ -1,40 +1,45 @@
+import 'package:edu_track/models/group.dart';
+import 'package:edu_track/models/subject.dart';
 // Модель для расписания уроков
 class Schedule {
   final String id;
   final String institutionId;
   final String subjectId;
   final String groupId;
-  final int weekday;
+  final String teacherId;
+  final DateTime? date;
   final String startTime;
   final String endTime;
-  final String? subjectName;
-  final String? groupName;
+  final Subject? subject;
+  final Group? group;
 
   Schedule({
     required this.id,
     required this.institutionId,
     required this.subjectId,
     required this.groupId,
-    required this.weekday,
+    required this.teacherId,
+    this.date,
     required this.startTime,
     required this.endTime,
-    this.subjectName,
-    this.groupName,
+    this.subject,
+    this.group,
   });
 
   factory Schedule.fromMap(Map<String, dynamic> map) {
-    final subject = map['subject'] as Map<String, dynamic>?;
-    final group = map['group'] as Map<String, dynamic>?;
+    final subjectMap = map['subject'] as Map<String, dynamic>?;
+    final groupMap = map['group'] as Map<String, dynamic>?;
     return Schedule(
-      id: map['id'] as String,
-      institutionId: map['institution_id'] as String,
-      subjectId: map['subject_id'] as String,
-      groupId: map['group_id'] as String,
-      weekday: map['weekday'] as int,
-      startTime: map['start_time'] as String,
-      endTime: map['end_time'] as String,
-      subjectName: subject != null ? subject['name'] as String? : null,
-      groupName: group != null ? group['name'] as String? : null,
+      id: map['id']?.toString() ?? '',
+      institutionId: map['institution_id']?.toString() ?? '',
+      subjectId: map['subject_id']?.toString() ?? '',
+      groupId: map['group_id']?.toString() ?? '',
+      teacherId: map['teacher_id']?.toString() ?? '',
+      date: map['date'] != null ? DateTime.tryParse(map['date'].toString()) : null,
+      startTime: map['start_time']?.toString() ?? '',
+      endTime: map['end_time']?.toString() ?? '',
+      subject: subjectMap != null ? Subject.fromMap(subjectMap) : null,
+      group: groupMap != null ? Group.fromMap(groupMap) : null,
     );
   }
 
@@ -44,7 +49,8 @@ class Schedule {
       'institution_id': institutionId,
       'subject_id': subjectId,
       'group_id': groupId,
-      'weekday': weekday,
+      'teacher_id': teacherId,
+      'date': date?.toIso8601String(),
       'start_time': startTime,
       'end_time': endTime,
     };

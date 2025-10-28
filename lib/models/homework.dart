@@ -1,15 +1,17 @@
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/subject.dart';
+
 // Модель для домашнего задания
 class Homework {
   final String id;
   final String institutionId;
   final String subjectId;
+  final String groupId;
+  final String? lessonId;
   final String title;
   final String? description;
   final DateTime? dueDate;
-  final DateTime createdAt;
-  final String groupId;
+  final DateTime? createdAt;
   final Subject? subject;
   final Group? group;
 
@@ -18,26 +20,40 @@ class Homework {
     required this.institutionId,
     required this.subjectId,
     required this.groupId,
+    this.lessonId,
     required this.title,
     this.description,
     this.dueDate,
-    required this.createdAt,
+    this.createdAt,
     this.subject,
     this.group,
   });
 
   factory Homework.fromMap(Map<String, dynamic> map) {
     return Homework(
-      id: map['id'] as String,
-      institutionId: map['institution_id'] as String,
-      subjectId: map['subject_id'] as String,
-      groupId: map['group_id'] as String,
-      title: map['title'] as String,
-      description: map['description'] as String?,
-      dueDate: map['due_date'] != null ? DateTime.parse(map['due_date']) : null,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      subject: map['subject'] != null ? Subject.fromMap(map['subject'] as Map<String, dynamic>) : null,
-      group: map['group'] != null ? Group.fromMap(map['group']) : null,
+      id: map['id']?.toString() ?? '',
+      institutionId: map['institution_id']?.toString() ?? '',
+      subjectId: map['subject_id']?.toString() ?? '',
+      groupId: map['group_id']?.toString() ?? '',
+      lessonId: map['lesson_id']?.toString(),
+      title: map['title'] ?? '',
+      description: map['description'],
+      dueDate:
+          map['due_date'] != null
+              ? DateTime.tryParse(map['due_date'].toString())
+              : null,
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString())
+              : null,
+      subject:
+          map['subject'] != null
+              ? Subject.fromMap(map['subject'] as Map<String, dynamic>)
+              : null,
+      group:
+          map['group'] != null
+              ? Group.fromMap(map['group'] as Map<String, dynamic>)
+              : null,
     );
   }
 
@@ -47,10 +63,11 @@ class Homework {
       'institution_id': institutionId,
       'subject_id': subjectId,
       'group_id': groupId,
+      if (lessonId != null) 'lesson_id': lessonId,
       'title': title,
       'description': description,
-      'due_date': dueDate?.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
+      if (dueDate != null) 'due_date': dueDate!.toIso8601String(),
+      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
   }
 }
