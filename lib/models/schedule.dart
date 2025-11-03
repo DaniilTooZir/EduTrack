@@ -26,6 +26,10 @@ class Schedule {
     this.group,
   });
 
+  int get weekday => date?.weekday ?? 1;
+  String? get subjectName => subject?.name;
+  String? get groupName => group?.name;
+
   factory Schedule.fromMap(Map<String, dynamic> map) {
     final subjectMap = map['subject'] as Map<String, dynamic>?;
     final groupMap = map['group'] as Map<String, dynamic>?;
