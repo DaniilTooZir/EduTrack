@@ -103,6 +103,15 @@ class _AddUserScreenState extends State<AddUserScreen> {
           email: email,
           institutionId: institutionId,
         );
+      } else if (role == 'schedule_operator') {
+        await service.addScheduleOperator(
+          login: login,
+          password: password,
+          name: name,
+          surname: surname,
+          email: email,
+          institutionId: institutionId,
+        );
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Пользователь успешно добавлен')),
@@ -226,6 +235,10 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   DropdownMenuItem(
                     value: 'teacher',
                     child: Text('Преподаватель'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'schedule_operator',
+                    child: Text('Оператор расписания'),
                   ),
                 ],
                 onChanged:

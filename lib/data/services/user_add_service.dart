@@ -65,4 +65,33 @@ class UserAddService {
       rethrow;
     }
   }
+
+  Future<void> addScheduleOperator({
+    required String name,
+    required String surname,
+    required String email,
+    required String login,
+    required String password,
+    required String institutionId,
+  }) async {
+    try {
+      final response = await _client.from('schedule_operators').insert({
+        'name': name,
+        'surname': surname,
+        'email': email,
+        'login': login,
+        'password': password,
+        'institution_id': institutionId,
+      }).select().single();
+
+      if (response == null) {
+        throw Exception('Пустой ответ от сервера при добавлении оператора');
+      }
+      print('[UserAddService] Оператор расписания успешно добавлен: $response');
+    } catch (e, stackTrace) {
+      print('[UserAddService] Ошибка при добавлении оператора расписания: $e');
+      print('[UserAddService] StackTrace: $stackTrace');
+      rethrow;
+    }
+  }
 }
