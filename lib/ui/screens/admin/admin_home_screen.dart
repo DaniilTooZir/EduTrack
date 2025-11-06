@@ -6,7 +6,6 @@ import 'package:edu_track/data/services/dashboard_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
 import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
-import 'package:edu_track/ui/screens/admin/schedule_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/subject_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/admin_profile_screen.dart';
 import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
@@ -25,7 +24,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     'Главная',
     'Пользователи',
     'Добавить пользователя',
-    'Расписание',
     'Предметы',
     'Профиль',
     'Группы',
@@ -46,15 +44,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         bodyContent = const AddUserScreen();
         break;
       case 3:
-        bodyContent = const ScheduleAdminScreen();
-        break;
-      case 4:
         bodyContent = const SubjectAdminScreen();
         break;
-      case 5:
+      case 4:
         bodyContent = const AdminProfileScreen();
         break;
-      case 6:
+      case 5:
         bodyContent = const GroupAdminScreen();
         break;
       default:
@@ -111,10 +106,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             _buildDrawerItem(Icons.dashboard, 'Главная', 0),
             _buildDrawerItem(Icons.people, 'Пользователи', 1),
             _buildDrawerItem(Icons.person_add, 'Добавить пользователя', 2),
-            _buildDrawerItem(Icons.schedule, 'Расписание', 3),
-            _buildDrawerItem(Icons.book, 'Предметы', 4),
-            _buildDrawerItem(Icons.person, 'Профиль', 5),
-            _buildDrawerItem(Icons.group, 'Группы', 6),
+            _buildDrawerItem(Icons.book, 'Предметы', 3),
+            _buildDrawerItem(Icons.person, 'Профиль', 4),
+            _buildDrawerItem(Icons.group, 'Группы', 5),
           ],
         ),
       ),
