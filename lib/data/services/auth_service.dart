@@ -73,6 +73,24 @@ class AuthService {
       print('Ошибка при попытке входа ученика: $e');
     }
 
+    try {
+      final operator = await client
+          .from('schedule_operators')
+          .select('id, password, institution_id')
+          .eq('login', login)
+          .maybeSingle();
+
+      if (operator != null && operator['password'] == password) {
+        return AuthResult(
+          role: 'schedule_operator',
+          userId: operator['id'],
+          institutionId: operator['institution_id'],
+        );
+      }
+    } catch (e) {
+      print('Ошибка при попытке входа оператора расписания: $e');
+    }
+
     return null;
   }
 }

@@ -10,18 +10,13 @@ import 'package:edu_track/ui/screens/admin/admin_home_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_home_screen.dart';
 import 'package:edu_track/ui/screens/student/student_home_screen.dart';
 import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
+import 'package:edu_track/ui/screens/schedule_operator/schedule_operator_home_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/splash',
   routes: [
-    GoRoute(
-      path: '/splash',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const WelcomeScreen(),
-    ),
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+    GoRoute(path: '/', builder: (context, state) => const WelcomeScreen()),
     GoRoute(
       path: '/institution-request',
       builder: (context, state) => const InstitutionRequestScreen(),
@@ -30,10 +25,7 @@ final GoRouter router = GoRouter(
       path: '/check-status',
       builder: (context, state) => const CheckRequestStatusScreen(),
     ),
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/admin-home',
       builder: (context, state) => const AdminHomeScreen(),
@@ -50,12 +42,22 @@ final GoRouter router = GoRouter(
       path: '/admin-add-user',
       builder: (context, state) => const AddUserScreen(),
     ),
+    GoRoute(
+      path: '/schedule-operator-home',
+      builder: (context, state) => const ScheduleOperatorHomeScreen(),
+    ),
   ],
   redirect: (context, state) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final loggedIn = userProvider.userId != null && userProvider.role != null;
 
-    final publicPaths = ['/', '/login', '/splash', '/institution-request', '/check-status'];
+    final publicPaths = [
+      '/',
+      '/login',
+      '/splash',
+      '/institution-request',
+      '/check-status',
+    ];
 
     if (!loggedIn && !publicPaths.contains(state.matchedLocation)) {
       return '/';
@@ -70,6 +72,8 @@ final GoRouter router = GoRouter(
             return '/teacher-home';
           case 'student':
             return '/student-home';
+          case 'schedule_operator':
+            return '/schedule-operator-home';
           default:
             return '/';
         }
