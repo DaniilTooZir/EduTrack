@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
 
 class ScheduleOperatorHomeScreen extends StatefulWidget {
   const ScheduleOperatorHomeScreen({super.key});
@@ -31,6 +32,9 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     switch (_selectedIndex) {
       case 0:
         bodyContent = _buildDashboard();
+        break;
+      case 1:
+        bodyContent = const ScheduleScheduleOperatorScreen();
         break;
       default:
         bodyContent = _buildPlaceholder(_titles[_selectedIndex]);

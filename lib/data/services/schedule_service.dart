@@ -10,18 +10,19 @@ class ScheduleService {
     try {
       final response = await _client
           .from('schedule')
-          .select()
+          .select('*, subject:subjects(*), group:groups(*)')
           .eq('institution_id', institutionId)
-          .order('weekday')
           .order('start_time');
-
       if (response == null) {
         throw Exception('Пустой ответ при загрузке расписания');
       }
       final List<dynamic> data = response as List<dynamic>;
-      return data
-          .map((e) => Schedule.fromMap(e as Map<String, dynamic>))
-          .toList();
+      final schedules =
+          data.map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+      schedules.sort(
+        (a, b) => (a.date?.weekday ?? 1).compareTo(b.date?.weekday ?? 1),
+      );
+      return schedules;
     } catch (e) {
       throw Exception('Ошибка загрузки расписания: $e');
     }
@@ -30,10 +31,11 @@ class ScheduleService {
   Future<void> addScheduleEntry({
     required String institutionId,
     required String subjectId,
-    required int weekday,
+    required String groupId,
+    required String teacherId,
+    required DateTime date,
     required String startTime,
     required String endTime,
-    required String groupId,
   }) async {
     try {
       final response =
@@ -42,13 +44,15 @@ class ScheduleService {
               .insert({
                 'institution_id': institutionId,
                 'subject_id': subjectId,
-                'weekday': weekday,
+                'group_id': groupId,
+                'teacher_id': teacherId,
+                'date': date.toIso8601String(),
                 'start_time': startTime,
                 'end_time': endTime,
-                'group_id': groupId,
               })
               .select()
               .single();
+
       if (response == null) {
         throw Exception('Пустой ответ при добавлении расписания');
       }

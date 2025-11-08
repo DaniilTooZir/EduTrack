@@ -4,21 +4,25 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/group.dart';
+import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/data/services/group_service.dart';
+import 'package:edu_track/data/services/teacher_service.dart';
 
-class ScheduleAdminScreen extends StatefulWidget {
-  const ScheduleAdminScreen({super.key});
+
+class ScheduleScheduleOperatorScreen extends StatefulWidget {
+  const ScheduleScheduleOperatorScreen({super.key});
 
   @override
-  State<ScheduleAdminScreen> createState() => _ScheduleAdminScreenState();
+  State<ScheduleScheduleOperatorScreen> createState() => _ScheduleScheduleOperatorScreen();
 }
 
-class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
+class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScreen> {
   late final ScheduleService _scheduleService;
   late final SubjectService _subjectService;
   late final GroupService _groupService;
+  late final TeacherService _teacherService;
 
   late Future<List<Schedule>> _scheduleFuture;
   String? _institutionId;
@@ -28,9 +32,14 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
   int? _weekday;
   String? _selectedSubjectId;
   String? _selectedGroupId;
+  String? _selectedTeacherId;
 
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
+
+  List<Subject> _subjects = [];
+  List<Group> _groups = [];
+  List<Teacher> _teachers = [];
 
   static const List<String> _weekdays = [
     'Понедельник',
@@ -42,27 +51,12 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
     'Воскресенье',
   ];
 
-  List<Subject> _subjects = [];
-  List<Group> _groups = [];
-  Map<String, String> get _subjectNames {
-    final map = <String, String>{};
-    for (var s in _subjects) {
-      if (s.id != null) {
-        map[s.id!] = s.name;
-      }
-    }
-    return map;
-  }
-
-  Map<String, String> get _groupNames {
-    final map = <String, String>{};
-    for (var g in _groups) {
-      if (g.id != null) {
-        map[g.id!] = g.name;
-      }
-    }
-    return map;
-  }
+  Map<String, String> get _subjectNames =>
+      {for (var s in _subjects) if (s.id != null) s.id!: s.name};
+  Map<String, String> get _groupNames =>
+      {for (var g in _groups) if (g.id != null) g.id!: g.name};
+  Map<String, String> get _teacherNames =>
+      {for (var t in _teachers) if (t.id != null) t.id!: '${t.name} ${t.surname}'};
 
   @override
   void initState() {
@@ -70,6 +64,7 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
     _scheduleService = ScheduleService();
     _subjectService = SubjectService();
     _groupService = GroupService();
+    _teacherService = TeacherService();
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _institutionId = userProvider.institutionId;
@@ -77,6 +72,7 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
     if (_institutionId != null) {
       _loadSubjects();
       _loadGroups();
+      _loadTeachers();
       _loadSchedule();
     } else {
       _scheduleFuture = Future.error('ID учреждения не найден');
@@ -85,12 +81,9 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
 
   void _loadSubjects() async {
     try {
-      final subjects = await _subjectService.getSubjectsForInstitution(
-        _institutionId!,
-      );
-      setState(() {
-        _subjects = subjects;
-      });
+      final subjects =
+      await _subjectService.getSubjectsForInstitution(_institutionId!);
+      setState(() => _subjects = subjects);
     } catch (e) {
       debugPrint('Ошибка загрузки предметов: $e');
     }
@@ -99,11 +92,18 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
   void _loadGroups() async {
     try {
       final groups = await _groupService.getGroups(_institutionId!);
-      setState(() {
-        _groups = groups;
-      });
+      setState(() => _groups = groups);
     } catch (e) {
       debugPrint('Ошибка загрузки групп: $e');
+    }
+  }
+
+  void _loadTeachers() async {
+    try {
+      final teachers = await _teacherService.getTeachers(_institutionId!);
+      setState(() => _teachers = teachers);
+    } catch (e) {
+      debugPrint('Ошибка загрузки преподавателей: $e');
     }
   }
 
@@ -111,93 +111,82 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
     if (_institutionId == null) {
       _scheduleFuture = Future.error('ID учреждения не найден');
     } else {
-      _scheduleFuture = _scheduleService.getScheduleForInstitution(
-        _institutionId!,
-      );
+      _scheduleFuture =
+          _scheduleService.getScheduleForInstitution(_institutionId!);
     }
     setState(() {});
   }
 
-  String _formatTimeOfDay(TimeOfDay time) {
-    final h = time.hour.toString().padLeft(2, '0');
-    final m = time.minute.toString().padLeft(2, '0');
-    return '$h:$m:00';
-  }
+  String _formatTimeOfDay(TimeOfDay time) =>
+      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00';
 
   Future<void> _addScheduleEntry() async {
     if (!_formKey.currentState!.validate()) return;
     if (_institutionId == null ||
         _selectedSubjectId == null ||
         _selectedGroupId == null ||
+        _selectedTeacherId == null ||
         _weekday == null ||
         _startTime == null ||
         _endTime == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Заполните все поля')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Заполните все поля')));
       return;
     }
     try {
+      DateTime selectedDate = DateTime.now();
       await _scheduleService.addScheduleEntry(
         institutionId: _institutionId!,
         subjectId: _selectedSubjectId!,
-        weekday: _weekday!,
+        groupId: _selectedGroupId!,
+        teacherId: _selectedTeacherId!,
+        date: selectedDate,
         startTime: _formatTimeOfDay(_startTime!),
         endTime: _formatTimeOfDay(_endTime!),
-        groupId: _selectedGroupId!,
       );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Запись успешно добавлена')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Запись успешно добавлена')));
       _loadSchedule();
       setState(() {
         _formKey.currentState!.reset();
         _weekday = null;
         _selectedSubjectId = null;
         _selectedGroupId = null;
+        _selectedTeacherId = null;
         _startTime = null;
         _endTime = null;
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка при добавлении: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при добавлении: $e')));
     }
   }
 
   Future<void> _deleteScheduleEntry(String id) async {
     try {
       await _scheduleService.deleteScheduleEntry(id);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Запись удалена')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Запись удалена')));
       _loadSchedule();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка удаления: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Ошибка удаления: $e')));
     }
   }
 
   Widget _buildTimePicker(
-    String label,
-    TimeOfDay? time,
-    Function(TimeOfDay) onTimePicked,
-  ) {
-    return InkWell(
-      onTap: () async {
-        final picked = await showTimePicker(
-          context: context,
-          initialTime: time ?? const TimeOfDay(hour: 8, minute: 0),
-        );
-        if (picked != null) onTimePicked(picked);
-      },
-      child: InputDecorator(
-        decoration: InputDecoration(labelText: label),
-        child: Text(time != null ? time.format(context) : 'Выберите время'),
-      ),
-    );
-  }
+      String label, TimeOfDay? time, Function(TimeOfDay) onTimePicked) =>
+      InkWell(
+        onTap: () async {
+          final picked = await showTimePicker(
+              context: context, initialTime: time ?? const TimeOfDay(hour: 8, minute: 0));
+          if (picked != null) onTimePicked(picked);
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(labelText: label),
+          child: Text(time != null ? time.format(context) : 'Выберите время'),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -229,80 +218,70 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
                       child: Column(
                         children: [
                           DropdownButtonFormField<int>(
-                            decoration: const InputDecoration(
-                              labelText: 'День недели',
-                            ),
+                            decoration: const InputDecoration(labelText: 'День недели'),
                             value: _weekday,
                             items: List.generate(
                               _weekdays.length,
-                              (index) => DropdownMenuItem(
+                                  (index) => DropdownMenuItem(
                                 value: index,
                                 child: Text(_weekdays[index]),
                               ),
                             ),
                             onChanged: (val) => setState(() => _weekday = val),
-                            validator:
-                                (val) =>
-                                    val == null ? 'Выберите день недели' : null,
+                            validator: (val) => val == null ? 'Выберите день недели' : null,
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Предмет',
-                            ),
+                            decoration: const InputDecoration(labelText: 'Предмет'),
                             value: _selectedSubjectId,
-                            items:
-                                _subjects
-                                    .map(
-                                      (s) => DropdownMenuItem(
-                                        value: s.id,
-                                        child: Text(s.name),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged:
-                                (val) =>
-                                    setState(() => _selectedSubjectId = val),
-                            validator:
-                                (val) =>
-                                    val == null ? 'Выберите предмет' : null,
+                            items: _subjects
+                                .map((s) => DropdownMenuItem(
+                              value: s.id,
+                              child: Text(s.name),
+                            ))
+                                .toList(),
+                            onChanged: (val) => setState(() => _selectedSubjectId = val),
+                            validator: (val) => val == null ? 'Выберите предмет' : null,
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Группа',
-                            ),
+                            decoration: const InputDecoration(labelText: 'Группа'),
                             value: _selectedGroupId,
-                            items:
-                                _groups
-                                    .map(
-                                      (g) => DropdownMenuItem(
-                                        value: g.id,
-                                        child: Text(g.name),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged:
-                                (val) => setState(() => _selectedGroupId = val),
-                            validator:
-                                (val) => val == null ? 'Выберите группу' : null,
+                            items: _groups
+                                .map((g) => DropdownMenuItem(
+                              value: g.id,
+                              child: Text(g.name),
+                            ))
+                                .toList(),
+                            onChanged: (val) => setState(() => _selectedGroupId = val),
+                            validator: (val) => val == null ? 'Выберите группу' : null,
                           ),
                           const SizedBox(height: 12),
-                          _buildTimePicker('Время начала', _startTime, (time) {
-                            setState(() => _startTime = time);
-                          }),
+                          DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(labelText: 'Преподаватель'),
+                            value: _selectedTeacherId,
+                            items: _teachers
+                                .map((t) => DropdownMenuItem(
+                              value: t.id,
+                              child: Text('${t.name} ${t.surname}'),
+                            ))
+                                .toList(),
+                            onChanged: (val) => setState(() => _selectedTeacherId = val),
+                            validator: (val) => val == null ? 'Выберите преподавателя' : null,
+                          ),
                           const SizedBox(height: 12),
-                          _buildTimePicker('Время окончания', _endTime, (time) {
-                            setState(() => _endTime = time);
-                          }),
+                          _buildTimePicker('Время начала', _startTime,
+                                  (time) => setState(() => _startTime = time)),
+                          const SizedBox(height: 12),
+                          _buildTimePicker('Время окончания', _endTime,
+                                  (time) => setState(() => _endTime = time)),
                           const SizedBox(height: 20),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
+                                padding:
+                                const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -328,76 +307,72 @@ class _ScheduleAdminScreenState extends State<ScheduleAdminScreen> {
                         return Center(
                           child: Text(
                             'Ошибка загрузки: ${snapshot.error}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.redAccent,
-                            ),
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(color: Colors.redAccent),
                           ),
                         );
                       }
                       final schedules = snapshot.data ?? [];
                       if (schedules.isEmpty) {
                         return Center(
-                          child: Text(
-                            'Расписание пустое',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                          ),
+                          child: Text('Расписание пустое',
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.grey[600])),
                         );
                       }
                       Map<int, List<Schedule>> schedulesByDay = {};
                       for (var s in schedules) {
                         schedulesByDay.putIfAbsent(s.weekday, () => []).add(s);
                       }
-                      return ListView(
-                        children: List.generate(7, (day) {
-                          final daySchedules = schedulesByDay[day] ?? [];
-                          if (daySchedules.isEmpty) {
-                            return const SizedBox.shrink();
-                          }
-                          daySchedules.sort(
-                            (a, b) => a.startTime.compareTo(b.startTime),
-                          );
-                          return ExpansionTile(
-                            title: Text(
-                              _weekdays[day],
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            children:
-                                daySchedules.map((s) {
-                                  final subjectName =
-                                      _subjectNames[s.subjectId] ?? s.subjectId;
-                                  final groupName =
-                                      _groupNames[s.groupId] ?? s.groupId;
-                                  return Card(
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 3,
-                                    child: ListTile(
-                                      title: Text(
-                                        '$groupName — ${s.startTime} - ${s.endTime}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      subtitle: Text(subjectName),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.delete),
-                                        onPressed:
-                                            () => _deleteScheduleEntry(s.id),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                          );
-                        }),
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: List.generate(7, (day) {
+                            final daySchedules = schedulesByDay[day] ?? [];
+                            if (daySchedules.isEmpty) return const SizedBox.shrink();
+                            daySchedules.sort((a, b) => a.startTime.compareTo(b.startTime));
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_weekdays[day],
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold)),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: DataTable(
+                                    columns: const [
+                                      DataColumn(label: Text('Группа')),
+                                      DataColumn(label: Text('Предмет')),
+                                      DataColumn(label: Text('Преподаватель')),
+                                      DataColumn(label: Text('Начало')),
+                                      DataColumn(label: Text('Конец')),
+                                      DataColumn(label: Text('')),
+                                    ],
+                                    rows: daySchedules.map((s) {
+                                      final subjectName =
+                                          s.subject?.name ?? s.subjectId;
+                                      final groupName =
+                                          s.group?.name ?? s.groupId;
+                                      final teacherName =
+                                          _teacherNames[s.teacherId] ?? s.teacherId;
+                                      return DataRow(cells: [
+                                        DataCell(Text(groupName)),
+                                        DataCell(Text(subjectName)),
+                                        DataCell(Text(teacherName)),
+                                        DataCell(Text(s.startTime)),
+                                        DataCell(Text(s.endTime)),
+                                        DataCell(IconButton(
+                                          icon: const Icon(Icons.delete),
+                                          onPressed: () => _deleteScheduleEntry(s.id),
+                                        )),
+                                      ]);
+                                    }).toList(),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                            );
+                          }),
+                        ),
                       );
                     },
                   ),
