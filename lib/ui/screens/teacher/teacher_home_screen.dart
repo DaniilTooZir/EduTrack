@@ -8,6 +8,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_lesson_screen.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -19,12 +20,7 @@ class TeacherHomeScreen extends StatefulWidget {
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _selectedIndex = 0;
 
-  final List<String> _titles = [
-    'Главная',
-    'Домашние задания',
-    'Расписание',
-    'Профиль',
-  ];
+  final List<String> _titles = ['Главная', 'Домашние задания', 'Мои занятия', 'Расписание', 'Профиль'];
 
   final Color primaryColor = const Color(0xFF9575CD);
   final Color drawerStart = const Color(0xFF7E57C2);
@@ -43,9 +39,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         bodyContent = const TeacherHomeworkScreen();
         break;
       case 2:
-        bodyContent = const TeacherScheduleScreen();
+        bodyContent = const TeacherLessonScreen();
         break;
       case 3:
+        bodyContent = const TeacherScheduleScreen();
+        break;
+      case 4:
         bodyContent = const TeacherProfileScreen();
         break;
       default:
@@ -56,13 +55,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 4,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-        ),
-        title: Text(
-          _titles[_selectedIndex],
-          style: const TextStyle(color: Colors.white),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
+        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -92,18 +86,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню преподавателя',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
             _buildDrawerItem(Icons.dashboard, 'Главная', 0),
             _buildDrawerItem(Icons.assignment, 'Домашние задания', 1),
-            _buildDrawerItem(Icons.schedule, 'Расписание', 2),
-            _buildDrawerItem(Icons.person, 'Профиль', 3),
+            _buildDrawerItem(Icons.book, 'Мои занятия', 2),
+            _buildDrawerItem(Icons.schedule, 'Расписание', 3),
+            _buildDrawerItem(Icons.person, 'Профиль', 4),
           ],
         ),
       ),
@@ -165,11 +156,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 children: [
                   const Text(
                     'Добро пожаловать!',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A148C),
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
                   ),
                   const SizedBox(height: 12),
                   const Text(
@@ -179,11 +166,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   const SizedBox(height: 24),
                   const Text(
                     'Ваши предметы:',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A148C),
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
                   ),
                   const SizedBox(height: 12),
                   if (subjects.isEmpty)
@@ -193,14 +176,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       (subject) => Card(
                         margin: const EdgeInsets.symmetric(vertical: 6),
                         elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
-                          leading: const Icon(
-                            Icons.book,
-                            color: Color(0xFF453190),
-                          ),
+                          leading: const Icon(Icons.book, color: Color(0xFF453190)),
                           title: Text(subject.name),
                         ),
                       ),

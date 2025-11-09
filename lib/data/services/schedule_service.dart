@@ -24,6 +24,17 @@ class ScheduleService {
     }
   }
 
+  Future<Schedule?> getScheduleById(String id) async {
+    try {
+      final response =
+          await _client.from('schedule').select('*, subject:subjects(*), group:groups(*)').eq('id', id).maybeSingle();
+      if (response == null) return null;
+      return Schedule.fromMap(response as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Ошибка при загрузке расписания по id: $e');
+    }
+  }
+
   Future<void> addScheduleEntry({
     required String institutionId,
     required String subjectId,
