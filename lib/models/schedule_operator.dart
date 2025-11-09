@@ -28,9 +28,10 @@ class ScheduleOperator {
       email: map['email'] as String?,
       login: map['login'] ?? '',
       password: map['password'] ?? '',
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+              : DateTime.now(),
     );
   }
 

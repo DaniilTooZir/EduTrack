@@ -1,5 +1,6 @@
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/subject.dart';
+
 // Модель для расписания уроков
 class Schedule {
   final String id;
@@ -8,6 +9,7 @@ class Schedule {
   final String groupId;
   final String teacherId;
   final DateTime? date;
+  final int weekday;
   final String startTime;
   final String endTime;
   final Subject? subject;
@@ -20,13 +22,13 @@ class Schedule {
     required this.groupId,
     required this.teacherId,
     this.date,
+    required this.weekday,
     required this.startTime,
     required this.endTime,
     this.subject,
     this.group,
   });
 
-  int get weekday => date?.weekday ?? 1;
   String? get subjectName => subject?.name;
   String? get groupName => group?.name;
 
@@ -40,6 +42,7 @@ class Schedule {
       groupId: map['group_id']?.toString() ?? '',
       teacherId: map['teacher_id']?.toString() ?? '',
       date: map['date'] != null ? DateTime.tryParse(map['date'].toString()) : null,
+      weekday: map['weekday'] is int ? map['weekday'] : int.tryParse(map['weekday'].toString()) ?? 1,
       startTime: map['start_time']?.toString() ?? '',
       endTime: map['end_time']?.toString() ?? '',
       subject: subjectMap != null ? Subject.fromMap(subjectMap) : null,
@@ -55,6 +58,7 @@ class Schedule {
       'group_id': groupId,
       'teacher_id': teacherId,
       'date': date?.toIso8601String(),
+      'weekday': weekday,
       'start_time': startTime,
       'end_time': endTime,
     };

@@ -35,9 +35,10 @@ class InstitutionRequest {
       phone: map['phone']?.toString(),
       comment: map['comment']?.toString(),
       status: map['status'] ?? '',
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+              : DateTime.now(),
     );
   }
 

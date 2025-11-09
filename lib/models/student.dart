@@ -1,4 +1,5 @@
 import 'package:edu_track/models/group.dart';
+
 // Модель для студента
 class Student {
   final String id;
@@ -39,9 +40,10 @@ class Student {
       institutionId: map['institution_id']?.toString() ?? '',
       groupId: map['group_id']?.toString(),
       isHeadman: map['isHeadman'] ?? false,
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+              : DateTime.now(),
       group: groupMap != null ? Group.fromMap(groupMap) : null,
     );
   }

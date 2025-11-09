@@ -24,6 +24,7 @@ class UserAddService {
         'password': password,
         'institution_id': institutionId,
         'group_id': groupId,
+        'isHeadman': false,
       }).select().single();
 
       if (response == null) {

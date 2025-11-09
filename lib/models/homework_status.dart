@@ -20,9 +20,10 @@ class HomeworkStatus {
       homeworkId: map['homework_id']?.toString() ?? '',
       studentId: map['student_id']?.toString() ?? '',
       isCompleted: map['is_completed'] ?? false,
-      updatedAt: map['updated_at'] != null
-          ? DateTime.tryParse(map['updated_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      updatedAt:
+          map['updated_at'] != null
+              ? DateTime.tryParse(map['updated_at'].toString()) ?? DateTime.now()
+              : DateTime.now(),
     );
   }
 

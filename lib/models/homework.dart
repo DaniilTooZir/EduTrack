@@ -38,22 +38,10 @@ class Homework {
       lessonId: map['lesson_id']?.toString(),
       title: map['title'] ?? '',
       description: map['description'],
-      dueDate:
-          map['due_date'] != null
-              ? DateTime.tryParse(map['due_date'].toString())
-              : null,
-      createdAt:
-          map['created_at'] != null
-              ? DateTime.tryParse(map['created_at'].toString())
-              : null,
-      subject:
-          map['subject'] != null
-              ? Subject.fromMap(map['subject'] as Map<String, dynamic>)
-              : null,
-      group:
-          map['group'] != null
-              ? Group.fromMap(map['group'] as Map<String, dynamic>)
-              : null,
+      dueDate: map['due_date'] != null ? DateTime.tryParse(map['due_date'].toString()) : null,
+      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'].toString()) : null,
+      subject: map['subject'] != null ? Subject.fromMap(map['subject'] as Map<String, dynamic>) : null,
+      group: map['group'] != null ? Group.fromMap(map['group'] as Map<String, dynamic>) : null,
     );
   }
 

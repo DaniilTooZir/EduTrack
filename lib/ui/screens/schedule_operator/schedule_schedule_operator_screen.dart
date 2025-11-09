@@ -10,7 +10,6 @@ import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/teacher_service.dart';
 
-
 class ScheduleScheduleOperatorScreen extends StatefulWidget {
   const ScheduleScheduleOperatorScreen({super.key});
 
@@ -51,12 +50,18 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     'Воскресенье',
   ];
 
-  Map<String, String> get _subjectNames =>
-      {for (var s in _subjects) if (s.id != null) s.id!: s.name};
-  Map<String, String> get _groupNames =>
-      {for (var g in _groups) if (g.id != null) g.id!: g.name};
-  Map<String, String> get _teacherNames =>
-      {for (var t in _teachers) if (t.id != null) t.id!: '${t.name} ${t.surname}'};
+  Map<String, String> get _subjectNames => {
+    for (var s in _subjects)
+      if (s.id != null) s.id!: s.name,
+  };
+  Map<String, String> get _groupNames => {
+    for (var g in _groups)
+      if (g.id != null) g.id!: g.name,
+  };
+  Map<String, String> get _teacherNames => {
+    for (var t in _teachers)
+      if (t.id != null) t.id!: '${t.name} ${t.surname}',
+  };
 
   @override
   void initState() {
@@ -81,8 +86,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
 
   void _loadSubjects() async {
     try {
-      final subjects =
-      await _subjectService.getSubjectsForInstitution(_institutionId!);
+      final subjects = await _subjectService.getSubjectsForInstitution(_institutionId!);
       setState(() => _subjects = subjects);
     } catch (e) {
       debugPrint('Ошибка загрузки предметов: $e');
@@ -111,8 +115,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     if (_institutionId == null) {
       _scheduleFuture = Future.error('ID учреждения не найден');
     } else {
-      _scheduleFuture =
-          _scheduleService.getScheduleForInstitution(_institutionId!);
+      _scheduleFuture = _scheduleService.getScheduleForInstitution(_institutionId!);
     }
     setState(() {});
   }
@@ -129,23 +132,26 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         _weekday == null ||
         _startTime == null ||
         _endTime == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Заполните все поля')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Заполните все поля')));
       return;
     }
+
     try {
-      DateTime selectedDate = DateTime.now();
+      final now = DateTime.now();
+      final todayWeekday = now.weekday;
+      final selectedDate = now.add(Duration(days: (_weekday! + 1 - todayWeekday) % 7));
       await _scheduleService.addScheduleEntry(
         institutionId: _institutionId!,
         subjectId: _selectedSubjectId!,
         groupId: _selectedGroupId!,
         teacherId: _selectedTeacherId!,
+        weekday: _weekday! + 1,
         date: selectedDate,
         startTime: _formatTimeOfDay(_startTime!),
         endTime: _formatTimeOfDay(_endTime!),
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Запись успешно добавлена')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Запись успешно добавлена')));
+
       _loadSchedule();
       setState(() {
         _formKey.currentState!.reset();
@@ -157,36 +163,30 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         _endTime = null;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка при добавлении: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при добавлении: $e')));
     }
   }
 
   Future<void> _deleteScheduleEntry(String id) async {
     try {
       await _scheduleService.deleteScheduleEntry(id);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Запись удалена')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Запись удалена')));
       _loadSchedule();
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Ошибка удаления: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка удаления: $e')));
     }
   }
 
-  Widget _buildTimePicker(
-      String label, TimeOfDay? time, Function(TimeOfDay) onTimePicked) =>
-      InkWell(
-        onTap: () async {
-          final picked = await showTimePicker(
-              context: context, initialTime: time ?? const TimeOfDay(hour: 8, minute: 0));
-          if (picked != null) onTimePicked(picked);
-        },
-        child: InputDecorator(
-          decoration: InputDecoration(labelText: label),
-          child: Text(time != null ? time.format(context) : 'Выберите время'),
-        ),
-      );
+  Widget _buildTimePicker(String label, TimeOfDay? time, Function(TimeOfDay) onTimePicked) => InkWell(
+    onTap: () async {
+      final picked = await showTimePicker(context: context, initialTime: time ?? const TimeOfDay(hour: 8, minute: 0));
+      if (picked != null) onTimePicked(picked);
+    },
+    child: InputDecorator(
+      decoration: InputDecoration(labelText: label),
+      child: Text(time != null ? time.format(context) : 'Выберите время'),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -208,9 +208,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
               children: [
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Form(
@@ -222,10 +220,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                             value: _weekday,
                             items: List.generate(
                               _weekdays.length,
-                                  (index) => DropdownMenuItem(
-                                value: index,
-                                child: Text(_weekdays[index]),
-                              ),
+                              (index) => DropdownMenuItem(value: index, child: Text(_weekdays[index])),
                             ),
                             onChanged: (val) => setState(() => _weekday = val),
                             validator: (val) => val == null ? 'Выберите день недели' : null,
@@ -234,12 +229,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                           DropdownButtonFormField<String>(
                             decoration: const InputDecoration(labelText: 'Предмет'),
                             value: _selectedSubjectId,
-                            items: _subjects
-                                .map((s) => DropdownMenuItem(
-                              value: s.id,
-                              child: Text(s.name),
-                            ))
-                                .toList(),
+                            items: _subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
                             onChanged: (val) => setState(() => _selectedSubjectId = val),
                             validator: (val) => val == null ? 'Выберите предмет' : null,
                           ),
@@ -247,12 +237,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                           DropdownButtonFormField<String>(
                             decoration: const InputDecoration(labelText: 'Группа'),
                             value: _selectedGroupId,
-                            items: _groups
-                                .map((g) => DropdownMenuItem(
-                              value: g.id,
-                              child: Text(g.name),
-                            ))
-                                .toList(),
+                            items: _groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
                             onChanged: (val) => setState(() => _selectedGroupId = val),
                             validator: (val) => val == null ? 'Выберите группу' : null,
                           ),
@@ -260,31 +245,24 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                           DropdownButtonFormField<String>(
                             decoration: const InputDecoration(labelText: 'Преподаватель'),
                             value: _selectedTeacherId,
-                            items: _teachers
-                                .map((t) => DropdownMenuItem(
-                              value: t.id,
-                              child: Text('${t.name} ${t.surname}'),
-                            ))
-                                .toList(),
+                            items:
+                                _teachers
+                                    .map((t) => DropdownMenuItem(value: t.id, child: Text('${t.name} ${t.surname}')))
+                                    .toList(),
                             onChanged: (val) => setState(() => _selectedTeacherId = val),
                             validator: (val) => val == null ? 'Выберите преподавателя' : null,
                           ),
                           const SizedBox(height: 12),
-                          _buildTimePicker('Время начала', _startTime,
-                                  (time) => setState(() => _startTime = time)),
+                          _buildTimePicker('Время начала', _startTime, (time) => setState(() => _startTime = time)),
                           const SizedBox(height: 12),
-                          _buildTimePicker('Время окончания', _endTime,
-                                  (time) => setState(() => _endTime = time)),
+                          _buildTimePicker('Время окончания', _endTime, (time) => setState(() => _endTime = time)),
                           const SizedBox(height: 20),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                padding:
-                                const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: _addScheduleEntry,
                               child: const Text('Добавить запись'),
@@ -307,22 +285,23 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                         return Center(
                           child: Text(
                             'Ошибка загрузки: ${snapshot.error}',
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(color: Colors.redAccent),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.redAccent),
                           ),
                         );
                       }
                       final schedules = snapshot.data ?? [];
                       if (schedules.isEmpty) {
                         return Center(
-                          child: Text('Расписание пустое',
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(color: Colors.grey[600])),
+                          child: Text(
+                            'Расписание пустое',
+                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                          ),
                         );
                       }
                       Map<int, List<Schedule>> schedulesByDay = {};
                       for (var s in schedules) {
-                        schedulesByDay.putIfAbsent(s.weekday, () => []).add(s);
+                        final key = ((s.weekday - 1) % 7 + 7) % 7;
+                        schedulesByDay.putIfAbsent(key, () => []).add(s);
                       }
                       return SingleChildScrollView(
                         child: Column(
@@ -333,39 +312,42 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(_weekdays[day],
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.bold)),
+                                Text(
+                                  _weekdays[day],
+                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                ),
                                 SingleChildScrollView(
                                   scrollDirection: Axis.horizontal,
                                   child: DataTable(
                                     columns: const [
+                                      DataColumn(label: Text('Начало')),
+                                      DataColumn(label: Text('Конец')),
                                       DataColumn(label: Text('Группа')),
                                       DataColumn(label: Text('Предмет')),
                                       DataColumn(label: Text('Преподаватель')),
-                                      DataColumn(label: Text('Начало')),
-                                      DataColumn(label: Text('Конец')),
                                       DataColumn(label: Text('')),
                                     ],
-                                    rows: daySchedules.map((s) {
-                                      final subjectName =
-                                          s.subject?.name ?? s.subjectId;
-                                      final groupName =
-                                          s.group?.name ?? s.groupId;
-                                      final teacherName =
-                                          _teacherNames[s.teacherId] ?? s.teacherId;
-                                      return DataRow(cells: [
-                                        DataCell(Text(groupName)),
-                                        DataCell(Text(subjectName)),
-                                        DataCell(Text(teacherName)),
-                                        DataCell(Text(s.startTime)),
-                                        DataCell(Text(s.endTime)),
-                                        DataCell(IconButton(
-                                          icon: const Icon(Icons.delete),
-                                          onPressed: () => _deleteScheduleEntry(s.id),
-                                        )),
-                                      ]);
-                                    }).toList(),
+                                    rows:
+                                        daySchedules.map((s) {
+                                          final subjectName = s.subject?.name ?? s.subjectId;
+                                          final groupName = s.group?.name ?? s.groupId;
+                                          final teacherName = _teacherNames[s.teacherId] ?? s.teacherId;
+                                          return DataRow(
+                                            cells: [
+                                              DataCell(Text(s.startTime)),
+                                              DataCell(Text(s.endTime)),
+                                              DataCell(Text(groupName)),
+                                              DataCell(Text(subjectName)),
+                                              DataCell(Text(teacherName)),
+                                              DataCell(
+                                                IconButton(
+                                                  icon: const Icon(Icons.delete),
+                                                  onPressed: () => _deleteScheduleEntry(s.id),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }).toList(),
                                   ),
                                 ),
                                 const SizedBox(height: 24),

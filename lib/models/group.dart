@@ -4,22 +4,14 @@ class Group {
   final String institutionId;
   final DateTime? createdAt;
 
-  Group({
-    this.id,
-    required this.name,
-    required this.institutionId,
-    this.createdAt,
-  });
+  Group({this.id, required this.name, required this.institutionId, this.createdAt});
 
   factory Group.fromMap(Map<String, dynamic> map) {
     return Group(
       id: map['id']?.toString(),
       name: map['name'] ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
-      createdAt:
-          map['created_at'] != null
-              ? DateTime.tryParse(map['created_at'].toString())
-              : null,
+      createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'].toString()) : null,
     );
   }
 

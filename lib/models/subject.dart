@@ -20,9 +20,10 @@ class Subject {
       name: map['name'] ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
       teacherId: map['teacher_id']?.toString() ?? '',
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+              : DateTime.now(),
     );
   }
 

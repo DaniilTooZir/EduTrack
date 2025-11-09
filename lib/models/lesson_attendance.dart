@@ -4,12 +4,7 @@ class LessonAttendance {
   final String studentId;
   final String? status;
 
-  LessonAttendance({
-    required this.id,
-    required this.lessonId,
-    required this.studentId,
-    this.status,
-  });
+  LessonAttendance({required this.id, required this.lessonId, required this.studentId, this.status});
 
   factory LessonAttendance.fromMap(Map<String, dynamic> map) {
     return LessonAttendance(
@@ -21,11 +16,6 @@ class LessonAttendance {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'lesson_id': lessonId,
-      'student_id': studentId,
-      'status': status,
-    };
+    return {'id': id, 'lesson_id': lessonId, 'student_id': studentId, 'status': status};
   }
 }

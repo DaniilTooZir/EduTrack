@@ -32,9 +32,10 @@ class Teacher {
       password: map['password'] ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
       department: map['department'] as String?,
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+              : DateTime.now(),
     );
   }
 

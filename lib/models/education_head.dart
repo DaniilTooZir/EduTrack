@@ -32,9 +32,10 @@ class EducationHead {
       password: map['password'] ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
       phone: map['phone']?.toString() ?? '',
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+              : DateTime.now(),
     );
   }
 
@@ -52,4 +53,3 @@ class EducationHead {
     };
   }
 }
-
