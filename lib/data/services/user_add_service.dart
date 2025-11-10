@@ -3,8 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class UserAddService {
   final SupabaseClient _client;
 
-  UserAddService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  UserAddService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
 
   Future<void> addStudent({
     required String name,
@@ -16,16 +15,21 @@ class UserAddService {
     required String groupId,
   }) async {
     try {
-      final response = await _client.from('students').insert({
-        'name': name,
-        'surname': surname,
-        'email': email,
-        'login': login,
-        'password': password,
-        'institution_id': institutionId,
-        'group_id': groupId,
-        'isHeadman': false,
-      }).select().single();
+      final response =
+          await _client
+              .from('students')
+              .insert({
+                'name': name,
+                'surname': surname,
+                'email': email,
+                'login': login,
+                'password': password,
+                'institution_id': institutionId,
+                'group_id': groupId,
+                'isHeadman': false,
+              })
+              .select()
+              .single();
 
       if (response == null) {
         throw Exception('Пустой ответ от сервера при добавлении студента');
@@ -47,14 +51,19 @@ class UserAddService {
     required String institutionId,
   }) async {
     try {
-      final response = await _client.from('teachers').insert({
-        'name': name,
-        'surname': surname,
-        'email': email,
-        'login': login,
-        'password': password,
-        'institution_id': institutionId,
-      }).select().single();
+      final response =
+          await _client
+              .from('teachers')
+              .insert({
+                'name': name,
+                'surname': surname,
+                'email': email,
+                'login': login,
+                'password': password,
+                'institution_id': institutionId,
+              })
+              .select()
+              .single();
 
       if (response == null) {
         throw Exception('Пустой ответ от сервера при добавлении преподавателя');
@@ -76,14 +85,19 @@ class UserAddService {
     required String institutionId,
   }) async {
     try {
-      final response = await _client.from('schedule_operators').insert({
-        'name': name,
-        'surname': surname,
-        'email': email,
-        'login': login,
-        'password': password,
-        'institution_id': institutionId,
-      }).select().single();
+      final response =
+          await _client
+              .from('schedule_operators')
+              .insert({
+                'name': name,
+                'surname': surname,
+                'email': email,
+                'login': login,
+                'password': password,
+                'institution_id': institutionId,
+              })
+              .select()
+              .single();
 
       if (response == null) {
         throw Exception('Пустой ответ от сервера при добавлении оператора');

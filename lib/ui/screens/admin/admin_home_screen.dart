@@ -47,10 +47,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         bodyContent = const SubjectAdminScreen();
         break;
       case 4:
-        bodyContent = const AdminProfileScreen();
+        bodyContent = const GroupAdminScreen();
         break;
       case 5:
-        bodyContent = const GroupAdminScreen();
+        bodyContent = const AdminProfileScreen();
         break;
       default:
         bodyContent = const SizedBox.shrink();
@@ -107,8 +107,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             _buildDrawerItem(Icons.people, 'Пользователи', 1),
             _buildDrawerItem(Icons.person_add, 'Добавить пользователя', 2),
             _buildDrawerItem(Icons.book, 'Предметы', 3),
-            _buildDrawerItem(Icons.person, 'Профиль', 4),
-            _buildDrawerItem(Icons.group, 'Группы', 5),
+            _buildDrawerItem(Icons.group, 'Группы', 4),
+            _buildDrawerItem(Icons.person, 'Профиль', 5),
           ],
         ),
       ),
@@ -208,7 +208,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         2,
                       ),
                       _quickActionButton('Создать группу', Icons.group_add, 6),
-                      _quickActionButton('Назначить предмет', Icons.book, 4),
+                      _quickActionButton('Назначить предмет', Icons.book, 3),
                     ],
                   ),
                 ],

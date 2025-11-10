@@ -27,12 +27,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   final HomeworkService _homeworkService = HomeworkService();
 
-  final List<String> _titles = [
-    'Главная',
-    'Домашние задания',
-    'Расписание',
-    'Профиль',
-  ];
+  final List<String> _titles = ['Главная', 'Домашние задания', 'Расписание', 'Профиль'];
 
   final Color primaryColor = const Color(0xFF9575CD);
   final Color drawerStart = const Color(0xFF7E57C2);
@@ -62,9 +57,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         });
         return;
       }
-      final groupResponse = await _homeworkService.getGroupByStudentId(
-        studentId,
-      );
+      final groupResponse = await _homeworkService.getGroupByStudentId(studentId);
       if (groupResponse == null) {
         setState(() {
           _dashboardError = 'Не удалось получить группу студента';
@@ -74,12 +67,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       }
       final groupId = groupResponse['id'] as String;
       final groupName = groupResponse['name'] as String;
-      final homeworks = await _homeworkService.getHomeworksByStudentGroup(
-        studentId,
-      );
-      final statuses = await _homeworkService.getHomeworkStatusesForStudent(
-        studentId,
-      );
+      final homeworks = await _homeworkService.getHomeworksByStudentGroup(studentId);
+      final statuses = await _homeworkService.getHomeworkStatusesForStudent(studentId);
       final statusMap = {for (var s in statuses) s.homeworkId: s};
       int completed = 0;
       int pending = 0;
@@ -166,75 +155,41 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (_groupName != null)
-                Text(
-                  'Ваша группа: $_groupName',
-                  style: theme.textTheme.titleMedium,
-                ),
+              if (_groupName != null) Text('Ваша группа: $_groupName', style: theme.textTheme.titleMedium),
               const SizedBox(height: 24),
               Card(
                 elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 child: ListTile(
-                  leading: const Icon(
-                    Icons.assignment,
-                    size: 40,
-                    color: Color(0xFF5E35B1),
-                  ),
+                  leading: const Icon(Icons.assignment, size: 40, color: Color(0xFF5E35B1)),
                   title: const Text('Всего домашних заданий'),
-                  trailing: Text(
-                    '$_totalHomework',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  trailing: Text('$_totalHomework', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
               ),
               Card(
                 elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 child: ListTile(
-                  leading: const Icon(
-                    Icons.check_circle,
-                    size: 40,
-                    color: Colors.green,
-                  ),
+                  leading: const Icon(Icons.check_circle, size: 40, color: Colors.green),
                   title: const Text('Выполнено'),
                   trailing: Text(
                     '$_completedHomework',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
               Card(
                 elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 child: ListTile(
-                  leading: const Icon(
-                    Icons.radio_button_unchecked,
-                    size: 40,
-                    color: Colors.red,
-                  ),
+                  leading: const Icon(Icons.radio_button_unchecked, size: 40, color: Colors.red),
                   title: const Text('Осталось выполнить'),
                   trailing: Text(
                     '$_pendingHomework',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -267,13 +222,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 4,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-        ),
-        title: Text(
-          _titles[_selectedIndex],
-          style: const TextStyle(color: Colors.white),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
+        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -303,11 +253,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню студента',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -326,10 +272,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: _buildBody(),
-        ),
+        child: Padding(padding: const EdgeInsets.all(16.0), child: _buildBody()),
       ),
     );
   }

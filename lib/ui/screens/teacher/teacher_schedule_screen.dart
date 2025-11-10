@@ -16,15 +16,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
   bool _isLoading = true;
   List<Schedule> _scheduleList = [];
 
-  final List<String> _weekdays = [
-    'Понедельник',
-    'Вторник',
-    'Среда',
-    'Четверг',
-    'Пятница',
-    'Суббота',
-    'Воскресенье',
-  ];
+  final List<String> _weekdays = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 
   @override
   void initState() {
@@ -58,8 +50,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final maxWidth =
-                  constraints.maxWidth > 600 ? 600.0 : constraints.maxWidth;
+              final maxWidth = constraints.maxWidth > 600 ? 600.0 : constraints.maxWidth;
               if (_isLoading) {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -81,31 +72,22 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
               return Center(
                 child: Container(
                   width: maxWidth,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: ListView.builder(
                     itemCount: _scheduleList.length,
                     itemBuilder: (context, index) {
                       final entry = _scheduleList[index];
                       return Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 6,
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         shadowColor: const Color(0xFF9575CD).withOpacity(0.4),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Предмет: ${entry.subjectName ?? '—'}',
-                                ),
-                              ),
-                            );
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text('Предмет: ${entry.subjectName ?? '—'}')));
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -122,23 +104,17 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
                                 const SizedBox(height: 6),
                                 Text(
                                   'Группа: ${entry.groupName}',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: const Color(0xFF7E57C2),
-                                  ),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFF7E57C2)),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   'День: ${_weekdays[entry.weekday - 1]}',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: const Color(0xFF7E57C2),
-                                  ),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFF7E57C2)),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   'Время: ${entry.startTime} — ${entry.endTime}',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: const Color(0xFF7E57C2),
-                                  ),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFF7E57C2)),
                                 ),
                               ],
                             ),

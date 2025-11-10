@@ -42,9 +42,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
       _subjectFuture = Future.error('ID учреждения не найден');
       _teachersFuture = Future.value([]);
     } else {
-      _subjectFuture = _subjectService.getSubjectsForInstitution(
-        _institutionId!,
-      );
+      _subjectFuture = _subjectService.getSubjectsForInstitution(_institutionId!);
       _teachersFuture = _teacherService.getTeachers(_institutionId!);
       _teachersFuture.then((list) {
         setState(() => _teachers = list);
@@ -61,9 +59,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
   Future<void> _addSubject() async {
     if (!_formKey.currentState!.validate()) return;
     if (_institutionId == null || _selectedTeacherId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Заполните все поля')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Заполните все поля')));
       return;
     }
     try {
@@ -72,20 +68,14 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
         institutionId: _institutionId!,
         teacherId: _selectedTeacherId!,
       );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Предмет успешно добавлен')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Предмет успешно добавлен')));
       _nameController.clear();
       setState(() {
         _selectedTeacherId = null;
-        _subjectFuture = _subjectService.getSubjectsForInstitution(
-          _institutionId!,
-        );
+        _subjectFuture = _subjectService.getSubjectsForInstitution(_institutionId!);
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при добавлении предмета: $e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при добавлении предмета: $e')));
     }
   }
 
@@ -127,9 +117,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
               children: [
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Form(
@@ -142,48 +130,27 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                               labelText: 'Название предмета',
                               border: OutlineInputBorder(),
                             ),
-                            validator:
-                                (val) =>
-                                    val == null || val.isEmpty
-                                        ? 'Введите название'
-                                        : null,
+                            validator: (val) => val == null || val.isEmpty ? 'Введите название' : null,
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             value: _selectedTeacherId,
-                            decoration: const InputDecoration(
-                              labelText: 'Преподаватель',
-                              border: OutlineInputBorder(),
-                            ),
+                            decoration: const InputDecoration(labelText: 'Преподаватель', border: OutlineInputBorder()),
                             items:
                                 _teachers.map((teacher) {
-                                  final fullName =
-                                      '${teacher.surname} ${teacher.name}';
-                                  return DropdownMenuItem(
-                                    value: teacher.id,
-                                    child: Text(fullName),
-                                  );
+                                  final fullName = '${teacher.surname} ${teacher.name}';
+                                  return DropdownMenuItem(value: teacher.id, child: Text(fullName));
                                 }).toList(),
-                            onChanged:
-                                (val) =>
-                                    setState(() => _selectedTeacherId = val),
-                            validator:
-                                (val) =>
-                                    val == null
-                                        ? 'Выберите преподавателя'
-                                        : null,
+                            onChanged: (val) => setState(() => _selectedTeacherId = val),
+                            validator: (val) => val == null ? 'Выберите преподавателя' : null,
                           ),
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: _addSubject,
                               child: const Text('Добавить предмет'),
@@ -206,9 +173,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                         return Center(
                           child: Text(
                             'Ошибка: ${snapshot.error}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.redAccent,
-                            ),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.redAccent),
                           ),
                         );
                       }
@@ -217,9 +182,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                         return Center(
                           child: Text(
                             'Список предметов пуст',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                           ),
                         );
                       }
@@ -230,14 +193,10 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                           final subject = subjects[index];
                           return Card(
                             elevation: 3,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             child: ListTile(
                               title: Text(subject.name),
-                              subtitle: Text(
-                                'Преподаватель: ${_getTeacherName(subject.teacherId)}',
-                              ),
+                              subtitle: Text('Преподаватель: ${_getTeacherName(subject.teacherId)}'),
                             ),
                           );
                         },

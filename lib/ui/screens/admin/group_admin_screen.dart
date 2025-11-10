@@ -26,8 +26,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
   }
 
   Future<void> _loadGroups() async {
-    final institutionId =
-        Provider.of<UserProvider>(context, listen: false).institutionId;
+    final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
     final groups = await _service.getGroups(institutionId);
     setState(() {
@@ -38,13 +37,9 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
 
   Future<void> _addGroup() async {
     if (!_formKey.currentState!.validate()) return;
-    final institutionId =
-        Provider.of<UserProvider>(context, listen: false).institutionId;
+    final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
-    final newGroup = Group(
-      name: _nameController.text.trim(),
-      institutionId: institutionId,
-    );
+    final newGroup = Group(name: _nameController.text.trim(), institutionId: institutionId);
     await _service.addGroup(newGroup);
     _nameController.clear();
     await _loadGroups();
@@ -73,15 +68,10 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 6,
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             child: Form(
                               key: _formKey,
                               child: Row(
@@ -93,23 +83,14 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                                         labelText: 'Название группы',
                                         border: OutlineInputBorder(),
                                       ),
-                                      validator:
-                                          (value) =>
-                                              value == null || value.isEmpty
-                                                  ? 'Введите название'
-                                                  : null,
+                                      validator: (value) => value == null || value.isEmpty ? 'Введите название' : null,
                                     ),
                                   ),
                                   const SizedBox(width: 16),
                                   ElevatedButton(
                                     style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                        vertical: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     ),
                                     onPressed: _addGroup,
                                     child: const Text('Добавить'),
@@ -134,43 +115,26 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                                   ? Center(
                                     child: Text(
                                       'Группы не найдены',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(color: Colors.grey[600]),
+                                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                                     ),
                                   )
                                   : ListView.separated(
                                     itemCount: _groups.length,
-                                    separatorBuilder:
-                                        (_, __) => const SizedBox(height: 8),
+                                    separatorBuilder: (_, __) => const SizedBox(height: 8),
                                     itemBuilder: (context, index) {
                                       final group = _groups[index];
                                       return Card(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                        ),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                         elevation: 3,
                                         child: ListTile(
                                           leading: CircleAvatar(
-                                            backgroundColor:
-                                                Colors.deepPurple[200],
+                                            backgroundColor: Colors.deepPurple[200],
                                             child: Text(
-                                              group.name.isNotEmpty
-                                                  ? group.name[0].toUpperCase()
-                                                  : '?',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                              group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                             ),
                                           ),
-                                          title: Text(
-                                            group.name,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
+                                          title: Text(group.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                                         ),
                                       );
                                     },

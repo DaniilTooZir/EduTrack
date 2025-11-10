@@ -35,8 +35,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   }
 
   Future<void> _loadGroups() async {
-    final institutionId =
-        Provider.of<UserProvider>(context, listen: false).institutionId;
+    final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
 
     final groups = await _groupService.getGroups(institutionId);
@@ -53,12 +52,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final email = _emailController.text.trim();
     final role = _selectedRole;
 
-    if (login.isEmpty ||
-        password.isEmpty ||
-        name.isEmpty ||
-        surname.isEmpty ||
-        email.isEmpty ||
-        role == null) {
+    if (login.isEmpty || password.isEmpty || name.isEmpty || surname.isEmpty || email.isEmpty || role == null) {
       setState(() => _errorMessage = 'Пожалуйста, заполните все поля');
       return;
     }
@@ -113,9 +107,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           institutionId: institutionId,
         );
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пользователь успешно добавлен')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пользователь успешно добавлен')));
       _loginController.clear();
       _passwordController.clear();
       _nameController.clear();
@@ -160,11 +152,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
             children: [
               const Text(
                 'Добавить пользователя',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF5E35B1),
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF5E35B1)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -232,14 +220,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                 ),
                 items: const [
                   DropdownMenuItem(value: 'student', child: Text('Студент')),
-                  DropdownMenuItem(
-                    value: 'teacher',
-                    child: Text('Преподаватель'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'schedule_operator',
-                    child: Text('Оператор расписания'),
-                  ),
+                  DropdownMenuItem(value: 'teacher', child: Text('Преподаватель')),
+                  DropdownMenuItem(value: 'schedule_operator', child: Text('Оператор расписания')),
                 ],
                 onChanged:
                     (value) => setState(() {
@@ -256,13 +238,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     prefixIcon: Icon(Icons.group_work),
                     border: OutlineInputBorder(),
                   ),
-                  items:
-                      _groups
-                          .map(
-                            (g) =>
-                                DropdownMenuItem(value: g, child: Text(g.name)),
-                          )
-                          .toList(),
+                  items: _groups.map((g) => DropdownMenuItem(value: g, child: Text(g.name))).toList(),
                   onChanged: (group) => setState(() => _selectedGroup = group),
                 ),
               ],
@@ -272,10 +248,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
                     _errorMessage!,
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -287,17 +260,11 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         ? const SizedBox(
                           height: 24,
                           width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: Colors.white,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
                         )
                         : const Text(
                           'Добавить пользователя',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
               ),
             ],

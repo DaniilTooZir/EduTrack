@@ -14,12 +14,7 @@ class ScheduleOperatorHomeScreen extends StatefulWidget {
 
 class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen> {
   int _selectedIndex = 0;
-  final List<String> _titles = [
-    'Главная',
-    'Расписание',
-    'Уроки',
-    'Профиль',
-  ];
+  final List<String> _titles = ['Главная', 'Расписание', 'Уроки', 'Профиль'];
 
   final Color primaryColor = const Color(0xFF9575CD);
   final Color drawerStart = const Color(0xFF7E57C2);
@@ -43,13 +38,8 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 4,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-        ),
-        title: Text(
-          _titles[_selectedIndex],
-          style: const TextStyle(color: Colors.white),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
+        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -79,11 +69,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню оператора расписания',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -139,11 +125,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             children: const [
               Text(
                 'Добро пожаловать!',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A148C),
-                ),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
               ),
               SizedBox(height: 12),
               Text(
@@ -153,11 +135,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
               SizedBox(height: 24),
               Text(
                 'Разделы панели:',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A148C),
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
               ),
               SizedBox(height: 12),
               Text('• Расписание — создание, редактирование и просмотр расписания занятий.'),
@@ -174,11 +152,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     return Center(
       child: Text(
         '$title — экран в разработке',
-        style: const TextStyle(
-          fontSize: 18,
-          color: Color(0xFF5E35B1),
-          fontWeight: FontWeight.w500,
-        ),
+        style: const TextStyle(fontSize: 18, color: Color(0xFF5E35B1), fontWeight: FontWeight.w500),
       ),
     );
   }

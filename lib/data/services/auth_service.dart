@@ -5,11 +5,7 @@ class AuthResult {
   final String userId;
   final String institutionId;
 
-  AuthResult({
-    required this.role,
-    required this.userId,
-    required this.institutionId,
-  });
+  AuthResult({required this.role, required this.userId, required this.institutionId});
 }
 
 class AuthService {
@@ -18,18 +14,10 @@ class AuthService {
 
     try {
       final admin =
-          await client
-              .from('education_heads')
-              .select('id, password, institution_id')
-              .eq('login', login)
-              .maybeSingle();
+          await client.from('education_heads').select('id, password, institution_id').eq('login', login).maybeSingle();
 
       if (admin != null && admin['password'] == password) {
-        return AuthResult(
-          role: 'admin',
-          userId: admin['id'],
-          institutionId: admin['institution_id'],
-        );
+        return AuthResult(role: 'admin', userId: admin['id'], institutionId: admin['institution_id']);
       }
     } catch (e) {
       print('Ошибка при попытке входа админа: $e');
@@ -37,18 +25,10 @@ class AuthService {
 
     try {
       final teacher =
-          await client
-              .from('teachers')
-              .select('id, password, institution_id')
-              .eq('login', login)
-              .maybeSingle();
+          await client.from('teachers').select('id, password, institution_id').eq('login', login).maybeSingle();
 
       if (teacher != null && teacher['password'] == password) {
-        return AuthResult(
-          role: 'teacher',
-          userId: teacher['id'],
-          institutionId: teacher['institution_id'],
-        );
+        return AuthResult(role: 'teacher', userId: teacher['id'], institutionId: teacher['institution_id']);
       }
     } catch (e) {
       print('Ошибка при попытке входа преподавателя: $e');
@@ -56,36 +36,25 @@ class AuthService {
 
     try {
       final student =
-          await client
-              .from('students')
-              .select('id, password, institution_id')
-              .eq('login', login)
-              .maybeSingle();
+          await client.from('students').select('id, password, institution_id').eq('login', login).maybeSingle();
 
       if (student != null && student['password'] == password) {
-        return AuthResult(
-          role: 'student',
-          userId: student['id'],
-          institutionId: student['institution_id'],
-        );
+        return AuthResult(role: 'student', userId: student['id'], institutionId: student['institution_id']);
       }
     } catch (e) {
       print('Ошибка при попытке входа ученика: $e');
     }
 
     try {
-      final operator = await client
-          .from('schedule_operators')
-          .select('id, password, institution_id')
-          .eq('login', login)
-          .maybeSingle();
+      final operator =
+          await client
+              .from('schedule_operators')
+              .select('id, password, institution_id')
+              .eq('login', login)
+              .maybeSingle();
 
       if (operator != null && operator['password'] == password) {
-        return AuthResult(
-          role: 'schedule_operator',
-          userId: operator['id'],
-          institutionId: operator['institution_id'],
-        );
+        return AuthResult(role: 'schedule_operator', userId: operator['id'], institutionId: operator['institution_id']);
       }
     } catch (e) {
       print('Ошибка при попытке входа оператора расписания: $e');

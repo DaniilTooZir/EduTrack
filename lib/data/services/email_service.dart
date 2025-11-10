@@ -5,19 +5,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class EmailService {
   static final String apiKey = dotenv.env['RESEND_API_KEY']!;
   static const String senderEmail = 'daniilzyraev500@gmail.com';
-  static Future<void> sendEmail({
-    required String to,
-    required String subject,
-    required String htmlContent,
-  }) async {
+  static Future<void> sendEmail({required String to, required String subject, required String htmlContent}) async {
     final uri = Uri.parse('https://api.resend.com/emails');
 
     final response = await http.post(
       uri,
-      headers: {
-        'Authorization': 'Bearer $apiKey',
-        'Content-Type': 'application/json',
-      },
+      headers: {'Authorization': 'Bearer $apiKey', 'Content-Type': 'application/json'},
       body: jsonEncode({
         'from': senderEmail,
         'to': [to],

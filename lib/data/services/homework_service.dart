@@ -5,8 +5,7 @@ import 'package:edu_track/models/homework_status.dart';
 class HomeworkService {
   final SupabaseClient _client;
 
-  HomeworkService({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
+  HomeworkService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
   Future<List<Homework>> getHomeworkByTeacherId(String teacherId) async {
     try {
       final response = await _client
@@ -15,20 +14,15 @@ class HomeworkService {
           .eq('subject.teacher_id', teacherId)
           .order('due_date', ascending: true);
       final List<dynamic> data = response as List<dynamic>;
-      return data
-          .map((e) => Homework.fromMap(e as Map<String, dynamic>))
-          .toList();
+      return data.map((e) => Homework.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
       throw Exception('Ошибка загрузки домашних заданий: $e');
     }
   }
+
   Future<List<Homework>> getHomeworksByStudentGroup(String studentId) async {
     try {
-      final student = await _client
-          .from('students')
-          .select('group_id')
-          .eq('id', studentId)
-          .maybeSingle();
+      final student = await _client.from('students').select('group_id').eq('id', studentId).maybeSingle();
       if (student == null || student['group_id'] == null) {
         throw Exception('Группа студента не найдена');
       }
@@ -40,26 +34,22 @@ class HomeworkService {
           .order('due_date', ascending: true);
 
       final List<dynamic> data = response as List<dynamic>;
-      return data
-          .map((e) => Homework.fromMap(e as Map<String, dynamic>))
-          .toList();
+      return data.map((e) => Homework.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
       throw Exception('Ошибка загрузки домашних заданий по группе: $e');
     }
   }
+
   Future<Map<String, dynamic>?> getGroupByStudentId(String studentId) async {
     try {
-      final response = await _client
-          .from('students')
-          .select('groups(id, name)')
-          .eq('id', studentId)
-          .single();
+      final response = await _client.from('students').select('groups(id, name)').eq('id', studentId).single();
       if (response == null) return null;
       return response['groups'] as Map<String, dynamic>?;
     } catch (e) {
       throw Exception('Ошибка получения группы студента: $e');
     }
   }
+
   Future<void> addHomework({
     required String institutionId,
     required String subjectId,
@@ -77,8 +67,7 @@ class HomeworkService {
         'description': description,
         'due_date': dueDate?.toIso8601String(),
       };
-      final response =
-          await _client.from('homework').insert(insertData).select().single();
+      final response = await _client.from('homework').insert(insertData).select().single();
 
       if (response == null) {
         throw Exception('Ошибка при добавлении домашнего задания');
@@ -119,9 +108,7 @@ class HomeworkService {
     try {
       final response = await _client
           .from('homework_status')
-          .select(
-            'homework_id, homework(*, subject:subjects(*), group:groups(*))',
-          )
+          .select('homework_id, homework(*, subject:subjects(*), group:groups(*))')
           .eq('student_id', studentId);
       final List data = response as List;
       return data.map((item) => Homework.fromMap(item['homework'])).toList();
@@ -130,18 +117,11 @@ class HomeworkService {
     }
   }
 
-  Future<List<HomeworkStatus>> getHomeworkStatusesForStudent(
-    String studentId,
-  ) async {
+  Future<List<HomeworkStatus>> getHomeworkStatusesForStudent(String studentId) async {
     try {
-      final response = await _client
-          .from('homework_status')
-          .select()
-          .eq('student_id', studentId);
+      final response = await _client.from('homework_status').select().eq('student_id', studentId);
       final List data = response as List;
-      return data
-          .map((e) => HomeworkStatus.fromMap(e as Map<String, dynamic>))
-          .toList();
+      return data.map((e) => HomeworkStatus.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
       throw Exception('Ошибка при загрузке статусов: $e');
     }
@@ -163,10 +143,7 @@ class HomeworkService {
       if (existing != null) {
         await _client
             .from('homework_status')
-            .update({
-              'is_completed': isCompleted,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
+            .update({'is_completed': isCompleted, 'updated_at': DateTime.now().toIso8601String()})
             .eq('id', existing['id']);
       } else {
         await _client.from('homework_status').insert({

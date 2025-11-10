@@ -60,13 +60,14 @@ class _UserListScreenState extends State<UserListScreen> {
       combined += _allStudents.map((s) => {...s, 'role': 'student'}).toList();
     }
     if (_searchQuery.isNotEmpty) {
-      combined = combined.where((user) {
-        final query = _searchQuery.toLowerCase();
-        return user['name'].toLowerCase().contains(query) ||
-            user['surname'].toLowerCase().contains(query) ||
-            user['email'].toLowerCase().contains(query) ||
-            user['login'].toLowerCase().contains(query);
-      }).toList();
+      combined =
+          combined.where((user) {
+            final query = _searchQuery.toLowerCase();
+            return user['name'].toLowerCase().contains(query) ||
+                user['surname'].toLowerCase().contains(query) ||
+                user['email'].toLowerCase().contains(query) ||
+                user['login'].toLowerCase().contains(query);
+          }).toList();
     }
     setState(() {
       _filteredUsers = combined;
@@ -77,10 +78,10 @@ class _UserListScreenState extends State<UserListScreen> {
     final service = UsersFetchService();
     try {
       await service.deleteUserById(id, role);
-      ScaffoldMessenger.of(context,).showSnackBar(const SnackBar(content: Text('Пользователь удалён')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пользователь удалён')));
       await _loadUsers();
     } catch (e) {
-      ScaffoldMessenger.of(context,).showSnackBar(SnackBar(content: Text('Ошибка при удалении: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при удалении: $e')));
     }
   }
 
@@ -106,16 +107,17 @@ class _UserListScreenState extends State<UserListScreen> {
                 _buildFilters(),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: _filteredUsers.isEmpty
-                      ? const Center(child: Text('Пользователи не найдены'))
-                      : ListView.separated(
-                    itemCount: _filteredUsers.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final user = _filteredUsers[index];
-                      return _buildUserCard(user);
-                    },
-                  ),
+                  child:
+                      _filteredUsers.isEmpty
+                          ? const Center(child: Text('Пользователи не найдены'))
+                          : ListView.separated(
+                            itemCount: _filteredUsers.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final user = _filteredUsers[index];
+                              return _buildUserCard(user);
+                            },
+                          ),
                 ),
               ],
             ),
@@ -137,9 +139,7 @@ class _UserListScreenState extends State<UserListScreen> {
               decoration: InputDecoration(
                 labelText: 'Поиск пользователей',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 isDense: true,
               ),
               onChanged: (value) {
@@ -198,17 +198,10 @@ class _UserListScreenState extends State<UserListScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor:
-              isTeacher ? const Color(0xFF9575CD) : const Color(0xFF673AB7),
-          child: Icon(
-            isTeacher ? Icons.person : Icons.school,
-            color: Colors.white,
-          ),
+          backgroundColor: isTeacher ? const Color(0xFF9575CD) : const Color(0xFF673AB7),
+          child: Icon(isTeacher ? Icons.person : Icons.school, color: Colors.white),
         ),
-        title: Text(
-          fullName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: Text(fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
         trailing: IconButton(
           icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -228,19 +221,13 @@ class _UserListScreenState extends State<UserListScreen> {
             title: const Text('Удаление пользователя'),
             content: Text('Вы уверены, что хотите удалить $fullName?'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Отмена'),
-              ),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
                   _deleteUser(user['id'], user['role']);
                 },
-                child: const Text(
-                  'Удалить',
-                  style: TextStyle(color: Colors.red),
-                ),
+                child: const Text('Удалить', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),

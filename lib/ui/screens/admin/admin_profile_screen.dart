@@ -45,9 +45,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
     final admin = await _headService.getHeadById(userId);
     if (admin != null) {
-      final inst = await _institutionService.getInstitutionById(
-        admin.institutionId,
-      );
+      final inst = await _institutionService.getInstitutionById(admin.institutionId);
       setState(() {
         _admin = admin;
         _institution = inst;
@@ -65,9 +63,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final confirm = _confirmPasswordController.text.trim();
 
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
       setState(() => _isSaving = false);
       return;
     }
@@ -91,18 +87,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     try {
       if (updatedData.isNotEmpty) {
         await _headService.updateHeadData(_admin!.id, updatedData);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Профиль обновлён')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Профиль обновлён')));
       }
       setState(() {
         _isEditing = false;
         _loadAdminData();
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка при обновлении: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при обновлении: $e')));
     } finally {
       setState(() => _isSaving = false);
     }
@@ -146,9 +138,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           constraints: const BoxConstraints(maxWidth: 600),
                           child: Card(
                             elevation: 8,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             child: Padding(
                               padding: const EdgeInsets.all(24),
                               child: Column(
@@ -159,9 +149,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                   Center(
                                     child: Text(
                                       '${_admin!.name} ${_admin!.surname}',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.headlineSmall?.copyWith(
+                                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: Colors.deepPurple,
                                       ),
@@ -174,9 +162,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                       _institution?.name ?? '',
                                       style: Theme.of(
                                         context,
-                                      ).textTheme.bodyMedium?.copyWith(
-                                        color: Colors.deepPurple.shade300,
-                                      ),
+                                      ).textTheme.bodyMedium?.copyWith(color: Colors.deepPurple.shade300),
                                     ),
                                   ),
                                   const Divider(height: 32),
@@ -189,10 +175,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                   AnimatedCrossFade(
                                     firstChild: _editButton(),
                                     secondChild: _editForm(),
-                                    crossFadeState:
-                                        _isEditing
-                                            ? CrossFadeState.showSecond
-                                            : CrossFadeState.showFirst,
+                                    crossFadeState: _isEditing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                                     duration: const Duration(milliseconds: 300),
                                   ),
                                 ],
@@ -215,24 +198,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       backgroundColor: Colors.deepPurple.shade200,
       child: Text(
         initials.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
+        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
       ),
     );
   }
 
   Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Colors.deepPurple,
-      ),
-    );
+    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple));
   }
 
   Widget _infoRow(String label, String value) {
@@ -240,10 +212,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value)),
-        ],
+        children: [Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Text(value))],
       ),
     );
   }
@@ -272,11 +241,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           _buildField(_loginController, 'Логин'),
           _buildField(_passwordController, 'Пароль', obscure: true),
           if (_passwordController.text.isNotEmpty)
-            _buildField(
-              _confirmPasswordController,
-              'Подтвердите пароль',
-              obscure: true,
-            ),
+            _buildField(_confirmPasswordController, 'Подтвердите пароль', obscure: true),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -288,10 +253,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                           ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                           : const Text('Сохранить'),
                   onPressed: _isSaving ? null : _saveChanges,
@@ -322,10 +284,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         keyboardType: type,
         obscureText: obscure,
       ),

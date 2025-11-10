@@ -9,8 +9,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   bool _isSkipping = false;
@@ -18,15 +17,9 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this);
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
 
     _controller.forward();
     Timer(const Duration(seconds: 4), () {
@@ -55,10 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFFEDE7F6),
-              Color(0xFFD1C4E9),
-            ],
+            colors: [Color(0xFFEDE7F6), Color(0xFFD1C4E9)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -96,17 +86,11 @@ class _SplashScreenState extends State<SplashScreen>
                             const SizedBox(height: 12),
                             const Text(
                               'Загрузка данных...',
-                              style: TextStyle(
-                                color: Colors.black54,
-                                fontSize: 16,
-                                fontStyle: FontStyle.italic,
-                              ),
+                              style: TextStyle(color: Colors.black54, fontSize: 16, fontStyle: FontStyle.italic),
                             ),
                             const SizedBox(height: 30),
                             const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF7E57C2),
-                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7E57C2)),
                             ),
                           ],
                         ),

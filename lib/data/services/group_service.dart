@@ -5,10 +5,7 @@ class GroupService {
   final _client = Supabase.instance.client;
   Future<List<Group>> getGroups(String institutionId) async {
     try {
-      final response = await _client
-          .from('groups')
-          .select()
-          .eq('institution_id', institutionId);
+      final response = await _client.from('groups').select().eq('institution_id', institutionId);
       if (response == null) return [];
       final List<dynamic> data = response as List<dynamic>;
       return data.map((e) => Group.fromMap(e as Map<String, dynamic>)).toList();

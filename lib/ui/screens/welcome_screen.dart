@@ -13,10 +13,7 @@ class WelcomeScreen extends StatelessWidget {
       fontWeight: FontWeight.w800,
       color: const Color(0xFF453190),
     );
-    final subtitleStyle = TextStyle(
-      fontSize: size.width.clamp(14.0, 18.0),
-      color: Colors.black.withOpacity(0.7),
-    );
+    final subtitleStyle = TextStyle(fontSize: size.width.clamp(14.0, 18.0), color: Colors.black.withOpacity(0.7));
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Container(
@@ -37,9 +34,7 @@ class WelcomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   physics: const ClampingScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: IntrinsicHeight(
                       child: Column(
                         children: [
@@ -51,11 +46,7 @@ class WelcomeScreen extends StatelessWidget {
                             fit: BoxFit.contain,
                           ),
                           const SizedBox(height: 24),
-                          Text(
-                            'EduTrack',
-                            textAlign: TextAlign.center,
-                            style: titleStyle,
-                          ),
+                          Text('EduTrack', textAlign: TextAlign.center, style: titleStyle),
                           const SizedBox(height: 12),
                           Text(
                             'Цифровая платформа для образовательных учреждений.\nУчёт, контроль, обучение — в одном месте.',
@@ -70,55 +61,31 @@ class WelcomeScreen extends StatelessWidget {
                               style: ElevatedButton.styleFrom(
                                 foregroundColor: Colors.white,
                                 backgroundColor: const Color(0xFF5E35B1),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 elevation: 3,
                               ),
                               child: const Text('Войти'),
                             ),
                           ),
                           const SizedBox(height: 20),
-                          SizedBox(
-                            width: buttonWidth,
-                            child: const Divider(
-                              thickness: 1,
-                              color: Colors.white60,
-                            ),
-                          ),
+                          SizedBox(width: buttonWidth, child: const Divider(thickness: 1, color: Colors.white60)),
                           const SizedBox(height: 20),
                           SizedBox(
                             width: buttonWidth,
                             child: OutlinedButton(
-                              onPressed:
-                                  () => context.push('/institution-request'),
+                              onPressed: () => context.push('/institution-request'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFF5E35B1),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                side: const BorderSide(
-                                  color: Color(0xFF5E35B1),
-                                  width: 1.5,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                side: const BorderSide(color: Color(0xFF5E35B1), width: 1.5),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                               child: const Text('Зарегистрировать ОО'),
                             ),
                           ),
                           const SizedBox(height: 20),
-                          SizedBox(
-                            width: buttonWidth,
-                            child: const Divider(
-                              thickness: 1,
-                              color: Colors.white60,
-                            ),
-                          ),
+                          SizedBox(width: buttonWidth, child: const Divider(thickness: 1, color: Colors.white60)),
                           const SizedBox(height: 20),
                           SizedBox(
                             width: buttonWidth,
@@ -126,10 +93,7 @@ class WelcomeScreen extends StatelessWidget {
                               onPressed: () => context.push('/check-status'),
                               style: TextButton.styleFrom(
                                 foregroundColor: const Color(0xFF7E57C2),
-                                textStyle: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
+                                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                               ),
                               child: const Text('Проверить статус заявки'),
                             ),

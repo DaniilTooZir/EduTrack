@@ -38,11 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _errorMessage = 'Неверный логин или пароль.');
       } else {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.setUser(
-          authResult.userId,
-          authResult.role,
-          authResult.institutionId,
-        );
+        userProvider.setUser(authResult.userId, authResult.role, authResult.institutionId);
         switch (authResult.role) {
           case 'admin':
             context.go('/admin-home');
@@ -105,20 +101,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: maxWidth),
                     child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 6,
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.lock_outline,
-                              size: 48,
-                              color: Color(0xFF5E35B1),
-                            ),
+                            const Icon(Icons.lock_outline, size: 48, color: Color(0xFF5E35B1)),
                             const SizedBox(height: 16),
                             Text(
                               'Вход в систему',
@@ -131,18 +121,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 24),
                             TextField(
                               controller: _loginController,
-                              decoration: const InputDecoration(
-                                labelText: 'Логин',
-                                border: OutlineInputBorder(),
-                              ),
+                              decoration: const InputDecoration(labelText: 'Логин', border: OutlineInputBorder()),
                             ),
                             const SizedBox(height: 16),
                             TextField(
                               controller: _passwordController,
-                              decoration: const InputDecoration(
-                                labelText: 'Пароль',
-                                border: OutlineInputBorder(),
-                              ),
+                              decoration: const InputDecoration(labelText: 'Пароль', border: OutlineInputBorder()),
                               obscureText: true,
                             ),
                             const SizedBox(height: 24),
@@ -154,31 +138,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                   backgroundColor: const Color(0xFF5E35B1),
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   textStyle: const TextStyle(fontSize: 16),
                                 ),
-                                child: _isLoading
-                                    ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                                    : const Text('Войти'),
+                                child:
+                                    _isLoading
+                                        ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        )
+                                        : const Text('Войти'),
                               ),
                             ),
                             if (_errorMessage != null) ...[
                               const SizedBox(height: 16),
                               Text(
                                 _errorMessage!,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                                 textAlign: TextAlign.center,
                               ),
                             ],

@@ -87,45 +87,31 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   }
 
   Future<void> _addHomework() async {
-    if (_selectedSubjectId == null ||
-        _selectedGroupId == null ||
-        _titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Пожалуйста, выберите предмет, группу и заполните заголовок',
-          ),
-        ),
-      );
+    if (_selectedSubjectId == null || _selectedGroupId == null || _titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Пожалуйста, выберите предмет, группу и заполните заголовок')));
       return;
     }
     setState(() => _isSaving = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final institutionId =
-          Provider.of<UserProvider>(context, listen: false).institutionId!;
+      final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId!;
       await _homeworkService.addHomework(
         institutionId: userProvider.institutionId!,
         subjectId: _selectedSubjectId!,
         groupId: _selectedGroupId!,
         title: _titleController.text.trim(),
-        description:
-            _descriptionController.text.trim().isEmpty
-                ? null
-                : _descriptionController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         dueDate: _dueDate,
       );
       await _loadData();
       _titleController.clear();
       _descriptionController.clear();
       _dueDate = null;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Домашнее задание успешно добавлено')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Домашнее задание успешно добавлено')));
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка при добавлении: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при добавлении: $e')));
     } finally {
       setState(() => _isSaving = false);
     }
@@ -140,9 +126,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
 
   void _showEditHomeworkDialog(Homework hw) {
     final _editTitleController = TextEditingController(text: hw.title);
-    final _editDescriptionController = TextEditingController(
-      text: hw.description ?? '',
-    );
+    final _editDescriptionController = TextEditingController(text: hw.description ?? '');
     DateTime? _editDueDate = hw.dueDate;
     String? _editSelectedGroupId = hw.group?.id;
 
@@ -171,19 +155,9 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                   children: [
                     DropdownButtonFormField<String>(
                       value: _editSelectedGroupId,
-                      decoration: const InputDecoration(
-                        labelText: 'Выберите группу',
-                        border: OutlineInputBorder(),
-                      ),
+                      decoration: const InputDecoration(labelText: 'Выберите группу', border: OutlineInputBorder()),
                       items:
-                          _groups
-                              .map(
-                                (group) => DropdownMenuItem(
-                                  value: group.id,
-                                  child: Text(group.name),
-                                ),
-                              )
-                              .toList(),
+                          _groups.map((group) => DropdownMenuItem(value: group.id, child: Text(group.name))).toList(),
                       onChanged: (value) {
                         setState(() {
                           _editSelectedGroupId = value;
@@ -211,37 +185,27 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                 : 'Дата сдачи: ${_editDueDate!.toLocal().toString().split(' ')[0]}',
                           ),
                         ),
-                        TextButton(
-                          onPressed: _selectEditDueDate,
-                          child: const Text('Выбрать дату'),
-                        ),
+                        TextButton(onPressed: _selectEditDueDate, child: const Text('Выбрать дату')),
                       ],
                     ),
                   ],
                 ),
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Отмена'),
-                ),
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Отмена')),
                 ElevatedButton(
                   onPressed: () async {
                     final newTitle = _editTitleController.text.trim();
                     if (newTitle.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Заголовок не может быть пустым'),
-                        ),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('Заголовок не может быть пустым')));
                       return;
                     }
                     if (_editSelectedGroupId == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Пожалуйста, выберите группу'),
-                        ),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('Пожалуйста, выберите группу')));
                       return;
                     }
                     try {
@@ -254,15 +218,13 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                       );
                       Navigator.of(context).pop();
                       await _loadData();
-                      ScaffoldMessenger.of(_scaffoldContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('Домашнее задание обновлено'),
-                        ),
-                      );
+                      ScaffoldMessenger.of(
+                        _scaffoldContext,
+                      ).showSnackBar(const SnackBar(content: Text('Домашнее задание обновлено')));
                     } catch (e) {
-                      ScaffoldMessenger.of(_scaffoldContext).showSnackBar(
-                        SnackBar(content: Text('Ошибка обновления: $e')),
-                      );
+                      ScaffoldMessenger.of(
+                        _scaffoldContext,
+                      ).showSnackBar(SnackBar(content: Text('Ошибка обновления: $e')));
                     }
                   },
                   child: const Text('Сохранить'),
@@ -281,27 +243,20 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Удалить домашнее задание?'),
-          content: Text(
-            'Вы уверены, что хотите удалить задание "${hw.title}"?',
-          ),
+          content: Text('Вы уверены, что хотите удалить задание "${hw.title}"?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Отмена'),
-            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Отмена')),
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
                 try {
                   await _homeworkService.deleteHomework(hw.id);
                   await _loadData();
-                  ScaffoldMessenger.of(_scaffoldContext).showSnackBar(
-                    const SnackBar(content: Text('Домашнее задание удалено')),
-                  );
+                  ScaffoldMessenger.of(
+                    _scaffoldContext,
+                  ).showSnackBar(const SnackBar(content: Text('Домашнее задание удалено')));
                 } catch (e) {
-                  ScaffoldMessenger.of(_scaffoldContext).showSnackBar(
-                    SnackBar(content: Text('Ошибка удаления: $e')),
-                  );
+                  ScaffoldMessenger.of(_scaffoldContext).showSnackBar(SnackBar(content: Text('Ошибка удаления: $e')));
                 }
               },
               child: const Text('Удалить'),
@@ -330,19 +285,14 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Ваши домашние задания',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
+              const Text('Ваши домашние задания', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               if (_homeworks.isEmpty)
                 const Text('У вас пока нет домашних заданий.')
               else
                 ..._homeworks.map((hw) {
                   final dueDateText =
-                      hw.dueDate != null
-                          ? 'До ${hw.dueDate!.toLocal().toString().split(' ')[0]}'
-                          : 'Без срока';
+                      hw.dueDate != null ? 'До ${hw.dueDate!.toLocal().toString().split(' ')[0]}' : 'Без срока';
                   final groupName = hw.group?.name ?? 'Группа не указана';
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 6),
@@ -373,19 +323,8 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _selectedGroupId,
-                decoration: const InputDecoration(
-                  labelText: 'Выберите группу',
-                  border: OutlineInputBorder(),
-                ),
-                items:
-                    _groups
-                        .map(
-                          (group) => DropdownMenuItem(
-                            value: group.id,
-                            child: Text(group.name),
-                          ),
-                        )
-                        .toList(),
+                decoration: const InputDecoration(labelText: 'Выберите группу', border: OutlineInputBorder()),
+                items: _groups.map((group) => DropdownMenuItem(value: group.id, child: Text(group.name))).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedGroupId = value;
@@ -395,19 +334,8 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _selectedSubjectId,
-                decoration: const InputDecoration(
-                  labelText: 'Выберите предмет',
-                  border: OutlineInputBorder(),
-                ),
-                items:
-                    _subjects
-                        .map(
-                          (subj) => DropdownMenuItem(
-                            value: subj.id,
-                            child: Text(subj.name),
-                          ),
-                        )
-                        .toList(),
+                decoration: const InputDecoration(labelText: 'Выберите предмет', border: OutlineInputBorder()),
+                items: _subjects.map((subj) => DropdownMenuItem(value: subj.id, child: Text(subj.name))).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedSubjectId = value;
@@ -417,19 +345,13 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Заголовок задания',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Заголовок задания', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _descriptionController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Описание (необязательно)',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Описание (необязательно)', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               Row(
@@ -441,10 +363,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           : 'Дата сдачи: ${_dueDate!.toLocal().toString().split(' ')[0]}',
                     ),
                   ),
-                  TextButton(
-                    onPressed: _selectDueDate,
-                    child: const Text('Выбрать дату'),
-                  ),
+                  TextButton(onPressed: _selectDueDate, child: const Text('Выбрать дату')),
                 ],
               ),
               const SizedBox(height: 12),
@@ -457,10 +376,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                           : const Text('Добавить домашнее задание'),
                 ),

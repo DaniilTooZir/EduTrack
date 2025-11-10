@@ -3,8 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class UsersFetchService {
   final SupabaseClient _client;
 
-  UsersFetchService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  UsersFetchService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
 
   Future<List<Map<String, dynamic>>> fetchTeachers(String institutionId) async {
     final response = await _client

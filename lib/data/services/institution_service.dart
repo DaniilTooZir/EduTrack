@@ -5,11 +5,7 @@ class InstitutionService {
   final _client = Supabase.instance.client;
   Future<Institution?> getInstitutionById(String id) async {
     try {
-      final data = await _client
-          .from('institutions')
-          .select()
-          .eq('id', id)
-          .maybeSingle();
+      final data = await _client.from('institutions').select().eq('id', id).maybeSingle();
       if (data == null) return null;
       return Institution.fromMap(data);
     } catch (e) {

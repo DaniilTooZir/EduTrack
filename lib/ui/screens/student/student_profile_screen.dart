@@ -44,9 +44,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     if (userId == null) return;
     final student = await _studentService.getStudentById(userId);
     if (student != null) {
-      final inst = await _institutionService.getInstitutionById(
-        student.institutionId,
-      );
+      final inst = await _institutionService.getInstitutionById(student.institutionId);
       setState(() {
         _student = student;
         _institution = inst;
@@ -62,9 +60,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
       setState(() => _isSaving = false);
       return;
     }
@@ -86,18 +82,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     try {
       if (updatedData.isNotEmpty) {
         await _studentService.updateStudentData(_student!.id, updatedData);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Профиль обновлён')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Профиль обновлён')));
       }
       setState(() {
         _isEditing = false;
         _loadStudentData();
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка при обновлении: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при обновлении: $e')));
     } finally {
       setState(() => _isSaving = false);
     }
@@ -154,47 +146,27 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                                   child: Column(
                                     children: [
                                       _buildField(_nameController, 'Имя'),
-                                      _buildField(
-                                        _surnameController,
-                                        'Фамилия',
-                                      ),
-                                      _buildField(
-                                        _emailController,
-                                        'Email',
-                                        type: TextInputType.emailAddress,
-                                      ),
+                                      _buildField(_surnameController, 'Фамилия'),
+                                      _buildField(_emailController, 'Email', type: TextInputType.emailAddress),
                                       _buildField(_loginController, 'Логин'),
-                                      _buildField(
-                                        _passwordController,
-                                        'Пароль',
-                                        obscure: true,
-                                      ),
+                                      _buildField(_passwordController, 'Пароль', obscure: true),
                                       if (_passwordController.text.isNotEmpty)
-                                        _buildField(
-                                          _confirmPasswordController,
-                                          'Подтвердите пароль',
-                                          obscure: true,
-                                        ),
+                                        _buildField(_confirmPasswordController, 'Подтвердите пароль', obscure: true),
                                       const SizedBox(height: 24),
                                       Row(
                                         children: [
                                           Expanded(
                                             child: ElevatedButton(
-                                              onPressed:
-                                                  _isSaving
-                                                      ? null
-                                                      : _saveChanges,
+                                              onPressed: _isSaving ? null : _saveChanges,
                                               child:
                                                   _isSaving
                                                       ? const SizedBox(
                                                         height: 20,
                                                         width: 20,
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                              strokeWidth: 2,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
                                                       )
                                                       : const Text('Сохранить'),
                                             ),
@@ -237,10 +209,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value)),
-        ],
+        children: [Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)), Expanded(child: Text(value))],
       ),
     );
   }
@@ -262,10 +231,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           if (label == 'Email' && (val == null || val.isEmpty)) {
             return 'Введите email';
           }
-          if (label == 'Пароль' &&
-              val != null &&
-              val.isNotEmpty &&
-              val.length < 6) {
+          if (label == 'Пароль' && val != null && val.isNotEmpty && val.length < 6) {
             return 'Пароль должен быть не менее 6 символов';
           }
           return null;

@@ -17,47 +17,20 @@ final GoRouter router = GoRouter(
   routes: [
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/', builder: (context, state) => const WelcomeScreen()),
-    GoRoute(
-      path: '/institution-request',
-      builder: (context, state) => const InstitutionRequestScreen(),
-    ),
-    GoRoute(
-      path: '/check-status',
-      builder: (context, state) => const CheckRequestStatusScreen(),
-    ),
+    GoRoute(path: '/institution-request', builder: (context, state) => const InstitutionRequestScreen()),
+    GoRoute(path: '/check-status', builder: (context, state) => const CheckRequestStatusScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-    GoRoute(
-      path: '/admin-home',
-      builder: (context, state) => const AdminHomeScreen(),
-    ),
-    GoRoute(
-      path: '/teacher-home',
-      builder: (context, state) => const TeacherHomeScreen(),
-    ),
-    GoRoute(
-      path: '/student-home',
-      builder: (context, state) => const StudentHomeScreen(),
-    ),
-    GoRoute(
-      path: '/admin-add-user',
-      builder: (context, state) => const AddUserScreen(),
-    ),
-    GoRoute(
-      path: '/schedule-operator-home',
-      builder: (context, state) => const ScheduleOperatorHomeScreen(),
-    ),
+    GoRoute(path: '/admin-home', builder: (context, state) => const AdminHomeScreen()),
+    GoRoute(path: '/teacher-home', builder: (context, state) => const TeacherHomeScreen()),
+    GoRoute(path: '/student-home', builder: (context, state) => const StudentHomeScreen()),
+    GoRoute(path: '/admin-add-user', builder: (context, state) => const AddUserScreen()),
+    GoRoute(path: '/schedule-operator-home', builder: (context, state) => const ScheduleOperatorHomeScreen()),
   ],
   redirect: (context, state) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final loggedIn = userProvider.userId != null && userProvider.role != null;
 
-    final publicPaths = [
-      '/',
-      '/login',
-      '/splash',
-      '/institution-request',
-      '/check-status',
-    ];
+    final publicPaths = ['/', '/login', '/splash', '/institution-request', '/check-status'];
 
     if (!loggedIn && !publicPaths.contains(state.matchedLocation)) {
       return '/';

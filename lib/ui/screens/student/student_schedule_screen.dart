@@ -34,12 +34,9 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка загрузки расписания: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Ошибка загрузки расписания: $e'), backgroundColor: Colors.redAccent));
       }
     }
   }
@@ -52,10 +49,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     }
     if (_schedule.isEmpty) {
       return Center(
-        child: Text(
-          'Расписание отсутствует.',
-          style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey[700]),
-        ),
+        child: Text('Расписание отсутствует.', style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey[700])),
       );
     }
     final grouped = <int, List<Schedule>>{};
@@ -78,68 +72,43 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
             children:
                 grouped.entries.map((entry) {
                   final dayName = _weekdayName(entry.key);
-                  final lessons =
-                      entry.value
-                        ..sort((a, b) => a.startTime.compareTo(b.startTime));
+                  final lessons = entry.value..sort((a, b) => a.startTime.compareTo(b.startTime));
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         dayName,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A148C),
-                        ),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
                       ),
                       const SizedBox(height: 10),
                       ...lessons.map(
                         (s) => Card(
                           elevation: 4,
                           margin: const EdgeInsets.symmetric(vertical: 6),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           color: Colors.white.withOpacity(0.85),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 16,
-                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.access_time,
-                                      size: 20,
-                                      color: Colors.deepPurple,
-                                    ),
+                                    const Icon(Icons.access_time, size: 20, color: Colors.deepPurple),
                                     const SizedBox(width: 8),
                                     Text(
                                       '${s.startTime} – ${s.endTime}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.book,
-                                      size: 20,
-                                      color: Colors.deepPurple,
-                                    ),
+                                    const Icon(Icons.book, size: 20, color: Colors.deepPurple),
                                     const SizedBox(width: 8),
                                     Expanded(
-                                      child: Text(
-                                        s.subjectName ?? 'неизвестно',
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
+                                      child: Text(s.subjectName ?? 'неизвестно', style: const TextStyle(fontSize: 16)),
                                     ),
                                   ],
                                 ),
@@ -159,17 +128,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
   }
 
   String _weekdayName(int weekday) {
-    const days = [
-      'Понедельник',
-      'Вторник',
-      'Среда',
-      'Четверг',
-      'Пятница',
-      'Суббота',
-      'Воскресенье',
-    ];
-    return (weekday >= 1 && weekday <= 7)
-        ? days[weekday - 1]
-        : 'Неизвестный день';
+    const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    return (weekday >= 1 && weekday <= 7) ? days[weekday - 1] : 'Неизвестный день';
   }
 }

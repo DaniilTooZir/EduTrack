@@ -13,29 +13,22 @@ class InstitutionModerationService {
         final email = request['email'];
 
         try {
-          final existingAdmin = await SupabaseConnection.client
-              .from('education_heads')
-              .select()
-              .eq('email', email);
+          final existingAdmin = await SupabaseConnection.client.from('education_heads').select().eq('email', email);
 
           if (existingAdmin.isEmpty) {
             final login = _generateLogin(request['head_name'], request['head_surname']);
             final password = _generatePassword();
 
-            final institutionInsert = await SupabaseConnection.client
-                .from('institutions')
-                .insert({
-              'name': request['name'],
-              'address': request['address'],
-            })
-                .select('id')
-                .single();
+            final institutionInsert =
+                await SupabaseConnection.client
+                    .from('institutions')
+                    .insert({'name': request['name'], 'address': request['address']})
+                    .select('id')
+                    .single();
 
             final institutionId = institutionInsert['id'];
 
-            await SupabaseConnection.client
-                .from('education_heads')
-                .insert({
+            await SupabaseConnection.client.from('education_heads').insert({
               'name': request['head_name'],
               'surname': request['head_surname'],
               'email': email,

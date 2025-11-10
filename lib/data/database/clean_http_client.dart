@@ -6,8 +6,7 @@ class CleanHttpClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     if (request.headers.containsKey('X-Supabase-Client-Platform-Version')) {
-      request.headers['X-Supabase-Client-Platform-Version'] =
-      'Windows 10 Pro 10.0';
+      request.headers['X-Supabase-Client-Platform-Version'] = 'Windows 10 Pro 10.0';
     }
     return _inner.send(request);
   }

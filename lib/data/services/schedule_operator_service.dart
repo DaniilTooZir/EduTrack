@@ -6,11 +6,7 @@ class ScheduleOperatorService {
 
   static Future<ScheduleOperator?> getOperatorByLogin(String login) async {
     try {
-      final data = await client
-          .from('schedule_operators')
-          .select()
-          .eq('login', login)
-          .maybeSingle();
+      final data = await client.from('schedule_operators').select().eq('login', login).maybeSingle();
       if (data != null) {
         return ScheduleOperator.fromMap(data);
       }
@@ -23,11 +19,7 @@ class ScheduleOperatorService {
 
   static Future<ScheduleOperator?> getById(String id) async {
     try {
-      final data = await client
-          .from('schedule_operators')
-          .select()
-          .eq('id', id)
-          .maybeSingle();
+      final data = await client.from('schedule_operators').select().eq('id', id).maybeSingle();
       if (data != null) {
         return ScheduleOperator.fromMap(data);
       }

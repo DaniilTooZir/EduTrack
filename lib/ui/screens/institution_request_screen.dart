@@ -5,8 +5,7 @@ class InstitutionRequestScreen extends StatefulWidget {
   const InstitutionRequestScreen({super.key});
 
   @override
-  State<InstitutionRequestScreen> createState() =>
-      _InstitutionRequestScreenState();
+  State<InstitutionRequestScreen> createState() => _InstitutionRequestScreenState();
 }
 
 class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
@@ -34,21 +33,13 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
         headName: _headNameController.text.trim(),
         headSurname: _headSurnameController.text.trim(),
         email: _emailController.text.trim(),
-        phone:
-            _phoneController.text.trim().isEmpty
-                ? null
-                : _phoneController.text.trim(),
-        comment:
-            _commentController.text.trim().isEmpty
-                ? null
-                : _commentController.text.trim(),
+        phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+        comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
       );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Заявка успешно отправлена!')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Заявка успешно отправлена!')));
 
       Navigator.of(context).pop();
     } catch (e, stackTrace) {
@@ -59,9 +50,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Произошла ошибка при отправке заявки. Попробуйте позже.',
-          ),
+          content: Text('Произошла ошибка при отправке заявки. Попробуйте позже.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -87,8 +76,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
     final size = MediaQuery.of(context).size;
     final maxWidth = (size.width * 0.85).clamp(320.0, 600.0);
     return Scaffold(
-      appBar: AppBar(title: const Text('Регистрация организации'),
-          backgroundColor: const Color(0xFFBC9BF3)),
+      appBar: AppBar(title: const Text('Регистрация организации'), backgroundColor: const Color(0xFFBC9BF3)),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -104,9 +92,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 6,
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -117,47 +103,22 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                         children: [
                           const Text(
                             'Заполните информацию об организации',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF5E35B1),
-                            ),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5E35B1)),
                           ),
                           const SizedBox(height: 20),
-                          _buildTextField(
-                            _nameController,
-                            'Название организации',
-                            true,
-                          ),
-                          _buildTextField(
-                            _addressController,
-                            'Адрес организации',
-                            true,
-                          ),
-                          _buildTextField(
-                            _headNameController,
-                            'Имя руководителя',
-                            true,
-                          ),
-                          _buildTextField(
-                            _headSurnameController,
-                            'Фамилия руководителя',
-                            true,
-                          ),
+                          _buildTextField(_nameController, 'Название организации', true),
+                          _buildTextField(_addressController, 'Адрес организации', true),
+                          _buildTextField(_headNameController, 'Имя руководителя', true),
+                          _buildTextField(_headSurnameController, 'Фамилия руководителя', true),
                           TextFormField(
                             controller: _emailController,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              border: OutlineInputBorder(),
-                            ),
+                            decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v == null || v.isEmpty) {
                                 return 'Введите email';
                               }
-                              final emailReg = RegExp(
-                                r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                              );
+                              final emailReg = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
                               if (!emailReg.hasMatch(v)) {
                                 return 'Введите корректный email';
                               }
@@ -171,12 +132,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             false,
                             inputType: TextInputType.phone,
                           ),
-                          _buildTextField(
-                            _commentController,
-                            'Комментарий (необязательно)',
-                            false,
-                            maxLines: 3,
-                          ),
+                          _buildTextField(_commentController, 'Комментарий (необязательно)', false, maxLines: 3),
                           const SizedBox(height: 24),
                           SizedBox(
                             width: double.infinity,
@@ -187,23 +143,16 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                                       ? const SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                       )
                                       : const Icon(Icons.send),
                               label: const Text('Отправить заявку'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF5E35B1),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 textStyle: const TextStyle(fontSize: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                             ),
                           ),
@@ -231,17 +180,10 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         keyboardType: inputType,
         maxLines: maxLines,
-        validator:
-            required
-                ? (v) =>
-                    v == null || v.isEmpty ? 'Поле "$label" обязательно' : null
-                : null,
+        validator: required ? (v) => v == null || v.isEmpty ? 'Поле "$label" обязательно' : null : null,
       ),
     );
   }
