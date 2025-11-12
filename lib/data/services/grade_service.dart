@@ -8,16 +8,16 @@ class GradeService {
     try {
       final existing =
           await _supabase
-              .from('grades')
+              .from('grade')
               .select()
               .eq('lessons_id', grade.lessonId)
               .eq('student_id', grade.studentId)
               .maybeSingle();
       if (existing != null) {
         final id = existing['id'];
-        await _supabase.from('grades').update({'value': grade.value}).eq('id', id);
+        await _supabase.from('grade').update({'value': grade.value}).eq('id', id);
       } else {
-        await _supabase.from('grades').insert(grade.toMap());
+        await _supabase.from('grade').insert(grade.toMap());
       }
       return true;
     } catch (e) {
@@ -29,7 +29,7 @@ class GradeService {
   Future<List<Grade>> getGradesByStudent(String studentId) async {
     try {
       final response = await _supabase
-          .from('grades')
+          .from('grade')
           .select()
           .eq('student_id', studentId)
           .order('lessons_id', ascending: false);
@@ -42,7 +42,7 @@ class GradeService {
 
   Future<List<Grade>> getGradesByLesson(int lessonId) async {
     try {
-      final response = await _supabase.from('grades').select().eq('lessons_id', lessonId);
+      final response = await _supabase.from('grade').select().eq('lessons_id', lessonId);
       return (response as List).map((map) => Grade.fromMap(map)).toList();
     } catch (e) {
       print('Ошибка при получении оценок по уроку: $e');
