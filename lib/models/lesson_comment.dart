@@ -1,5 +1,5 @@
 class LessonComment {
-  final int id;
+  final int? id;
   final int lessonId;
   final String? senderTeacherId;
   final String? senderStudentId;
@@ -7,7 +7,7 @@ class LessonComment {
   final DateTime timestamp;
 
   LessonComment({
-    required this.id,
+    this.id,
     required this.lessonId,
     this.senderTeacherId,
     this.senderStudentId,
@@ -29,7 +29,6 @@ class LessonComment {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'lesson_id': lessonId,
       'sender_teacher_id': senderTeacherId,
       'sender_student_id': senderStudentId,
