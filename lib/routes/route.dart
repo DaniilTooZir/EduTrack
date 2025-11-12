@@ -12,6 +12,7 @@ import 'package:edu_track/ui/screens/student/student_home_screen.dart';
 import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_operator_home_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_comment_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_grade_screen.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/splash',
@@ -27,6 +28,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/admin-add-user', builder: (context, state) => const AddUserScreen()),
     GoRoute(path: '/schedule-operator-home', builder: (context, state) => const ScheduleOperatorHomeScreen()),
     GoRoute(path: '/teacher/lesson_comments', builder: (context, state) => const LessonCommentsScreen()),
+    GoRoute(path: '/teacher/grades', builder: (context, state) => const TeacherGradeScreen()),
   ],
   redirect: (context, state) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);

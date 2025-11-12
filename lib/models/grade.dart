@@ -1,10 +1,10 @@
 class Grade {
-  final int id;
+  final int? id;
   final int lessonId;
   final String studentId;
   final int value;
 
-  Grade({required this.id, required this.lessonId, required this.studentId, required this.value});
+  Grade({this.id, required this.lessonId, required this.studentId, required this.value});
 
   factory Grade.fromMap(Map<String, dynamic> map) {
     return Grade(
@@ -16,6 +16,6 @@ class Grade {
   }
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'lessons_id': lessonId, 'student_id': studentId, 'value': value};
+    return {'lessons_id': lessonId, 'student_id': studentId, 'value': value};
   }
 }
