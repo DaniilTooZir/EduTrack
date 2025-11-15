@@ -7,6 +7,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
 import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
 import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
+import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -27,7 +28,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   final HomeworkService _homeworkService = HomeworkService();
 
-  final List<String> _titles = ['Главная', 'Домашние задания', 'Расписание', 'Профиль'];
+  final List<String> _titles = ['Главная', 'Домашние задания', 'Уроки', 'Расписание', 'Профиль'];
 
   final Color primaryColor = const Color(0xFF9575CD);
   final Color drawerStart = const Color(0xFF7E57C2);
@@ -207,8 +208,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       case 1:
         return const StudentHomeworkScreen();
       case 2:
-        return const StudentScheduleScreen();
+        return const StudentLessonScreen();
       case 3:
+        return const StudentScheduleScreen();
+      case 4:
         return const StudentProfileScreen();
       default:
         return const SizedBox.shrink();
@@ -259,8 +262,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
             _buildDrawerItem(Icons.dashboard, 'Главная', 0),
             _buildDrawerItem(Icons.assignment, 'Домашние задания', 1),
-            _buildDrawerItem(Icons.schedule, 'Расписание', 2),
-            _buildDrawerItem(Icons.person, 'Профиль', 3),
+            _buildDrawerItem(Icons.school, 'Уроки', 2),
+            _buildDrawerItem(Icons.schedule, 'Расписание', 3),
+            _buildDrawerItem(Icons.person, 'Профиль', 4),
           ],
         ),
       ),
