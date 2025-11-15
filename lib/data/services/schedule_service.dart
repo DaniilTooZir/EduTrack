@@ -87,11 +87,24 @@ class ScheduleService {
 
   Future<List<Schedule>> getScheduleForTeacher(String teacherId) async {
     final subjectsResponse = await _client.from('subjects').select('id').eq('teacher_id', teacherId);
-    final subjectIds = (subjectsResponse as List).map((s) => s['id'] as String).toList();
+    final subjectIds = (subjectsResponse as List).map((s) => s['id'].toString()).toList();
+    if (subjectIds.isEmpty) return [];
     final response = await _client
         .from('schedule')
         .select('*, subject:subjects(*), group:groups(*)')
         .filter('subject_id', 'in', '(${subjectIds.join(',')})');
-    return (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+    final schedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+    schedules.sort((a, b) {
+      if (a.date != null && b.date != null) {
+        return a.date!.compareTo(b.date!);
+      }
+      if (a.date != null) return -1;
+      if (b.date != null) return 1;
+      final weekdayCompare = a.weekday.compareTo(b.weekday);
+      if (weekdayCompare != 0) return weekdayCompare;
+      return a.startTime.compareTo(b.startTime);
+    });
+
+    return schedules;
   }
 }
