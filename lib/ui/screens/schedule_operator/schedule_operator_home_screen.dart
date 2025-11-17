@@ -14,7 +14,7 @@ class ScheduleOperatorHomeScreen extends StatefulWidget {
 
 class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen> {
   int _selectedIndex = 0;
-  final List<String> _titles = ['Главная', 'Расписание', 'Уроки', 'Профиль'];
+  final List<String> _titles = ['Главная', 'Расписание'];
 
   final Color primaryColor = const Color(0xFF9575CD);
   final Color drawerStart = const Color(0xFF7E57C2);
@@ -75,8 +75,6 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             ),
             _buildDrawerItem(Icons.dashboard, 'Главная', 0),
             _buildDrawerItem(Icons.schedule, 'Расписание', 1),
-            _buildDrawerItem(Icons.class_, 'Уроки', 2),
-            _buildDrawerItem(Icons.person, 'Профиль', 3),
           ],
         ),
       ),
