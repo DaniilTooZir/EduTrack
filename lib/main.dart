@@ -7,6 +7,7 @@ import 'package:edu_track/data/services/moderation_timer.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 
+// Точка входа
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
