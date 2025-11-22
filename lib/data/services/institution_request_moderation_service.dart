@@ -7,13 +7,11 @@ class InstitutionModerationService {
   /// Основной метод: получает все заявки в ожидании и обрабатывает каждую.
   static Future<void> processPendingRequests() async {
     try {
-      // Запрашиваем все заявки со статусом pending
+      // Запрашивает все заявки со статусом pending
       final pendingRequests = await SupabaseConnection.client
           .from('institution_requests')
           .select()
           .eq('status', 'pending');
-
-      // Перебираем каждую заявку
       for (final request in pendingRequests) {
         await _processSingleRequest(request);
       }
@@ -28,14 +26,13 @@ class InstitutionModerationService {
   static Future<void> _processSingleRequest(Map<String, dynamic> request) async {
     final email = request['email'];
     try {
-      // Проверяем, существует ли уже администратор с таким email
+      // Проверяка, существует ли уже администратор с таким email
       final existingAdmin = await SupabaseConnection.client.from('education_heads').select().eq('email', email);
       if (existingAdmin.isEmpty) {
-        // Генерируем учётные данные для руководителя
         final login = _generateLogin(request['head_name'], request['head_surname']);
         final password = _generatePassword();
 
-        // Создаём запись учреждения и получаем ID
+        // Создание запись учреждения и получаем ID
         final institutionInsert =
             await SupabaseConnection.client
                 .from('institutions')
@@ -44,7 +41,7 @@ class InstitutionModerationService {
                 .single();
         final institutionId = institutionInsert['id'];
 
-        // Создаём администратора (руководителя учреждения)
+        // Создание администратора (руководителя учреждения)
         await SupabaseConnection.client.from('education_heads').insert({
           'name': request['head_name'],
           'surname': request['head_surname'],
@@ -55,20 +52,16 @@ class InstitutionModerationService {
           'phone': request['phone'],
         });
 
-        // Обновляем статус заявки
+        // обработка статуса заявки
         await _updateRequestStatus(request['id'], 'approved');
         print('Заявка одобрена для $email. Логин: $login, Пароль: $password');
       } else {
-        // Отклоняем заявку из-за существующего аккаунта
         await _updateRequestStatus(request['id'], 'rejected');
-
         print('Заявка отклонена — аккаунт с таким email уже существует: $email');
       }
     } catch (e, stack) {
       print('Ошибка при обработке заявки для $email: $e');
       print(stack);
-
-      // Помечаем как failed, если что-то пошло не так
       await _updateRequestStatus(request['id'], 'failed');
     }
   }
@@ -89,7 +82,7 @@ class InstitutionModerationService {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#\$%';
     final rand = Random.secure();
     return List.generate(
-      12, // чуть длиннее — безопаснее
+      12,
       (index) => chars[rand.nextInt(chars.length)],
     ).join();
   }
