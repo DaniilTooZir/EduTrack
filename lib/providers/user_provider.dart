@@ -10,6 +10,7 @@ class UserProvider with ChangeNotifier {
   String? get role => _role;
   String? get institutionId => _institutionId;
 
+  // Сохраняет данные пользователя и уведомляет слушателей
   void setUser(String userId, String role, String institutionId) {
     _userId = userId;
     _role = role;
@@ -18,6 +19,7 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Очищает данные пользователя и уведомляет слушателей
   void clearUser() {
     _userId = null;
     _role = null;
@@ -25,6 +27,7 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Загружает данные пользователя из сессии
   void loadSession(String? userId, String? role, String? institutionId) {
     if (userId != null && role != null && institutionId != null) {
       _userId = userId;

@@ -21,6 +21,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
   String? userId;
   String? userRole;
 
+  // Инициализирует экран, получает данные пользователя и загружает комментарии
   @override
   void initState() {
     super.initState();
@@ -34,6 +35,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     });
   }
 
+  // Загружает комментарии урока
   Future<void> _loadComments() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
@@ -45,6 +47,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     });
   }
 
+  // Отправляет новый комментарий
   Future<void> _sendComment() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
@@ -67,6 +70,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     }
   }
 
+  // Строит визуальный элемент комментария
   Widget _buildCommentBubble(LessonComment comment) {
     final isMe =
         (userRole == 'teacher' && comment.senderTeacherId == userId) ||
@@ -91,6 +95,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     );
   }
 
+  // Форматирует время комментария для отображения
   String _formatTimestamp(DateTime timestamp) {
     final time = TimeOfDay.fromDateTime(timestamp);
     return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";

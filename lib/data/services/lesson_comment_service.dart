@@ -4,6 +4,7 @@ import 'package:edu_track/models/lesson_comment.dart';
 class LessonCommentService {
   final _client = Supabase.instance.client;
 
+  // Получает список комментариев для указанного урока
   Future<List<LessonComment>> getCommentsByLessonId(int lessonId) async {
     try {
       final response = await _client
@@ -18,6 +19,7 @@ class LessonCommentService {
     }
   }
 
+  // Добавляет новый комментарий к уроку
   Future<bool> addComment(LessonComment comment) async {
     try {
       await _client.from('lesson_comment').insert(comment.toMap());

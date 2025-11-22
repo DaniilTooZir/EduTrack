@@ -8,6 +8,15 @@
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
+analyzer:
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
+
+  errors:
+    missing_return: error
+    dead_code: warning
+    unused_import: warning
 
 linter:
   # The lint rules applied to this project can be customized in the
@@ -21,6 +30,24 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
+    avoid_print: true
+    prefer_single_quotes: true
+    always_declare_return_types: true
+    avoid_redundant_argument_values: true
+    avoid_returning_null_for_future: true
+    avoid_returning_this: true
+    avoid_type_to_string: true
+    cancel_subscriptions: true
+    close_sinks: true
+    collection_methods_unrelated_type: true
+    combinators_ordering: true
+    directives_ordering: true
+    unawaited_futures: true
+    prefer_final_locals: true
+    prefer_final_in_for_each: true
+    prefer_expression_function_bodies: false
+    use_build_context_synchronously: true
+    unnecessary_lambdas: true
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 

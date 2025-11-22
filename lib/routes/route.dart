@@ -16,6 +16,7 @@ import 'package:edu_track/ui/screens/teacher/teacher_grade_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_attendance_screen.dart';
 import 'package:edu_track/ui/screens/student/student_lesson_comment.dart';
 
+// Настройка маршрутов
 final GoRouter router = GoRouter(
   initialLocation: '/splash',
   routes: [
@@ -34,6 +35,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/teacher/attendance', builder: (context, state) => const LessonAttendanceScreen()),
     GoRoute(path: '/student/lesson_comments', builder: (context, state) => const StudentLessonCommentsScreen())
   ],
+  // Перенаправление в зависимости от состояния авторизации и роли пользователя
   redirect: (context, state) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final loggedIn = userProvider.userId != null && userProvider.role != null;
