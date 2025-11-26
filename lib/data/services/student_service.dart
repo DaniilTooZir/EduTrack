@@ -5,7 +5,9 @@ import 'package:edu_track/models/schedule.dart';
 
 class StudentService {
   final SupabaseClient _client;
+
   StudentService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
+
   Future<Student?> getStudentById(String studentId) async {
     try {
       final response = await _client.from('students').select().eq('id', studentId).single();
@@ -41,12 +43,14 @@ class StudentService {
 
   Future<void> updateStudentData(String studentId, Map<String, dynamic> updatedFields) async {
     try {
-      final response = await _client.from('students').update(updatedFields).eq('id', studentId).select().single();
-      if (response == null) {
-        throw Exception('Обновление не удалось: пустой ответ');
+      await _client.from('students').update(updatedFields).eq('id', studentId);
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        throw Exception('Пользователь с таким Email или Логином уже существует');
       }
+      throw Exception('Ошибка базы данных: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при обновлении данных студента: $e');
+      throw Exception('Неизвестная ошибка при обновлении: $e');
     }
   }
 }

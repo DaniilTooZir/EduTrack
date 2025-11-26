@@ -2,110 +2,35 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserAddService {
   final SupabaseClient _client;
-
   UserAddService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
 
-  Future<void> addStudent({
-    required String name,
-    required String surname,
-    required String email,
-    required String login,
-    required String password,
-    required String institutionId,
-    required String groupId,
-  }) async {
-    try {
-      final response =
-          await _client
-              .from('students')
-              .insert({
-                'name': name,
-                'surname': surname,
-                'email': email,
-                'login': login,
-                'password': password,
-                'institution_id': institutionId,
-                'group_id': groupId,
-                'isHeadman': false,
-              })
-              .select()
-              .single();
+  Future<void> addStudent({required Map<String, dynamic> userData, required String groupId}) async {
+    final fullData = {...userData, 'group_id': groupId, 'isHeadman': false};
 
-      if (response == null) {
-        throw Exception('Пустой ответ от сервера при добавлении студента');
-      }
-      print('[UserAddService] Студент успешно добавлен: $response');
-    } catch (e, stackTrace) {
-      print('[UserAddService] Ошибка при добавлении студента: $e');
-      print('[UserAddService] StackTrace: $stackTrace');
-      rethrow;
-    }
+    await _insertUser('students', fullData, 'студента');
   }
 
-  Future<void> addTeacher({
-    required String name,
-    required String surname,
-    required String email,
-    required String login,
-    required String password,
-    required String institutionId,
-  }) async {
-    try {
-      final response =
-          await _client
-              .from('teachers')
-              .insert({
-                'name': name,
-                'surname': surname,
-                'email': email,
-                'login': login,
-                'password': password,
-                'institution_id': institutionId,
-              })
-              .select()
-              .single();
-
-      if (response == null) {
-        throw Exception('Пустой ответ от сервера при добавлении преподавателя');
-      }
-      print('[UserAddService] Преподаватель успешно добавлен: $response');
-    } catch (e, stackTrace) {
-      print('[UserAddService] Ошибка при добавлении преподавателя: $e');
-      print('[UserAddService] StackTrace: $stackTrace');
-      rethrow;
-    }
+  Future<void> addTeacher(Map<String, dynamic> userData) async {
+    await _insertUser('teachers', userData, 'преподавателя');
   }
 
-  Future<void> addScheduleOperator({
-    required String name,
-    required String surname,
-    required String email,
-    required String login,
-    required String password,
-    required String institutionId,
-  }) async {
-    try {
-      final response =
-          await _client
-              .from('schedule_operators')
-              .insert({
-                'name': name,
-                'surname': surname,
-                'email': email,
-                'login': login,
-                'password': password,
-                'institution_id': institutionId,
-              })
-              .select()
-              .single();
+  Future<void> addScheduleOperator(Map<String, dynamic> userData) async {
+    await _insertUser('schedule_operators', userData, 'оператора расписания');
+  }
 
-      if (response == null) {
-        throw Exception('Пустой ответ от сервера при добавлении оператора');
+  Future<void> _insertUser(String table, Map<String, dynamic> data, String userTypeRu) async {
+    try {
+      final response = await _client.from(table).insert(data).select().single();
+      print('[UserAddService] Успешно добавлен $userTypeRu: ${response['id']}');
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        throw Exception('Пользователь с таким логином или email уже существует');
       }
-      print('[UserAddService] Оператор расписания успешно добавлен: $response');
+      print('[UserAddService] Ошибка БД при добавлении $userTypeRu: ${e.message}');
+      throw Exception('Ошибка базы данных: ${e.message}');
     } catch (e, stackTrace) {
-      print('[UserAddService] Ошибка при добавлении оператора расписания: $e');
-      print('[UserAddService] StackTrace: $stackTrace');
+      print('[UserAddService] Неизвестная ошибка при добавлении $userTypeRu: $e');
+      print(stackTrace);
       rethrow;
     }
   }

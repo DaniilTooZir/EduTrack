@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:edu_track/data/services/institution_request_service.dart';
+import 'package:edu_track/utils/validators.dart';
 
 class InstitutionRequestScreen extends StatefulWidget {
   const InstitutionRequestScreen({super.key});
@@ -22,6 +24,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
   bool _isSubmitting = false;
 
   void _submitRequest() async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
@@ -76,8 +79,13 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
     final size = MediaQuery.of(context).size;
     final maxWidth = (size.width * 0.85).clamp(320.0, 600.0);
     return Scaffold(
-      appBar: AppBar(title: const Text('Регистрация организации'), backgroundColor: const Color(0xFFBC9BF3)),
+      appBar: AppBar(
+        title: const Text('Регистрация организации'),
+        backgroundColor: const Color(0xFFBC9BF3),
+        elevation: 4,
+      ),
       body: Container(
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
@@ -106,33 +114,65 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5E35B1)),
                           ),
                           const SizedBox(height: 20),
-                          _buildTextField(_nameController, 'Название организации', true),
-                          _buildTextField(_addressController, 'Адрес организации', true),
-                          _buildTextField(_headNameController, 'Имя руководителя', true),
-                          _buildTextField(_headSurnameController, 'Фамилия руководителя', true),
-                          TextFormField(
+                          _buildTextField(
+                            controller: _nameController,
+                            label: 'Название организации',
+                            icon: Icons.business,
+                            validator: Validators.validateOrganizationName,
+                            maxLength: 100,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s"\-.,№\(\)«»]')),
+                            ],
+                          ),
+                          _buildTextField(
+                            controller: _addressController,
+                            label: 'Адрес организации',
+                            icon: Icons.location_on,
+                            validator: Validators.validateAddress,
+                            maxLines: 2,
+                            maxLength: 200,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s,\-\.\/\(\)]')),
+                            ],
+                          ),
+                          _buildTextField(
+                            controller: _headNameController,
+                            label: 'Имя руководителя',
+                            icon: Icons.person,
+                            validator: (val) => Validators.validateName(val, 'Имя'),
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
+                          ),
+                          _buildTextField(
+                            controller: _headSurnameController,
+                            label: 'Фамилия руководителя',
+                            icon: Icons.person_outline,
+                            validator: (val) => Validators.validateName(val, 'Фамилия'),
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
+                          ),
+                          _buildTextField(
                             controller: _emailController,
-                            decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return 'Введите email';
-                              }
-                              final emailReg = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                              if (!emailReg.hasMatch(v)) {
-                                return 'Введите корректный email';
-                              }
-                              return null;
-                            },
+                            label: 'Email',
+                            icon: Icons.email,
+                            inputType: TextInputType.emailAddress,
+                            validator: Validators.validateEmail,
                           ),
                           const SizedBox(height: 12),
                           _buildTextField(
-                            _phoneController,
-                            'Телефон (необязательно)',
-                            false,
+                            controller: _phoneController,
+                            label: 'Телефон',
+                            icon: Icons.phone,
                             inputType: TextInputType.phone,
+                            validator: Validators.validatePhone,
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\s\(\)]'))],
                           ),
-                          _buildTextField(_commentController, 'Комментарий (необязательно)', false, maxLines: 3),
+                          _buildTextField(
+                            controller: _commentController,
+                            label: 'Комментарий (необязательно)',
+                            icon: Icons.comment,
+                            maxLines: 3,
+                            maxLength: 300,
+                            validator: (val) => Validators.validateLength(val, max: 300),
+                          ),
                           const SizedBox(height: 24),
                           SizedBox(
                             width: double.infinity,
@@ -169,21 +209,42 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
     );
   }
 
-  Widget _buildTextField(
-    TextEditingController controller,
-    String label,
-    bool required, {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    IconData? icon,
     int maxLines = 1,
+    int? maxLength,
     TextInputType inputType = TextInputType.text,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         keyboardType: inputType,
         maxLines: maxLines,
-        validator: required ? (v) => v == null || v.isEmpty ? 'Поле "$label" обязательно' : null : null,
+        maxLength: maxLength,
+        validator: validator,
+        inputFormatters: inputFormatters,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: icon != null ? Icon(icon, color: const Color(0xFF5E35B1)) : null,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.grey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF5E35B1), width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade50,
+          counterText: "",
+        ),
       ),
     );
   }

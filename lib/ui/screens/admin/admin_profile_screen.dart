@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:edu_track/data/services/education_head_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/validators.dart';
 
 class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
@@ -25,6 +27,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isEditing = false;
+  bool _isPasswordVisible = false;
 
   late final EducationHeadService _headService;
   late final InstitutionService _institutionService;
@@ -42,69 +45,94 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   Future<void> _loadAdminData() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId == null) return;
-
-    final admin = await _headService.getHeadById(userId);
-    if (admin != null) {
-      final inst = await _institutionService.getInstitutionById(admin.institutionId);
-      setState(() {
-        _admin = admin;
-        _institution = inst;
-        _isLoading = false;
-      });
+    try {
+      final admin = await _headService.getHeadById(userId);
+      if (admin != null) {
+        final inst = await _institutionService.getInstitutionById(admin.institutionId);
+        if (mounted) {
+          setState(() {
+            _admin = admin;
+            _institution = inst;
+            _fillControllers();
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _fillControllers() {
+    if (_admin == null) return;
+    _nameController.text = _admin!.name;
+    _surnameController.text = _admin!.surname;
+    _phoneController.text = _admin!.phone;
+    _loginController.text = _admin!.login;
   }
 
   Future<void> _saveChanges() async {
     if (_admin == null) return;
-    setState(() => _isSaving = true);
+    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _isSaving = true);
     final updatedData = <String, dynamic>{};
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
-
     if (password.isNotEmpty && password != confirm) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
       setState(() => _isSaving = false);
       return;
     }
 
-    if (_nameController.text.trim().isNotEmpty) {
+    if (_nameController.text.trim() != _admin!.name) {
       updatedData['name'] = _nameController.text.trim();
     }
-    if (_surnameController.text.trim().isNotEmpty) {
+    if (_surnameController.text.trim() != _admin!.surname) {
       updatedData['surname'] = _surnameController.text.trim();
     }
-    if (_phoneController.text.trim().isNotEmpty) {
+    if (_phoneController.text.trim() != _admin!.phone) {
       updatedData['phone'] = _phoneController.text.trim();
     }
-    if (_loginController.text.trim().isNotEmpty) {
+    if (_loginController.text.trim() != _admin!.login) {
       updatedData['login'] = _loginController.text.trim();
     }
     if (password.isNotEmpty) {
       updatedData['password'] = password;
     }
 
-    try {
-      if (updatedData.isNotEmpty) {
-        await _headService.updateHeadData(_admin!.id, updatedData);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Профиль обновлён')));
-      }
+    if (updatedData.isEmpty) {
       setState(() {
         _isEditing = false;
-        _loadAdminData();
+        _isSaving = false;
       });
+      return;
+    }
+    try {
+      await _headService.updateHeadData(_admin!.id, updatedData);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Профиль обновлён'), backgroundColor: Colors.green));
+        setState(() {
+          _isEditing = false;
+          _passwordController.clear();
+          _confirmPasswordController.clear();
+        });
+        await _loadAdminData();
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при обновлении: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
+      }
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   void _resetChanges() {
-    _nameController.clear();
-    _surnameController.clear();
-    _phoneController.clear();
-    _loginController.clear();
+    _fillControllers();
     _passwordController.clear();
     _confirmPasswordController.clear();
     setState(() => _isEditing = false);
@@ -223,7 +251,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         icon: const Icon(Icons.edit),
         label: const Text('Изменить данные'),
         onPressed: () {
-          _resetChanges();
+          _fillControllers();
           setState(() => _isEditing = true);
         },
       ),
@@ -235,13 +263,67 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       key: _formKey,
       child: Column(
         children: [
-          _buildField(_nameController, 'Имя'),
-          _buildField(_surnameController, 'Фамилия'),
-          _buildField(_phoneController, 'Телефон', type: TextInputType.phone),
-          _buildField(_loginController, 'Логин'),
-          _buildField(_passwordController, 'Пароль', obscure: true),
-          if (_passwordController.text.isNotEmpty)
-            _buildField(_confirmPasswordController, 'Подтвердите пароль', obscure: true),
+          _buildField(
+            controller: _nameController,
+            label: 'Имя',
+            validator: (val) => Validators.validateName(val, 'Имя'),
+          ),
+          _buildField(
+            controller: _surnameController,
+            label: 'Фамилия',
+            validator: (val) => Validators.validateName(val, 'Фамилия'),
+          ),
+          _buildField(
+            controller: _phoneController,
+            label: 'Телефон',
+            type: TextInputType.phone,
+            validator: Validators.validatePhone,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\(\)\s]'))],
+          ),
+          _buildField(
+            controller: _loginController,
+            label: 'Логин',
+            validator: (val) => Validators.requiredField(val, fieldName: 'Логин'),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._-]'))],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: TextFormField(
+              controller: _passwordController,
+              obscureText: !_isPasswordVisible,
+              decoration: InputDecoration(
+                labelText: 'Новый пароль',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                ),
+              ),
+              validator: (val) {
+                if (val == null || val.isEmpty) return null;
+                if (val.length < 6) return 'Минимум 6 символов';
+                return null;
+              },
+            ),
+          ),
+          ValueListenableBuilder(
+            valueListenable: _passwordController,
+            builder: (context, TextEditingValue value, __) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: !_isPasswordVisible,
+                  decoration: const InputDecoration(labelText: 'Подтвердите пароль', border: OutlineInputBorder()),
+                  validator: (val) {
+                    if (val != _passwordController.text) return 'Пароли не совпадают';
+                    return null;
+                  },
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -251,8 +333,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   label:
                       _isSaving
                           ? const SizedBox(
-                            height: 20,
                             width: 20,
+                            height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                           : const Text('Сохранить'),
@@ -274,11 +356,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     );
   }
 
-  Widget _buildField(
-    TextEditingController controller,
-    String label, {
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
     TextInputType type = TextInputType.text,
     bool obscure = false,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -287,6 +371,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         keyboardType: type,
         obscureText: obscure,
+        validator: validator,
+        inputFormatters: inputFormatters,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
       ),
     );
   }

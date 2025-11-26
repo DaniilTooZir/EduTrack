@@ -55,7 +55,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 4,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
         title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [

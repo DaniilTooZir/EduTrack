@@ -7,11 +7,18 @@ class InstitutionModerationService {
   /// Основной метод: получает все заявки в ожидании и обрабатывает каждую.
   static Future<void> processPendingRequests() async {
     try {
+      print('[Moderation] Запуск проверки заявок...');
       // Запрашивает все заявки со статусом pending
       final pendingRequests = await SupabaseConnection.client
           .from('institution_requests')
           .select()
           .eq('status', 'pending');
+
+      if (pendingRequests.isEmpty) {
+        print('[Moderation] Нет новых заявок.');
+        return;
+      }
+
       for (final request in pendingRequests) {
         await _processSingleRequest(request);
       }
@@ -54,10 +61,10 @@ class InstitutionModerationService {
 
         // обработка статуса заявки
         await _updateRequestStatus(request['id'], 'approved');
-        print('Заявка одобрена для $email. Логин: $login, Пароль: $password');
+        print('Заявка одобрена для $email. Логин: $login');
       } else {
         await _updateRequestStatus(request['id'], 'rejected');
-        print('Заявка отклонена — аккаунт с таким email уже существует: $email');
+        print('Заявка отклонена — дубликат email: $email');
       }
     } catch (e, stack) {
       print('Ошибка при обработке заявки для $email: $e');
@@ -71,19 +78,30 @@ class InstitutionModerationService {
     await SupabaseConnection.client.from('institution_requests').update({'status': status}).eq('id', id);
   }
 
-  /// Генерация логина: имя.фамилия + случайные 4 цифры.
+  /// Генерация логина
   static String _generateLogin(String firstName, String lastName) {
+    final cleanFirst = _transliterate(firstName.toLowerCase().trim());
+    final cleanLast = _transliterate(lastName.toLowerCase().trim());
     final randomNumber = Random().nextInt(9000) + 1000;
-    return '${firstName.toLowerCase()}.${lastName.toLowerCase()}$randomNumber';
+    return '$cleanFirst.$cleanLast$randomNumber';
+  }
+
+  static String _transliterate(String text) {
+    const ru = 'а-б-в-г-д-е-ё-ж-з-и-й-к-л-м-н-о-п-р-с-т-у-ф-х-ц-ч-ш-щ-ъ-ы-ь-э-ю-я';
+    const en = 'a-b-v-g-d-e-yo-zh-z-i-y-k-l-m-n-o-p-r-s-t-u-f-kh-ts-ch-sh-shch--y--e-yu-ya';
+    final ruList = ru.split('-');
+    final enList = en.split('-');
+    String res = text;
+    for (int i = 0; i < ruList.length; i++) {
+      res = res.replaceAll(ruList[i], enList[i]);
+    }
+    return res.replaceAll(RegExp(r'[^a-z0-9]'), '');
   }
 
   /// Генерация безопасного пароля.
   static String _generatePassword() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#\$%';
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#%';
     final rand = Random.secure();
-    return List.generate(
-      12,
-      (index) => chars[rand.nextInt(chars.length)],
-    ).join();
+    return List.generate(3, (index) => chars[rand.nextInt(chars.length)]).join();
   }
 }

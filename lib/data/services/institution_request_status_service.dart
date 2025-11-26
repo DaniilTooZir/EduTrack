@@ -1,13 +1,19 @@
+import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InstitutionRequestStatusService {
   static Future<Map<String, dynamic>?> getRequestDetailsByEmail(String email) async {
     try {
+      final normalizedEmail = email.trim().toLowerCase();
       final request =
-          await Supabase.instance.client.from('institution_requests').select('status').eq('email', email).maybeSingle();
+          await SupabaseConnection.client
+              .from('institution_requests')
+              .select('status')
+              .eq('email', normalizedEmail)
+              .maybeSingle();
 
       if (request == null) {
-        print('[StatusService] Заявка не найдена для email: $email');
+        print('[StatusService] Заявка не найдена для email: $normalizedEmail');
         return null;
       }
 
@@ -19,14 +25,14 @@ class InstitutionRequestStatusService {
       }
 
       final head =
-          await Supabase.instance.client
+          await SupabaseConnection.client
               .from('education_heads')
               .select('login, password')
-              .eq('email', email)
+              .eq('email', normalizedEmail)
               .maybeSingle();
 
       if (head == null) {
-        print('[StatusService] Не найден руководитель по email: $email');
+        print('[StatusService] Не найден руководитель по email: $normalizedEmail');
         return {'status': status};
       }
 
@@ -35,7 +41,7 @@ class InstitutionRequestStatusService {
       print('[StatusService] Ошибка при получении данных по email: $email');
       print('[StatusService] $e');
       print('[StatusService] $stackTrace');
-      return null;
+      throw Exception('Не удалось проверить статус. Проверьте соединение.');
     }
   }
 }

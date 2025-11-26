@@ -20,14 +20,7 @@ class AdminHomeScreen extends StatefulWidget {
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _selectedIndex = 0;
 
-  final List<String> _titles = [
-    'Главная',
-    'Пользователи',
-    'Добавить пользователя',
-    'Предметы',
-    'Профиль',
-    'Группы',
-  ];
+  final List<String> _titles = ['Главная', 'Пользователи', 'Добавить пользователя', 'Предметы', 'Профиль', 'Группы'];
 
   @override
   Widget build(BuildContext context) {
@@ -59,13 +52,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF9575CD),
         elevation: 4,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-        ),
-        title: Text(
-          _titles[_selectedIndex],
-          style: const TextStyle(color: Colors.white),
-        ),
+        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -95,11 +82,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню администратора',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -156,9 +139,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(
-            child: Text('Ошибка при загрузке статистики: ${snapshot.error}'),
-          );
+          return Center(child: Text('Ошибка при загрузке статистики: ${snapshot.error}'));
         }
         final data = snapshot.data!;
         return Center(
@@ -171,11 +152,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 children: [
                   const Text(
                     'Общая статистика по вашему учреждению',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A148C),
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -191,22 +168,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   const SizedBox(height: 32),
                   const Text(
                     'Быстрые действия',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A148C),
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
                   ),
                   const SizedBox(height: 16),
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
                     children: [
-                      _quickActionButton(
-                        'Добавить пользователя',
-                        Icons.person_add,
-                        2,
-                      ),
+                      _quickActionButton('Добавить пользователя', Icons.person_add, 2),
                       _quickActionButton('Создать группу', Icons.group_add, 6),
                       _quickActionButton('Назначить предмет', Icons.book, 3),
                     ],
@@ -226,12 +195,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     final teacherCount = await dashboardService.getTeacherCount(institutionId);
     final groupCount = await dashboardService.getGroupCount(institutionId);
     final subjectCount = await dashboardService.getSubjectCount(institutionId);
-    return {
-      'students': studentCount,
-      'teachers': teacherCount,
-      'groups': groupCount,
-      'subjects': subjectCount,
-    };
+    return {'students': studentCount, 'teachers': teacherCount, 'groups': groupCount, 'subjects': subjectCount};
   }
 
   Widget _quickActionButton(String label, IconData icon, int pageIndex) {
@@ -257,30 +221,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF5E35B1),
-            ),
-          ),
+          Text(value, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFF5E35B1))),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, color: Colors.black87),
-          ),
+          Text(title, style: const TextStyle(fontSize: 16, color: Colors.black87)),
         ],
       ),
     );

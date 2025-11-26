@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:edu_track/data/services/institution_request_status_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:edu_track/utils/validators.dart';
 
 class CheckRequestStatusScreen extends StatefulWidget {
   const CheckRequestStatusScreen({super.key});
@@ -13,11 +14,14 @@ class CheckRequestStatusScreen extends StatefulWidget {
 class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
   final TextEditingController _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
   String? _statusMessage;
   String? _login;
   String? _password;
   bool _isLoading = false;
+
   Future<void> _checkStatus() async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
@@ -25,9 +29,12 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
       _login = null;
       _password = null;
     });
+
     final email = _emailController.text.trim();
     try {
       final result = await InstitutionRequestStatusService.getRequestDetailsByEmail(email);
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
         if (result == null) {
@@ -46,12 +53,16 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
             case 'rejected':
               _statusMessage = 'Заявка отклонена.';
               break;
+            case 'failed':
+              _statusMessage = 'Произошла техническая ошибка при обработке.';
+              break;
             default:
               _statusMessage = 'Статус заявки: $status';
           }
         }
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _statusMessage = 'Ошибка при проверке: $e';
@@ -72,6 +83,12 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
   }
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final maxWidth = (size.width * 0.85).clamp(320.0, 600.0);
@@ -81,9 +98,9 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
         title: const Text('Проверка статуса заявки'),
         backgroundColor: const Color(0xFFBC9BF3),
         elevation: 4,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
       ),
       body: Container(
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
@@ -108,7 +125,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const Text(
-                            'Введите email руководителя для проверки статуса заявки',
+                            'Введите email руководителя для проверки статуса',
                             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5E35B1)),
                             textAlign: TextAlign.center,
                           ),
@@ -116,21 +133,14 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
+                            inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                            decoration: InputDecoration(
                               labelText: 'Email руководителя',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF5E35B1)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF5E35B1)),
+                              suffixIcon: IconButton(icon: const Icon(Icons.clear), onPressed: _emailController.clear),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Введите email';
-                              }
-                              final emailReg = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                              if (!emailReg.hasMatch(value)) {
-                                return 'Введите корректный email';
-                              }
-                              return null;
-                            },
+                            validator: Validators.validateEmail,
                             autovalidateMode: AutovalidateMode.onUserInteraction,
                           ),
                           const SizedBox(height: 20),
@@ -178,46 +188,72 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       key: ValueKey(_statusMessage),
       children: [
-        Text(
-          _statusMessage!,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF4A148C)),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.deepPurple.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.deepPurple.shade100),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Color(0xFF4A148C)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _statusMessage!,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF4A148C)),
+                ),
+              ),
+            ],
+          ),
         ),
         if (_login != null && _password != null) ...[
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: SelectableText('Логин: $_login', style: textStyle)),
-              IconButton(
-                icon: const Icon(Icons.copy, color: Color(0xFF5E35B1)),
-                tooltip: 'Копировать логин',
-                onPressed: () => _copyToClipboard(_login!, 'Логин'),
-              ),
-            ],
-          ),
+          _buildCopyRow('Логин', _login!, Icons.person),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(child: SelectableText('Пароль: $_password', style: textStyle)),
-              IconButton(
-                icon: const Icon(Icons.copy, color: Color(0xFF5E35B1)),
-                tooltip: 'Копировать пароль',
-                onPressed: () => _copyToClipboard(_password!, 'Пароль'),
-              ),
-            ],
-          ),
+          _buildCopyRow('Пароль', _password!, Icons.lock),
           const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              context.push('/login');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7E57C2),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                context.push('/login');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF7E57C2),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Перейти к авторизации', style: TextStyle(fontSize: 16, color: Colors.white70)),
             ),
-            child: const Text('Перейти к авторизации', style: TextStyle(fontSize: 16, color: Colors.white70)),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildCopyRow(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextFormField(
+            initialValue: value,
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: label,
+              prefixIcon: Icon(icon, color: const Color(0xFF5E35B1)),
+              border: const OutlineInputBorder(),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          icon: const Icon(Icons.copy, color: Color(0xFF5E35B1)),
+          tooltip: 'Копировать $label',
+          onPressed: () => _copyToClipboard(value, label),
+        ),
       ],
     );
   }

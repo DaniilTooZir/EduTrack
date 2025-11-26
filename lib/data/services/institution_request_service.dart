@@ -15,29 +15,28 @@ class InstitutionRequestService {
     String? comment,
   }) async {
     try {
-      final response =
-          await _client
-              .from('institution_requests')
-              .insert({
-                'name': name,
-                'address': address,
-                'head_name': headName,
-                'head_surname': headSurname,
-                'email': email,
-                'phone': phone,
-                'comment': comment,
-                'status': 'pending',
-              })
-              .select()
-              .single();
+      final dataToInsert = {
+        'name': name.trim(),
+        'address': address.trim(),
+        'head_name': headName.trim(),
+        'head_surname': headSurname.trim(),
+        'email': email.trim(),
+        'phone': phone?.trim(),
+        'comment': comment?.trim(),
+        'status': 'pending',
+      };
+      final response = await _client.from('institution_requests').insert(dataToInsert).select().single();
 
       if (response == null) {
-        throw Exception('Пустой ответ от сервера при отправке заявки');
+        throw Exception('Не удалось создать заявку: сервер вернул пустой ответ');
       }
 
-      print('[InstitutionRequestService] Заявка успешно отправлена: $response');
+      print('[InstitutionRequestService] Заявка успешно отправлена: ${response['id']}');
+    } on PostgrestException catch (e) {
+      print('[InstitutionRequestService] Ошибка БД: ${e.message} (Code: ${e.code})');
+      throw Exception('Ошибка базы данных: ${e.message}');
     } catch (e, stackTrace) {
-      print('[InstitutionRequestService] Ошибка при отправке заявки: $e');
+      print('[InstitutionRequestService] Неизвестная ошибка: $e');
       print('[InstitutionRequestService] StackTrace: $stackTrace');
       rethrow;
     }

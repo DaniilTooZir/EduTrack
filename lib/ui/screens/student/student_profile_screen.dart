@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
+import 'package:edu_track/utils/validators.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   const StudentProfileScreen({super.key});
@@ -15,6 +17,7 @@ class StudentProfileScreen extends StatefulWidget {
 
 class _StudentProfileScreenState extends State<StudentProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -25,6 +28,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isEditing = false;
+  bool _isPasswordVisible = false;
 
   late final StudentService _studentService;
   late final InstitutionService _institutionService;
@@ -42,64 +46,96 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   Future<void> _loadStudentData() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId == null) return;
-    final student = await _studentService.getStudentById(userId);
-    if (student != null) {
-      final inst = await _institutionService.getInstitutionById(student.institutionId);
-      setState(() {
-        _student = student;
-        _institution = inst;
-        _isLoading = false;
-      });
+    try {
+      final student = await _studentService.getStudentById(userId);
+      if (student != null) {
+        final inst = await _institutionService.getInstitutionById(student.institutionId);
+        if (mounted) {
+          setState(() {
+            _student = student;
+            _institution = inst;
+            _fillControllers();
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _fillControllers() {
+    if (_student == null) return;
+    _nameController.text = _student!.name;
+    _surnameController.text = _student!.surname;
+    _emailController.text = _student!.email;
+    _loginController.text = _student!.login;
   }
 
   Future<void> _saveChanges() async {
     if (_student == null) return;
+    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
+
     final updatedData = <String, dynamic>{};
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают'), backgroundColor: Colors.redAccent));
       setState(() => _isSaving = false);
       return;
     }
-    if (_nameController.text.trim().isNotEmpty) {
+
+    if (_nameController.text.trim() != _student!.name) {
       updatedData['name'] = _nameController.text.trim();
     }
-    if (_surnameController.text.trim().isNotEmpty) {
+    if (_surnameController.text.trim() != _student!.surname) {
       updatedData['surname'] = _surnameController.text.trim();
     }
-    if (_emailController.text.trim().isNotEmpty) {
+    if (_emailController.text.trim() != _student!.email) {
       updatedData['email'] = _emailController.text.trim();
     }
-    if (_loginController.text.trim().isNotEmpty) {
+    if (_loginController.text.trim() != _student!.login) {
       updatedData['login'] = _loginController.text.trim();
     }
-    if (_passwordController.text.trim().isNotEmpty) {
-      updatedData['password'] = _passwordController.text.trim();
+    if (password.isNotEmpty) {
+      updatedData['password'] = password;
     }
-    try {
-      if (updatedData.isNotEmpty) {
-        await _studentService.updateStudentData(_student!.id, updatedData);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Профиль обновлён')));
-      }
+
+    if (updatedData.isEmpty) {
       setState(() {
         _isEditing = false;
-        _loadStudentData();
+        _isSaving = false;
       });
+      return;
+    }
+    try {
+      await _studentService.updateStudentData(_student!.id, updatedData);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Профиль обновлён'), backgroundColor: Colors.green));
+        setState(() {
+          _isEditing = false;
+          _passwordController.clear();
+          _confirmPasswordController.clear();
+        });
+        await _loadStudentData();
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при обновлении: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
+      }
     } finally {
-      setState(() => _isSaving = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   void _resetChanges() {
-    _nameController.clear();
-    _surnameController.clear();
-    _emailController.clear();
-    _loginController.clear();
+    _fillControllers();
     _passwordController.clear();
     _confirmPasswordController.clear();
     setState(() => _isEditing = false);
@@ -119,89 +155,96 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Профиль студента')),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : SafeArea(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 500),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _infoRow('Имя', _student!.name),
-                              _infoRow('Фамилия', _student!.surname),
-                              _infoRow('Email', _student!.email),
-                              _infoRow('Логин', _student!.login),
-                              _infoRow('Учреждение', _institution?.name ?? '—'),
-                              const SizedBox(height: 24),
-                              if (_isEditing)
-                                Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    children: [
-                                      _buildField(_nameController, 'Имя'),
-                                      _buildField(_surnameController, 'Фамилия'),
-                                      _buildField(_emailController, 'Email', type: TextInputType.emailAddress),
-                                      _buildField(_loginController, 'Логин'),
-                                      _buildField(_passwordController, 'Пароль', obscure: true),
-                                      if (_passwordController.text.isNotEmpty)
-                                        _buildField(_confirmPasswordController, 'Подтвердите пароль', obscure: true),
-                                      const SizedBox(height: 24),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: ElevatedButton(
-                                              onPressed: _isSaving ? null : _saveChanges,
-                                              child:
-                                                  _isSaving
-                                                      ? const SizedBox(
-                                                        height: 20,
-                                                        width: 20,
-                                                        child: CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                          color: Colors.white,
-                                                        ),
-                                                      )
-                                                      : const Text('Сохранить'),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: OutlinedButton(
-                                              onPressed: _resetChanges,
-                                              child: const Text('Сбросить'),
-                                            ),
-                                          ),
-                                        ],
+      body: Container(
+        constraints: const BoxConstraints.expand(),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child:
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 600),
+                            child: Card(
+                              elevation: 8,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildAvatar(),
+                                    const SizedBox(height: 16),
+                                    Center(
+                                      child: Text(
+                                        '${_student!.name} ${_student!.surname}',
+                                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.deepPurple,
+                                        ),
+                                        textAlign: TextAlign.center,
                                       ),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Center(
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      _resetChanges();
-                                      setState(() => _isEditing = true);
-                                    },
-                                    child: const Text('Изменить данные'),
-                                  ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Center(
+                                      child: Text(
+                                        _institution?.name ?? '',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(color: Colors.deepPurple.shade300),
+                                      ),
+                                    ),
+                                    const Divider(height: 32),
+                                    _sectionTitle('Данные профиля'),
+                                    const SizedBox(height: 8),
+                                    _infoRow('Логин', _student!.login),
+                                    _infoRow('Email', _student!.email),
+                                    _infoRow('Учреждение', _institution?.name ?? '—'),
+                                    const SizedBox(height: 24),
+                                    AnimatedCrossFade(
+                                      firstChild: _editButton(),
+                                      secondChild: _editForm(),
+                                      crossFadeState: _isEditing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                                      duration: const Duration(milliseconds: 300),
+                                    ),
+                                  ],
                                 ),
-                            ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                      );
+                    },
+                  ),
+        ),
+      ),
     );
+  }
+
+  Widget _buildAvatar() {
+    final initials = '${_student!.name[0]}${_student!.surname[0]}';
+    return CircleAvatar(
+      radius: 40,
+      backgroundColor: Colors.deepPurple.shade200,
+      child: Text(
+        initials.toUpperCase(),
+        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple));
   }
 
   Widget _infoRow(String label, String value) {
@@ -214,28 +257,136 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     );
   }
 
-  Widget _buildField(
-    TextEditingController controller,
-    String label, {
+  Widget _editButton() {
+    return Center(
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.edit),
+        label: const Text('Изменить данные'),
+        onPressed: () {
+          _resetChanges();
+          setState(() => _isEditing = true);
+        },
+      ),
+    );
+  }
+
+  Widget _editForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          _buildField(
+            controller: _nameController,
+            label: 'Имя',
+            validator: (val) => Validators.validateName(val, 'Имя'),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
+          ),
+          _buildField(
+            controller: _surnameController,
+            label: 'Фамилия',
+            validator: (val) => Validators.validateName(val, 'Фамилия'),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
+          ),
+          _buildField(
+            controller: _emailController,
+            label: 'Email',
+            type: TextInputType.emailAddress,
+            validator: Validators.validateEmail,
+          ),
+          _buildField(
+            controller: _loginController,
+            label: 'Логин',
+            validator: (val) => Validators.requiredField(val, fieldName: 'Логин'),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._-]'))],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: TextFormField(
+              controller: _passwordController,
+              obscureText: !_isPasswordVisible,
+              decoration: InputDecoration(
+                labelText: 'Новый пароль',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                ),
+              ),
+              validator: (val) {
+                if (val == null || val.isEmpty) return null;
+                if (val.length < 6) return 'Пароль должен быть не менее 6 символов';
+                return null;
+              },
+            ),
+          ),
+          ValueListenableBuilder(
+            valueListenable: _passwordController,
+            builder: (context, TextEditingValue value, __) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: !_isPasswordVisible,
+                  decoration: const InputDecoration(labelText: 'Подтвердите пароль', border: OutlineInputBorder()),
+                  validator: (val) {
+                    if (val != _passwordController.text) return 'Пароли не совпадают';
+                    return null;
+                  },
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label:
+                      _isSaving
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                          : const Text('Сохранить'),
+                  onPressed: _isSaving ? null : _saveChanges,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Отменить'),
+                  onPressed: _resetChanges,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
     TextInputType type = TextInputType.text,
     bool obscure = false,
+    String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         keyboardType: type,
         obscureText: obscure,
-        validator: (val) {
-          if (label == 'Email' && (val == null || val.isEmpty)) {
-            return 'Введите email';
-          }
-          if (label == 'Пароль' && val != null && val.isNotEmpty && val.length < 6) {
-            return 'Пароль должен быть не менее 6 символов';
-          }
-          return null;
-        },
+        validator: validator,
+        inputFormatters: inputFormatters,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
       ),
     );
   }

@@ -5,16 +5,58 @@ class GroupService {
   final _client = Supabase.instance.client;
   Future<List<Group>> getGroups(String institutionId) async {
     try {
-      final response = await _client.from('groups').select().eq('institution_id', institutionId);
+      final response = await _client
+          .from('groups')
+          .select()
+          .eq('institution_id', institutionId)
+          .order('name', ascending: true);
       if (response == null) return [];
       final List<dynamic> data = response as List<dynamic>;
       return data.map((e) => Group.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      throw Exception('Ошибка загрузки групп: $e');
+      print('Ошибка загрузки групп: $e');
+      throw Exception('Не удалось загрузить список групп');
     }
   }
 
   Future<void> addGroup(Group group) async {
-    await _client.from('groups').insert(group.toMap());
+    try {
+      await _client.from('groups').insert(group.toMap());
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        throw Exception('Группа с таким названием уже существует');
+      }
+      print('Ошибка БД при создании группы: ${e.message}');
+      throw Exception('Ошибка базы данных: ${e.message}');
+    } catch (e) {
+      print('Неизвестная ошибка при создании группы: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateGroup(String id, String newName) async {
+    try {
+      await _client.from('groups').update({'name': newName}).eq('id', id);
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        throw Exception('Группа с таким названием уже существует');
+      }
+      throw Exception('Ошибка при обновлении: ${e.message}');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteGroup(String id) async {
+    try {
+      await _client.from('groups').delete().eq('id', id);
+    } on PostgrestException catch (e) {
+      if (e.code == '23503') {
+        throw Exception('Нельзя удалить группу: в ней есть студенты или данные');
+      }
+      throw Exception('Ошибка при удалении: ${e.message}');
+    } catch (e) {
+      rethrow;
+    }
   }
 }
