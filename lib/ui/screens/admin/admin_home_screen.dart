@@ -20,7 +20,7 @@ class AdminHomeScreen extends StatefulWidget {
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _selectedIndex = 0;
 
-  final List<String> _titles = ['Главная', 'Пользователи', 'Добавить пользователя', 'Предметы', 'Профиль', 'Группы'];
+  final List<String> _titles = ['Главная', 'Пользователи', 'Добавить пользователя', 'Предметы', 'Группы', 'Профиль'];
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +52,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF9575CD),
         elevation: 4,
-        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white)),
+        title: Text(
+          _selectedIndex < _titles.length ? _titles[_selectedIndex] : '',
+          style: const TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
@@ -103,7 +106,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Padding(padding: const EdgeInsets.all(16.0), child: bodyContent),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: KeyedSubtree(
+            key: ValueKey<int>(_selectedIndex), // Важно для анимации
+            child: Padding(padding: const EdgeInsets.all(16.0), child: bodyContent),
+          ),
+        ),
       ),
     );
   }
@@ -129,11 +138,21 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
+  Future<Map<String, int>> _fetchStats(String institutionId) async {
+    final dashboardService = DashboardService();
+    final studentCount = await dashboardService.getStudentCount(institutionId);
+    final teacherCount = await dashboardService.getTeacherCount(institutionId);
+    final groupCount = await dashboardService.getGroupCount(institutionId);
+    final subjectCount = await dashboardService.getSubjectCount(institutionId);
+    return {'students': studentCount, 'teachers': teacherCount, 'groups': groupCount, 'subjects': subjectCount};
+  }
+
   Widget _buildDashboard() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final institutionId = userProvider.institutionId;
+    if (institutionId == null) return const Center(child: CircularProgressIndicator());
     return FutureBuilder<Map<String, int>>(
-      future: _fetchStats(institutionId!),
+      future: _fetchStats(institutionId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -176,7 +195,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     runSpacing: 12,
                     children: [
                       _quickActionButton('Добавить пользователя', Icons.person_add, 2),
-                      _quickActionButton('Создать группу', Icons.group_add, 6),
+                      _quickActionButton('Создать группу', Icons.group_add, 4), // ИСПРАВЛЕНО: Индекс 4
                       _quickActionButton('Назначить предмет', Icons.book, 3),
                     ],
                   ),
@@ -187,15 +206,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         );
       },
     );
-  }
-
-  Future<Map<String, int>> _fetchStats(String institutionId) async {
-    final dashboardService = DashboardService();
-    final studentCount = await dashboardService.getStudentCount(institutionId);
-    final teacherCount = await dashboardService.getTeacherCount(institutionId);
-    final groupCount = await dashboardService.getGroupCount(institutionId);
-    final subjectCount = await dashboardService.getSubjectCount(institutionId);
-    return {'students': studentCount, 'teachers': teacherCount, 'groups': groupCount, 'subjects': subjectCount};
   }
 
   Widget _quickActionButton(String label, IconData icon, int pageIndex) {
