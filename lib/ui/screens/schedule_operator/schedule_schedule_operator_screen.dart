@@ -14,12 +14,10 @@ class ScheduleScheduleOperatorScreen extends StatefulWidget {
   const ScheduleScheduleOperatorScreen({super.key});
 
   @override
-  State<ScheduleScheduleOperatorScreen> createState() =>
-      _ScheduleScheduleOperatorScreen();
+  State<ScheduleScheduleOperatorScreen> createState() => _ScheduleScheduleOperatorScreen();
 }
 
-class _ScheduleScheduleOperatorScreen
-    extends State<ScheduleScheduleOperatorScreen> {
+class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScreen> {
   late final ScheduleService _scheduleService;
   late final SubjectService _subjectService;
   late final GroupService _groupService;
@@ -82,9 +80,7 @@ class _ScheduleScheduleOperatorScreen
 
   void _loadSubjects() async {
     try {
-      final subjects = await _subjectService.getSubjectsForInstitution(
-        _institutionId!,
-      );
+      final subjects = await _subjectService.getSubjectsForInstitution(_institutionId!);
       setState(() => _subjects = subjects);
     } catch (e) {
       debugPrint('Ошибка загрузки предметов: $e');
@@ -113,9 +109,7 @@ class _ScheduleScheduleOperatorScreen
     if (_institutionId == null) {
       _scheduleFuture = Future.error('ID учреждения не найден');
     } else {
-      _scheduleFuture = _scheduleService.getScheduleForInstitution(
-        _institutionId!,
-      );
+      _scheduleFuture = _scheduleService.getScheduleForInstitution(_institutionId!);
     }
     setState(() {});
   }
@@ -130,9 +124,7 @@ class _ScheduleScheduleOperatorScreen
   Future<void> _addScheduleEntry() async {
     if (!_formKey.currentState!.validate()) return;
     if (_startTime == null || _endTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Выберите время начала и окончания')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите время начала и окончания')));
       return;
     }
 
@@ -167,12 +159,9 @@ class _ScheduleScheduleOperatorScreen
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Запись успешно добавлена'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Запись успешно добавлена'), backgroundColor: Colors.green));
 
       _loadSchedule();
       setState(() {
@@ -182,12 +171,9 @@ class _ScheduleScheduleOperatorScreen
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ошибка при добавлении: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Ошибка при добавлении: $e'), backgroundColor: Colors.redAccent));
     } finally {
       if (mounted) setState(() => _isAdding = false);
     }
@@ -199,20 +185,12 @@ class _ScheduleScheduleOperatorScreen
       builder:
           (ctx) => AlertDialog(
             title: const Text('Удалить запись?'),
-            content: const Text(
-              'Вы уверены, что хотите удалить этот урок из расписания?',
-            ),
+            content: const Text('Вы уверены, что хотите удалить этот урок из расписания?'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Отмена'),
-              ),
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text(
-                  'Удалить',
-                  style: TextStyle(color: Colors.red),
-                ),
+                child: const Text('Удалить', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
@@ -222,27 +200,18 @@ class _ScheduleScheduleOperatorScreen
       try {
         await _scheduleService.deleteScheduleEntry(id);
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Запись удалена')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Запись удалена')));
         _loadSchedule();
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка удаления: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Ошибка удаления: $e'), backgroundColor: Colors.redAccent));
       }
     }
   }
 
-  Widget _buildTimePicker(
-    String label,
-    TimeOfDay? time,
-    Function(TimeOfDay) onTimePicked,
-  ) => InkWell(
+  Widget _buildTimePicker(String label, TimeOfDay? time, Function(TimeOfDay) onTimePicked) => InkWell(
     onTap: () async {
       final picked = await showTimePicker(
         context: context,
@@ -284,9 +253,7 @@ class _ScheduleScheduleOperatorScreen
               children: [
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Form(
@@ -294,49 +261,28 @@ class _ScheduleScheduleOperatorScreen
                       child: Column(
                         children: [
                           DropdownButtonFormField<int>(
-                            decoration: const InputDecoration(
-                              labelText: 'День недели',
-                              border: OutlineInputBorder(),
-                            ),
+                            decoration: const InputDecoration(labelText: 'День недели', border: OutlineInputBorder()),
                             value: _weekday,
                             items: List.generate(
                               _weekdays.length,
-                              (index) => DropdownMenuItem(
-                                value: index,
-                                child: Text(_weekdays[index]),
-                              ),
+                              (index) => DropdownMenuItem(value: index, child: Text(_weekdays[index])),
                             ),
                             onChanged: (val) => setState(() => _weekday = val),
-                            validator:
-                                (val) =>
-                                    val == null ? 'Выберите день недели' : null,
+                            validator: (val) => val == null ? 'Выберите день недели' : null,
                           ),
                           const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
-                                child: _buildTimePicker(
-                                  'Начало',
-                                  _startTime,
-                                  (t) => setState(() => _startTime = t),
-                                ),
+                                child: _buildTimePicker('Начало', _startTime, (t) => setState(() => _startTime = t)),
                               ),
                               const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildTimePicker(
-                                  'Конец',
-                                  _endTime,
-                                  (t) => setState(() => _endTime = t),
-                                ),
-                              ),
+                              Expanded(child: _buildTimePicker('Конец', _endTime, (t) => setState(() => _endTime = t))),
                             ],
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Предмет',
-                              border: OutlineInputBorder(),
-                            ),
+                            decoration: const InputDecoration(labelText: 'Предмет', border: OutlineInputBorder()),
                             value: _selectedSubjectId,
                             isExpanded: true,
                             items:
@@ -344,47 +290,24 @@ class _ScheduleScheduleOperatorScreen
                                     .map(
                                       (s) => DropdownMenuItem(
                                         value: s.id,
-                                        child: Text(
-                                          s.name,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                        child: Text(s.name, overflow: TextOverflow.ellipsis),
                                       ),
                                     )
                                     .toList(),
-                            onChanged:
-                                (val) =>
-                                    setState(() => _selectedSubjectId = val),
-                            validator:
-                                (val) =>
-                                    val == null ? 'Выберите предмет' : null,
+                            onChanged: (val) => setState(() => _selectedSubjectId = val),
+                            validator: (val) => val == null ? 'Выберите предмет' : null,
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Группа',
-                              border: OutlineInputBorder(),
-                            ),
+                            decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
                             value: _selectedGroupId,
-                            items:
-                                _groups
-                                    .map(
-                                      (g) => DropdownMenuItem(
-                                        value: g.id,
-                                        child: Text(g.name),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged:
-                                (val) => setState(() => _selectedGroupId = val),
-                            validator:
-                                (val) => val == null ? 'Выберите группу' : null,
+                            items: _groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
+                            onChanged: (val) => setState(() => _selectedGroupId = val),
+                            validator: (val) => val == null ? 'Выберите группу' : null,
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Преподаватель',
-                              border: OutlineInputBorder(),
-                            ),
+                            decoration: const InputDecoration(labelText: 'Преподаватель', border: OutlineInputBorder()),
                             value: _selectedTeacherId,
                             isExpanded: true,
                             items:
@@ -392,33 +315,20 @@ class _ScheduleScheduleOperatorScreen
                                     .map(
                                       (t) => DropdownMenuItem(
                                         value: t.id,
-                                        child: Text(
-                                          '${t.surname} ${t.name}',
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                        child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
                                       ),
                                     )
                                     .toList(),
-                            onChanged:
-                                (val) =>
-                                    setState(() => _selectedTeacherId = val),
-                            validator:
-                                (val) =>
-                                    val == null
-                                        ? 'Выберите преподавателя'
-                                        : null,
+                            onChanged: (val) => setState(() => _selectedTeacherId = val),
+                            validator: (val) => val == null ? 'Выберите преподавателя' : null,
                           ),
                           const SizedBox(height: 20),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 backgroundColor: const Color(0xFF5E35B1),
                                 foregroundColor: Colors.white,
                               ),
@@ -428,10 +338,7 @@ class _ScheduleScheduleOperatorScreen
                                       ? const SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                       )
                                       : const Text('Добавить запись'),
                             ),
@@ -453,9 +360,7 @@ class _ScheduleScheduleOperatorScreen
                         return Center(
                           child: Text(
                             'Ошибка загрузки: ${snapshot.error}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.redAccent,
-                            ),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.redAccent),
                           ),
                         );
                       }
@@ -464,9 +369,7 @@ class _ScheduleScheduleOperatorScreen
                         return Center(
                           child: Text(
                             'Расписание пустое',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                           ),
                         );
                       }
@@ -480,14 +383,10 @@ class _ScheduleScheduleOperatorScreen
                         itemBuilder: (context, index) {
                           final day = sortedDays[index];
                           final daySchedules = schedulesByDay[day]!;
-                          daySchedules.sort(
-                            (a, b) => a.startTime.compareTo(b.startTime),
-                          );
+                          daySchedules.sort((a, b) => a.startTime.compareTo(b.startTime));
                           return Card(
                             margin: const EdgeInsets.only(bottom: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             color: Colors.white.withOpacity(0.9),
                             child: Padding(
                               padding: const EdgeInsets.all(12),
@@ -495,13 +394,11 @@ class _ScheduleScheduleOperatorScreen
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _weekdays[day -
-                                        1], // day 1..7 -> index 0..6
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF5E35B1),
-                                        ),
+                                    _weekdays[day - 1], // day 1..7 -> index 0..6
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF5E35B1),
+                                    ),
                                   ),
                                   const Divider(),
                                   SingleChildScrollView(
@@ -513,48 +410,28 @@ class _ScheduleScheduleOperatorScreen
                                         DataColumn(label: Text('Время')),
                                         DataColumn(label: Text('Группа')),
                                         DataColumn(label: Text('Предмет')),
-                                        DataColumn(
-                                          label: Text('Преподаватель'),
-                                        ),
+                                        DataColumn(label: Text('Преподаватель')),
                                         DataColumn(label: Text('')),
                                       ],
                                       rows:
                                           daySchedules.map((s) {
-                                            final subjectName =
-                                                s.subject?.name ?? '—';
-                                            final groupName =
-                                                s.group?.name ?? '—';
-                                            final teacherName =
-                                                _teacherNames[s.teacherId] ??
-                                                '—';
+                                            final subjectName = s.subject?.name ?? '—';
+                                            final groupName = s.group?.name ?? '—';
+                                            final teacherName = _teacherNames[s.teacherId] ?? '—';
                                             final timeRange =
                                                 '${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)}';
                                             return DataRow(
                                               cells: [
                                                 DataCell(
-                                                  Text(
-                                                    timeRange,
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
+                                                  Text(timeRange, style: const TextStyle(fontWeight: FontWeight.bold)),
                                                 ),
                                                 DataCell(Text(groupName)),
                                                 DataCell(Text(subjectName)),
                                                 DataCell(Text(teacherName)),
                                                 DataCell(
                                                   IconButton(
-                                                    icon: const Icon(
-                                                      Icons.delete,
-                                                      color: Colors.redAccent,
-                                                      size: 20,
-                                                    ),
-                                                    onPressed:
-                                                        () =>
-                                                            _deleteScheduleEntry(
-                                                              s.id,
-                                                            ),
+                                                    icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                                                    onPressed: () => _deleteScheduleEntry(s.id),
                                                     tooltip: 'Удалить урок',
                                                   ),
                                                 ),

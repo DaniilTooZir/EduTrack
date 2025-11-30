@@ -1,22 +1,31 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeworkService {
   final SupabaseClient _client;
+  HomeworkService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
-  HomeworkService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
   Future<List<Homework>> getHomeworkByTeacherId(String teacherId) async {
     try {
+      final subjectsResponse = await _client.from('subjects').select('id').eq('teacher_id', teacherId);
+      final List<dynamic> subjectsData = subjectsResponse as List<dynamic>;
+      if (subjectsData.isEmpty) {
+        return [];
+      }
+      final subjectIds = subjectsData.map((s) => s['id'].toString()).toList();
+
       final response = await _client
           .from('homework')
           .select('*, subject:subjects(*), group:groups(*)')
-          .eq('subject.teacher_id', teacherId)
+          .filter('subject_id', 'in', '(${subjectIds.join(',')})')
           .order('due_date', ascending: true);
       final List<dynamic> data = response as List<dynamic>;
       return data.map((e) => Homework.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      throw Exception('Ошибка загрузки домашних заданий: $e');
+      print('Ошибка при загрузке ДЗ учителя: $e');
+      throw Exception('Не удалось загрузить задания');
     }
   }
 
@@ -43,7 +52,6 @@ class HomeworkService {
   Future<Map<String, dynamic>?> getGroupByStudentId(String studentId) async {
     try {
       final response = await _client.from('students').select('groups(id, name)').eq('id', studentId).single();
-      if (response == null) return null;
       return response['groups'] as Map<String, dynamic>?;
     } catch (e) {
       throw Exception('Ошибка получения группы студента: $e');
@@ -59,21 +67,16 @@ class HomeworkService {
     DateTime? dueDate,
   }) async {
     try {
-      final Map<String, dynamic> insertData = {
+      await _client.from('homework').insert({
         'institution_id': institutionId,
         'subject_id': subjectId,
         'group_id': groupId,
         'title': title,
         'description': description,
         'due_date': dueDate?.toIso8601String(),
-      };
-      final response = await _client.from('homework').insert(insertData).select().single();
-
-      if (response == null) {
-        throw Exception('Ошибка при добавлении домашнего задания');
-      }
+      });
     } catch (e) {
-      throw Exception('Ошибка при добавлении домашнего задания: $e');
+      throw Exception('Ошибка при создании ДЗ: $e');
     }
   }
 
@@ -98,9 +101,10 @@ class HomeworkService {
 
   Future<void> deleteHomework(String id) async {
     try {
+      await _client.from('homework_status').delete().eq('homework_id', id);
       await _client.from('homework').delete().eq('id', id);
     } catch (e) {
-      throw Exception('Ошибка при удалении домашнего задания: $e');
+      throw Exception('Ошибка при удалении: $e');
     }
   }
 
