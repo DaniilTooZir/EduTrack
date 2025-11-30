@@ -1,10 +1,10 @@
+import 'package:edu_track/data/services/lesson_attendance_service.dart';
+import 'package:edu_track/data/services/student_service.dart';
+import 'package:edu_track/models/lesson.dart';
+import 'package:edu_track/models/lesson_attendance.dart';
+import 'package:edu_track/models/student.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:edu_track/models/lesson.dart';
-import 'package:edu_track/models/student.dart';
-import 'package:edu_track/models/lesson_attendance.dart';
-import 'package:edu_track/data/services/student_service.dart';
-import 'package:edu_track/data/services/lesson_attendance_service.dart';
 
 class LessonAttendanceScreen extends StatefulWidget {
   const LessonAttendanceScreen({super.key});
@@ -36,20 +36,20 @@ class _LessonAttendanceScreenState extends State<LessonAttendanceScreen> {
   Future<void> _loadStudents() async {
     setState(() => _loading = true);
     final schedule = await _studentService.getScheduleById(lesson.scheduleId);
-    if (schedule == null || schedule.groupId == null) {
+    if (schedule == null) {
       setState(() => _loading = false);
       return;
     }
-    final students = await _studentService.getStudentsByGroupId(schedule.groupId!);
+    final students = await _studentService.getStudentsByGroupId(schedule.groupId);
     setState(() {
       _students = students;
-      _attendance = {for (var s in students) s.id: null};
+      _attendance = {for (final s in students) s.id: null};
       _loading = false;
     });
   }
 
   Future<void> _save() async {
-    for (var entry in _attendance.entries) {
+    for (final entry in _attendance.entries) {
       if (entry.value == null) continue;
       final record = LessonAttendance(lessonId: lesson.id!, studentId: entry.key, status: entry.value);
       await _attendanceService.addOrUpdateAttendance(record);
@@ -62,7 +62,7 @@ class _LessonAttendanceScreenState extends State<LessonAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Посещаемость урока")),
+      appBar: AppBar(title: const Text('Посещаемость урока')),
       body:
           _loading
               ? const Center(child: CircularProgressIndicator())
@@ -74,12 +74,12 @@ class _LessonAttendanceScreenState extends State<LessonAttendanceScreen> {
                       itemBuilder: (context, index) {
                         final st = _students[index];
                         return ListTile(
-                          title: Text("${st.surname} ${st.name}"),
+                          title: Text('${st.surname} ${st.name}'),
                           trailing: DropdownButton<String>(
                             value: _attendance[st.id],
                             items:
                                 statuses.map((s) => DropdownMenuItem(value: s, child: Text(s.toUpperCase()))).toList(),
-                            hint: const Text("Статус"),
+                            hint: const Text('Статус'),
                             onChanged: (v) {
                               setState(() {
                                 _attendance[st.id] = v;
@@ -95,7 +95,7 @@ class _LessonAttendanceScreenState extends State<LessonAttendanceScreen> {
                     child: ElevatedButton(
                       onPressed: _save,
                       style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-                      child: const Text("Сохранить"),
+                      child: const Text('Сохранить'),
                     ),
                   ),
                 ],

@@ -1,20 +1,20 @@
+import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
+import 'package:edu_track/ui/screens/admin/admin_home_screen.dart';
+import 'package:edu_track/ui/screens/check_request_status_screen.dart';
+import 'package:edu_track/ui/screens/institution_request_screen.dart';
+import 'package:edu_track/ui/screens/login_screen.dart';
+import 'package:edu_track/ui/screens/schedule_operator/schedule_operator_home_screen.dart';
+import 'package:edu_track/ui/screens/splash_screen.dart';
+import 'package:edu_track/ui/screens/student/student_home_screen.dart';
+import 'package:edu_track/ui/screens/student/student_lesson_comment_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_grade_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_home_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_lesson_attendance_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_lesson_comment_screen.dart';
+import 'package:edu_track/ui/screens/welcome_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/ui/screens/welcome_screen.dart';
-import 'package:edu_track/ui/screens/splash_screen.dart';
-import 'package:edu_track/ui/screens/institution_request_screen.dart';
-import 'package:edu_track/ui/screens/check_request_status_screen.dart';
-import 'package:edu_track/ui/screens/login_screen.dart';
-import 'package:edu_track/ui/screens/admin/admin_home_screen.dart';
-import 'package:edu_track/ui/screens/teacher/teacher_home_screen.dart';
-import 'package:edu_track/ui/screens/student/student_home_screen.dart';
-import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
-import 'package:edu_track/ui/screens/schedule_operator/schedule_operator_home_screen.dart';
-import 'package:edu_track/ui/screens/teacher/teacher_lesson_comment_screen.dart';
-import 'package:edu_track/ui/screens/teacher/teacher_grade_screen.dart';
-import 'package:edu_track/ui/screens/teacher/teacher_lesson_attendance_screen.dart';
-import 'package:edu_track/ui/screens/student/student_lesson_comment.dart';
 
 // Настройка маршрутов
 final GoRouter router = GoRouter(
@@ -33,7 +33,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/teacher/lesson_comments', builder: (context, state) => const LessonCommentsScreen()),
     GoRoute(path: '/teacher/grades', builder: (context, state) => const TeacherGradeScreen()),
     GoRoute(path: '/teacher/attendance', builder: (context, state) => const LessonAttendanceScreen()),
-    GoRoute(path: '/student/lesson_comments', builder: (context, state) => const StudentLessonCommentsScreen())
+    GoRoute(path: '/student/lesson_comments', builder: (context, state) => const StudentLessonCommentsScreen()),
   ],
   // Перенаправление в зависимости от состояния авторизации и роли пользователя
   redirect: (context, state) {

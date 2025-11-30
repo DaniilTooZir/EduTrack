@@ -27,10 +27,6 @@ class InstitutionRequestService {
       };
       final response = await _client.from('institution_requests').insert(dataToInsert).select().single();
 
-      if (response == null) {
-        throw Exception('Не удалось создать заявку: сервер вернул пустой ответ');
-      }
-
       print('[InstitutionRequestService] Заявка успешно отправлена: ${response['id']}');
     } on PostgrestException catch (e) {
       print('[InstitutionRequestService] Ошибка БД: ${e.message} (Code: ${e.code})');

@@ -1,5 +1,5 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:edu_track/models/group.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class GroupService {
   final _client = Supabase.instance.client;
@@ -10,7 +10,6 @@ class GroupService {
           .select()
           .eq('institution_id', institutionId)
           .order('name', ascending: true);
-      if (response == null) return [];
       final List<dynamic> data = response as List<dynamic>;
       return data.map((e) => Group.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {

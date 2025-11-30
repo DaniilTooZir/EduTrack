@@ -1,10 +1,9 @@
+import 'package:edu_track/data/services/auth_service.dart';
+import 'package:edu_track/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/data/services/auth_service.dart';
-import 'package:edu_track/utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

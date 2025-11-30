@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/utils/validators.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class GroupAdminScreen extends StatefulWidget {
   const GroupAdminScreen({super.key});
@@ -214,7 +213,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                                 prefixIcon: const Icon(Icons.group_work, color: Color(0xFF5E35B1)),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 isDense: true,
-                                counterText: "",
+                                counterText: '',
                               ),
                               maxLength: 10,
                               inputFormatters: [FilteringTextInputFormatter.allow(_groupNameAllowList)],

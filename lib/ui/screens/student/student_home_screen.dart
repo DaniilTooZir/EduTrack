@@ -1,13 +1,13 @@
+import 'package:edu_track/data/services/homework_service.dart';
+import 'package:edu_track/data/services/session_service.dart';
+import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
+import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
+import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
+import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/data/services/session_service.dart';
-import 'package:edu_track/data/services/homework_service.dart';
-import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
-import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
-import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
-import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -70,10 +70,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       final groupName = groupResponse['name'] as String;
       final homeworks = await _homeworkService.getHomeworksByStudentGroup(studentId);
       final statuses = await _homeworkService.getHomeworkStatusesForStudent(studentId);
-      final statusMap = {for (var s in statuses) s.homeworkId: s};
+      final statusMap = {for (final s in statuses) s.homeworkId: s};
       int completed = 0;
       int pending = 0;
-      for (var hw in homeworks) {
+      for (final hw in homeworks) {
         final status = statusMap[hw.id];
         if (status != null && status.isCompleted) {
           completed++;

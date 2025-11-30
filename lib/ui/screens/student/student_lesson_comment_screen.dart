@@ -5,22 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-class LessonCommentsScreen extends StatefulWidget {
-  const LessonCommentsScreen({super.key});
+class StudentLessonCommentsScreen extends StatefulWidget {
+  const StudentLessonCommentsScreen({super.key});
 
   @override
-  State<LessonCommentsScreen> createState() => _LessonCommentsScreenState();
+  State<StudentLessonCommentsScreen> createState() => _StudentLessonCommentsScreenState();
 }
 
-class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
+class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScreen> {
   final _service = LessonCommentService();
   final TextEditingController _messageController = TextEditingController();
   List<LessonComment> _comments = [];
   bool _isLoading = true;
   bool _isSending = false;
   late final int lessonId;
-  String? userId;
-  String? userRole;
+  String? studentId;
 
   @override
   void initState() {
@@ -33,8 +32,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
       }
       lessonId = state.extra as int;
       final provider = Provider.of<UserProvider>(context, listen: false);
-      userId = provider.userId;
-      userRole = provider.role;
+      studentId = provider.userId;
       _loadComments();
     });
   }
@@ -67,8 +65,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     try {
       final comment = LessonComment(
         lessonId: lessonId,
-        senderTeacherId: userRole == 'teacher' ? userId : null,
-        senderStudentId: userRole == 'student' ? userId : null,
+        senderStudentId: studentId,
         message: text,
         timestamp: DateTime.now(),
       );
@@ -87,12 +84,9 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
   }
 
   Widget _buildCommentBubble(LessonComment comment) {
-    final isMe =
-        (userRole == 'teacher' && comment.senderTeacherId == userId) ||
-        (userRole == 'student' && comment.senderStudentId == userId);
+    final isMe = comment.senderStudentId == studentId;
     final align = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final bubbleColor = isMe ? const Color(0xFFD1C4E9) : Colors.grey.shade200; // Немного темнее для контраста
-    final textColor = Colors.black87;
+    final bubbleColor = isMe ? const Color(0xFFD1C4E9) : Colors.grey.shade200;
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -112,7 +106,15 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
           crossAxisAlignment: align,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(comment.message ?? '', style: TextStyle(color: textColor, fontSize: 15)),
+            if (comment.senderTeacherId != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  'Преподаватель',
+                  style: TextStyle(fontSize: 10, color: Colors.deepPurple[700], fontWeight: FontWeight.bold),
+                ),
+              ),
+            Text(comment.message ?? '', style: const TextStyle(color: Colors.black87, fontSize: 15)),
             const SizedBox(height: 4),
             Text(_formatTimestamp(comment.timestamp), style: TextStyle(fontSize: 10, color: Colors.grey[600])),
           ],
@@ -141,14 +143,12 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _comments.isEmpty
-                    ? const Center(
-                      child: Text('Нет комментариев. Напишите первым!', style: TextStyle(color: Colors.grey)),
-                    )
+                    ? const Center(child: Text('Нет комментариев', style: TextStyle(color: Colors.grey)))
                     : RefreshIndicator(
                       onRefresh: _loadComments,
                       child: ListView.builder(
                         reverse: true,
-                        padding: const EdgeInsets.only(bottom: 12, top: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         itemCount: _comments.length,
                         itemBuilder: (context, index) {
                           final comment = _comments[index];
@@ -188,7 +188,6 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
                     valueListenable: _messageController,
                     builder: (context, value, child) {
                       final isTextEmpty = value.text.trim().isEmpty;
-
                       return IconButton.filled(
                         icon:
                             _isSending

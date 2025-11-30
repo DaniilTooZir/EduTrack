@@ -1,6 +1,6 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/models/teacher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TeacherService {
   final SupabaseClient _client;
@@ -19,8 +19,7 @@ class TeacherService {
   Future<Teacher?> getTeacherById(String id) async {
     try {
       final response = await _client.from('teachers').select().eq('id', id).single();
-      if (response == null) return null;
-      return Teacher.fromMap(response as Map<String, dynamic>);
+      return Teacher.fromMap(response);
     } catch (e) {
       throw Exception('Ошибка загрузки данных преподавателя: $e');
     }

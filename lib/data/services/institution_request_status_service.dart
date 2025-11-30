@@ -1,5 +1,4 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InstitutionRequestStatusService {
   static Future<Map<String, dynamic>?> getRequestDetailsByEmail(String email) async {
