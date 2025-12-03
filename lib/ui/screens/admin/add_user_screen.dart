@@ -1,11 +1,11 @@
+import 'package:edu_track/data/services/group_service.dart';
+import 'package:edu_track/data/services/user_add_service.dart';
+import 'package:edu_track/models/group.dart';
+import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/models/group.dart';
-import 'package:edu_track/data/services/user_add_service.dart';
-import 'package:edu_track/data/services/group_service.dart';
-import 'package:edu_track/utils/validators.dart';
 
 class AddUserScreen extends StatefulWidget {
   const AddUserScreen({super.key});

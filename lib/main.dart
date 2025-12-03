@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:provider/provider.dart';
 import 'package:edu_track/data/database/connection_to_database.dart';
-import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/data/services/moderation_timer.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/route.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 
 // Точка входа
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  await dotenv.load();
   await SupabaseConnection.initializeSupabase();
   ModerationTimer.start();
 

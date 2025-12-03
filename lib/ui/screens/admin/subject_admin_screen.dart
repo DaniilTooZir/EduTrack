@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:edu_track/data/services/subject_service.dart';
+import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/data/services/subject_service.dart';
-import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/utils/validators.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class SubjectAdminScreen extends StatefulWidget {
   const SubjectAdminScreen({super.key});

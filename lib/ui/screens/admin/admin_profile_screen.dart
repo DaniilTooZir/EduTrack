@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:edu_track/data/services/education_head_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/utils/validators.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
