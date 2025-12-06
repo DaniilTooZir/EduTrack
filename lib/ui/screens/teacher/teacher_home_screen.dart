@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
@@ -20,7 +21,7 @@ class TeacherHomeScreen extends StatefulWidget {
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _selectedIndex = 0;
 
-  final List<String> _titles = ['Главная', 'Домашние задания', 'Мои занятия', 'Расписание', 'Профиль'];
+  final List<String> _titles = ['Главная', 'Домашние задания', 'Мои занятия', 'Расписание', 'Профиль', 'Проверка ДЗ'];
 
   final Color primaryColor = const Color(0xFF9575CD);
   final Color drawerStart = const Color(0xFF7E57C2);
@@ -60,6 +61,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         break;
       case 4:
         bodyContent = const TeacherProfileScreen();
+        break;
+      case 5:
+        bodyContent = const TeacherHomeworkStatusScreen();
         break;
       default:
         bodyContent = const SizedBox.shrink();
@@ -105,6 +109,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             ),
             _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0),
             _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1),
+            _buildDrawerItem(Icons.checklist_rtl_rounded, 'Проверка ДЗ', 5),
             _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4),

@@ -266,7 +266,6 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Мои занятия'),
         actions: [
           IconButton(icon: const Icon(Icons.add), tooltip: 'Провести занятие', onPressed: _showAddLessonDialog),
         ],

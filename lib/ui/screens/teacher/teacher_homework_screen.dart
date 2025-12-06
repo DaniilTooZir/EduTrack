@@ -7,6 +7,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class TeacherHomeworkScreen extends StatefulWidget {
@@ -199,7 +200,6 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                   onPressed: () async {
                     if (!editFormKey.currentState!.validate()) return;
                     if (editSelectedGroupId == null) return;
-
                     try {
                       await _homeworkService.updateHomework(
                         id: hw.id,
@@ -276,9 +276,20 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Текущие задания',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Текущие задания',
+                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                            ),
+                            TextButton.icon(
+                              onPressed: () => context.push('/teacher/homework-status'),
+                              icon: const Icon(Icons.check_box_outlined),
+                              label: const Text('Проверка'),
+                              style: TextButton.styleFrom(foregroundColor: const Color(0xFF5E35B1)),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         if (_homeworks.isEmpty)

@@ -160,4 +160,14 @@ class HomeworkService {
       throw Exception('Ошибка при обновлении статуса: $e');
     }
   }
+
+  Future<List<HomeworkStatus>> getStatusesByHomeworkId(String homeworkId) async {
+    try {
+      final response = await _client.from('homework_status').select().eq('homework_id', homeworkId);
+      final List data = response as List;
+      return data.map((e) => HomeworkStatus.fromMap(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      throw Exception('Ошибка загрузки статусов ДЗ: $e');
+    }
+  }
 }
