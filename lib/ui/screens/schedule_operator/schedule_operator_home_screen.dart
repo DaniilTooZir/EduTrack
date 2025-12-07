@@ -24,7 +24,6 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
 
   final ScheduleService _scheduleService = ScheduleService();
   late Future<List<Schedule>> _scheduleFuture;
-
   Key _refreshKey = UniqueKey();
 
   @override
@@ -36,7 +35,6 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   void _loadData() {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final institutionId = userProvider.institutionId;
-
     if (institutionId != null) {
       _scheduleFuture = _scheduleService.getScheduleForInstitution(institutionId);
     } else {
@@ -54,6 +52,9 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   void _navigateToTab(int index) {
     setState(() {
       _selectedIndex = index;
+      if (_selectedIndex == 0) {
+        _refreshDashboard();
+      }
     });
   }
 
@@ -75,10 +76,15 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 4,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
         title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
+          if (_selectedIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              tooltip: 'Обновить расписание',
+              onPressed: _refreshDashboard,
+            ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             tooltip: 'Выйти',
@@ -143,12 +149,20 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
       ),
       selected: selected,
       onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
+        _navigateToTab(index);
         Navigator.of(context).pop();
       },
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+  }
+
+  String _getWeekdayName(int weekday) {
+    const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    if (weekday >= 1 && weekday <= 7) return days[weekday - 1];
+    return 'Неизвестно';
   }
 
   Widget _buildDashboard() {
@@ -188,14 +202,11 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             ),
             const SizedBox(height: 24),
             const Text(
-              'Текущее расписание',
+              'Полное расписание',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Ниже представлено полное расписание учреждения по дням недели.',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
+            const Text('Группировка по дням и датам.', style: TextStyle(fontSize: 14, color: Colors.grey)),
             const SizedBox(height: 12),
             FutureBuilder<List<Schedule>>(
               key: _refreshKey,
@@ -207,34 +218,43 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                   );
                 }
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Card(
-                      color: Colors.red.shade50,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text('Ошибка: ${snapshot.error}', style: TextStyle(color: Colors.red[900])),
-                      ),
-                    ),
-                  );
+                  return Center(child: Text('Ошибка: ${snapshot.error}', style: TextStyle(color: Colors.red[900])));
                 }
                 final schedules = snapshot.data ?? [];
                 if (schedules.isEmpty) {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(24.0),
-                      child: Text('Расписание пока пусто.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                      child: Text('Расписание пусто.', style: TextStyle(color: Colors.grey)),
                     ),
                   );
                 }
-                final Map<int, List<Schedule>> grouped = {};
+                schedules.sort((a, b) {
+                  if (a.date == null && b.date != null) return -1;
+                  if (a.date != null && b.date == null) return 1;
+                  if (a.date != null && b.date != null) {
+                    final dateComp = a.date!.compareTo(b.date!);
+                    if (dateComp != 0) return dateComp;
+                  }
+                  final dayComp = a.weekday.compareTo(b.weekday);
+                  if (dayComp != 0) return dayComp;
+                  return a.startTime.compareTo(b.startTime);
+                });
+                final Map<String, List<Schedule>> grouped = {};
                 for (final s in schedules) {
-                  grouped.putIfAbsent(s.weekday, () => []).add(s);
+                  String header;
+                  final String dayName = _getWeekdayName(s.weekday);
+                  if (s.date != null) {
+                    header = '$dayName, ${_formatDate(s.date!)}';
+                  } else {
+                    header = dayName;
+                  }
+                  grouped.putIfAbsent(header, () => []).add(s);
                 }
-                final sortedDays = grouped.keys.toList()..sort();
                 return Column(
                   children:
-                      sortedDays.map((day) {
-                        return _buildDayScheduleCard(day, grouped[day]!);
+                      grouped.entries.map((entry) {
+                        return _buildDayScheduleCard(entry.key, entry.value);
                       }).toList(),
                 );
               },
@@ -272,10 +292,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     );
   }
 
-  Widget _buildDayScheduleCard(int weekday, List<Schedule> dailySchedules) {
-    dailySchedules.sort((a, b) => a.startTime.compareTo(b.startTime));
-    final dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
-    final dayName = (weekday >= 1 && weekday <= 7) ? dayNames[weekday - 1] : 'Неизвестный день';
+  Widget _buildDayScheduleCard(String headerTitle, List<Schedule> dailySchedules) {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 20),
@@ -296,7 +313,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    dayName,
+                    headerTitle,
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
                   ),
                 ],

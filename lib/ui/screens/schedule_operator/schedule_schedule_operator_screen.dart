@@ -28,7 +28,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
 
   final _formKey = GlobalKey<FormState>();
 
-  int? _weekday;
+  DateTime? _selectedDate;
   String? _selectedSubjectId;
   String? _selectedGroupId;
   String? _selectedTeacherId;
@@ -52,11 +52,6 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     'Воскресенье',
   ];
 
-  Map<String, String> get _teacherNames => {
-    for (final t in _teachers)
-      if (t.id.isNotEmpty) t.id: '${t.surname} ${t.name}',
-  };
-
   @override
   void initState() {
     super.initState();
@@ -67,6 +62,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _institutionId = userProvider.institutionId;
+    _selectedDate = DateTime.now();
 
     if (_institutionId != null) {
       _loadSubjects();
@@ -117,6 +113,14 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   String _formatTimeOfDay(TimeOfDay time) =>
       '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00';
 
+  String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+
+  String _getWeekdayName(int weekday) {
+    if (weekday >= 1 && weekday <= 7) return _weekdays[weekday - 1];
+    return 'Неизвестно';
+  }
+
   int _timeToMinutes(TimeOfDay time) {
     return time.hour * 60 + time.minute;
   }
@@ -127,7 +131,6 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите время начала и окончания')));
       return;
     }
-
     if (_timeToMinutes(_endTime!) <= _timeToMinutes(_startTime!)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -137,37 +140,31 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       );
       return;
     }
-
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите дату занятия')));
+      return;
+    }
     setState(() => _isAdding = true);
     try {
-      final now = DateTime.now();
-      final todayWeekday = now.weekday;
-      final targetWeekday = _weekday! + 1;
-      int daysToAdd = (targetWeekday - todayWeekday + 7) % 7;
-      if (daysToAdd == 0) daysToAdd = 0;
-
-      final selectedDate = now.add(Duration(days: daysToAdd));
+      final int targetWeekday = _selectedDate!.weekday;
       await _scheduleService.addScheduleEntry(
         institutionId: _institutionId!,
         subjectId: _selectedSubjectId!,
         groupId: _selectedGroupId!,
         teacherId: _selectedTeacherId!,
         weekday: targetWeekday,
-        date: selectedDate,
+        date: _selectedDate!,
         startTime: _formatTimeOfDay(_startTime!),
         endTime: _formatTimeOfDay(_endTime!),
       );
-
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Запись успешно добавлена'), backgroundColor: Colors.green));
-
+      ).showSnackBar(const SnackBar(content: Text('Урок добавлен'), backgroundColor: Colors.green));
       _loadSchedule();
       setState(() {
         _selectedSubjectId = null;
         _selectedGroupId = null;
-        _selectedTeacherId = null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -185,7 +182,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       builder:
           (ctx) => AlertDialog(
             title: const Text('Удалить запись?'),
-            content: const Text('Вы уверены, что хотите удалить этот урок из расписания?'),
+            content: const Text('Вы уверены, что хотите удалить этот урок?'),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
               TextButton(
@@ -211,6 +208,31 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     }
   }
 
+  Widget _buildDatePicker() => InkWell(
+    onTap: () async {
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: _selectedDate ?? DateTime.now(),
+        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+        lastDate: DateTime.now().add(const Duration(days: 365)),
+      );
+      if (picked != null) setState(() => _selectedDate = picked);
+    },
+    child: InputDecorator(
+      decoration: const InputDecoration(
+        labelText: 'Дата занятия',
+        border: OutlineInputBorder(),
+        suffixIcon: Icon(Icons.calendar_month, color: Color(0xFF5E35B1)),
+      ),
+      child: Text(
+        _selectedDate != null
+            ? '${_formatDate(_selectedDate!)} (${_getWeekdayName(_selectedDate!.weekday)})'
+            : 'Выберите дату',
+        style: TextStyle(color: _selectedDate == null ? Colors.grey : Colors.black, fontSize: 16),
+      ),
+    ),
+  );
+
   Widget _buildTimePicker(String label, TimeOfDay? time, Function(TimeOfDay) onTimePicked) => InkWell(
     onTap: () async {
       final picked = await showTimePicker(
@@ -227,7 +249,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         suffixIcon: const Icon(Icons.access_time),
       ),
       child: Text(
-        time != null ? time.format(context) : 'Выберите время',
+        time != null ? time.format(context) : '--:--',
         style: TextStyle(color: time == null ? Colors.grey : Colors.black),
       ),
     ),
@@ -259,17 +281,14 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                     child: Form(
                       key: _formKey,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          DropdownButtonFormField<int>(
-                            decoration: const InputDecoration(labelText: 'День недели', border: OutlineInputBorder()),
-                            value: _weekday,
-                            items: List.generate(
-                              _weekdays.length,
-                              (index) => DropdownMenuItem(value: index, child: Text(_weekdays[index])),
-                            ),
-                            onChanged: (val) => setState(() => _weekday = val),
-                            validator: (val) => val == null ? 'Выберите день недели' : null,
+                          const Text(
+                            'Добавление урока',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF5E35B1)),
                           ),
+                          const SizedBox(height: 16),
+                          _buildDatePicker(),
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -281,33 +300,62 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                             ],
                           ),
                           const SizedBox(height: 12),
-                          DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(labelText: 'Предмет', border: OutlineInputBorder()),
-                            value: _selectedSubjectId,
-                            isExpanded: true,
-                            items:
-                                _subjects
-                                    .map(
-                                      (s) => DropdownMenuItem(
-                                        value: s.id,
-                                        child: Text(s.name, overflow: TextOverflow.ellipsis),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged: (val) => setState(() => _selectedSubjectId = val),
-                            validator: (val) => val == null ? 'Выберите предмет' : null,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Предмет',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  value: _selectedSubjectId,
+                                  isExpanded: true,
+                                  items:
+                                      _subjects
+                                          .map(
+                                            (s) => DropdownMenuItem(
+                                              value: s.id,
+                                              child: Text(s.name, overflow: TextOverflow.ellipsis),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: (val) => setState(() => _selectedSubjectId = val),
+                                  validator: (val) => val == null ? 'Предмет?' : null,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Группа',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  value: _selectedGroupId,
+                                  isExpanded: true,
+                                  items:
+                                      _groups
+                                          .map(
+                                            (g) => DropdownMenuItem(
+                                              value: g.id,
+                                              child: Text(g.name, overflow: TextOverflow.ellipsis),
+                                            ),
+                                          )
+                                          .toList(),
+                                  onChanged: (val) => setState(() => _selectedGroupId = val),
+                                  validator: (val) => val == null ? 'Группа?' : null,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
-                            value: _selectedGroupId,
-                            items: _groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
-                            onChanged: (val) => setState(() => _selectedGroupId = val),
-                            validator: (val) => val == null ? 'Выберите группу' : null,
-                          ),
-                          const SizedBox(height: 12),
-                          DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(labelText: 'Преподаватель', border: OutlineInputBorder()),
+                            decoration: const InputDecoration(
+                              labelText: 'Преподаватель',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
                             value: _selectedTeacherId,
                             isExpanded: true,
                             items:
@@ -320,27 +368,28 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                     )
                                     .toList(),
                             onChanged: (val) => setState(() => _selectedTeacherId = val),
-                            validator: (val) => val == null ? 'Выберите преподавателя' : null,
+                            validator: (val) => val == null ? 'Преподаватель?' : null,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
+                            child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 backgroundColor: const Color(0xFF5E35B1),
                                 foregroundColor: Colors.white,
                               ),
                               onPressed: _isAdding ? null : _addScheduleEntry,
-                              child:
+                              icon:
                                   _isAdding
                                       ? const SizedBox(
                                         width: 20,
                                         height: 20,
                                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                       )
-                                      : const Text('Добавить запись'),
+                                      : const Icon(Icons.add),
+                              label: const Text('Добавить в расписание'),
                             ),
                           ),
                         ],
@@ -348,7 +397,15 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Расписание занятий',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Expanded(
                   child: FutureBuilder<List<Schedule>>(
                     future: _scheduleFuture,
@@ -358,32 +415,39 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                       }
                       if (snapshot.hasError) {
                         return Center(
-                          child: Text(
-                            'Ошибка загрузки: ${snapshot.error}',
-                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.redAccent),
-                          ),
+                          child: Text('Ошибка: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
                         );
                       }
                       final schedules = snapshot.data ?? [];
                       if (schedules.isEmpty) {
-                        return Center(
-                          child: Text(
-                            'Расписание пустое',
-                            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                          ),
-                        );
+                        return const Center(child: Text('Расписание пустое', style: TextStyle(color: Colors.grey)));
                       }
-                      final Map<int, List<Schedule>> schedulesByDay = {};
+                      schedules.sort((a, b) {
+                        if (a.date != null && b.date != null) {
+                          final d = a.date!.compareTo(b.date!);
+                          if (d != 0) return d;
+                        }
+                        if (a.date == null) return 1;
+                        if (b.date == null) return -1;
+
+                        return a.startTime.compareTo(b.startTime);
+                      });
+                      final Map<String, List<Schedule>> grouped = {};
                       for (final s in schedules) {
-                        schedulesByDay.putIfAbsent(s.weekday, () => []).add(s);
+                        String header;
+                        final String dayName = _getWeekdayName(s.weekday);
+                        if (s.date != null) {
+                          header = '$dayName, ${_formatDate(s.date!)}';
+                        } else {
+                          header = dayName;
+                        }
+                        grouped.putIfAbsent(header, () => []).add(s);
                       }
-                      final sortedDays = schedulesByDay.keys.toList()..sort();
                       return ListView.builder(
-                        itemCount: sortedDays.length,
+                        itemCount: grouped.length,
                         itemBuilder: (context, index) {
-                          final day = sortedDays[index];
-                          final daySchedules = schedulesByDay[day]!;
-                          daySchedules.sort((a, b) => a.startTime.compareTo(b.startTime));
+                          final header = grouped.keys.elementAt(index);
+                          final items = grouped[header]!;
                           return Card(
                             margin: const EdgeInsets.only(bottom: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -393,46 +457,62 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    _weekdays[day - 1], // day 1..7 -> index 0..6
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF5E35B1),
-                                    ),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today, size: 18, color: Color(0xFF5E35B1)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        header,
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF5E35B1),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const Divider(),
                                   SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
                                     child: DataTable(
-                                      columnSpacing: 20,
-                                      horizontalMargin: 10,
+                                      columnSpacing: 15,
+                                      horizontalMargin: 5,
+                                      headingRowHeight: 30,
+                                      dataRowMinHeight: 40,
                                       columns: const [
                                         DataColumn(label: Text('Время')),
                                         DataColumn(label: Text('Группа')),
                                         DataColumn(label: Text('Предмет')),
-                                        DataColumn(label: Text('Преподаватель')),
+                                        DataColumn(label: Text('Препод.')),
                                         DataColumn(label: Text('')),
                                       ],
                                       rows:
-                                          daySchedules.map((s) {
+                                          items.map((s) {
                                             final subjectName = s.subject?.name ?? '—';
                                             final groupName = s.group?.name ?? '—';
-                                            final teacherName = _teacherNames[s.teacherId] ?? '—';
+                                            final teacherName = s.teacherName;
                                             final timeRange =
                                                 '${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)}';
                                             return DataRow(
                                               cells: [
                                                 DataCell(
-                                                  Text(timeRange, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                                  Text(
+                                                    timeRange,
+                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                                  ),
                                                 ),
                                                 DataCell(Text(groupName)),
                                                 DataCell(Text(subjectName)),
-                                                DataCell(Text(teacherName)),
+                                                DataCell(
+                                                  SizedBox(
+                                                    width: 100,
+                                                    child: Text(teacherName, overflow: TextOverflow.ellipsis),
+                                                  ),
+                                                ),
                                                 DataCell(
                                                   IconButton(
                                                     icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
                                                     onPressed: () => _deleteScheduleEntry(s.id),
-                                                    tooltip: 'Удалить урок',
+                                                    tooltip: 'Удалить',
                                                   ),
                                                 ),
                                               ],
