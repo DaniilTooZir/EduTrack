@@ -5,22 +5,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ScheduleService {
   final SupabaseClient _client;
 
-  ScheduleService({SupabaseClient? client})
-    : _client = client ?? SupabaseConnection.client;
+  ScheduleService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
   Future<List<Schedule>> getScheduleForInstitution(String institutionId) async {
     try {
       final response = await _client
           .from('schedule')
-          .select('*, subject:subjects(*), group:groups(*)')
+          .select('*, subject:subjects(*), group:groups(*), teacher:teachers(*)')
           .eq('institution_id', institutionId)
           .order('weekday', ascending: true)
           .order('start_time', ascending: true);
-
       final List<dynamic> data = response as List<dynamic>;
-      return data
-          .map((e) => Schedule.fromMap(e as Map<String, dynamic>))
-          .toList();
+      return data.map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
       throw Exception('Ошибка загрузки расписания: $e');
     }
@@ -29,11 +25,7 @@ class ScheduleService {
   Future<Schedule?> getScheduleById(String id) async {
     try {
       final response =
-          await _client
-              .from('schedule')
-              .select('*, subject:subjects(*), group:groups(*)')
-              .eq('id', id)
-              .maybeSingle();
+          await _client.from('schedule').select('*, subject:subjects(*), group:groups(*)').eq('id', id).maybeSingle();
       if (response == null) return null;
       return Schedule.fromMap(response);
     } catch (e) {
@@ -81,38 +73,21 @@ class ScheduleService {
   }
 
   Future<List<Schedule>> getScheduleForStudent(String studentId) async {
-    final student =
-        await _client
-            .from('students')
-            .select('group_id')
-            .eq('id', studentId)
-            .single();
+    final student = await _client.from('students').select('group_id').eq('id', studentId).single();
     final groupId = student['group_id'] as String;
-    final response = await _client
-        .from('schedule')
-        .select('*, subject:subjects(*)')
-        .eq('group_id', groupId);
-    return (response as List)
-        .map((e) => Schedule.fromMap(e as Map<String, dynamic>))
-        .toList();
+    final response = await _client.from('schedule').select('*, subject:subjects(*)').eq('group_id', groupId);
+    return (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
   }
 
   Future<List<Schedule>> getScheduleForTeacher(String teacherId) async {
-    final subjectsResponse = await _client
-        .from('subjects')
-        .select('id')
-        .eq('teacher_id', teacherId);
-    final subjectIds =
-        (subjectsResponse as List).map((s) => s['id'].toString()).toList();
+    final subjectsResponse = await _client.from('subjects').select('id').eq('teacher_id', teacherId);
+    final subjectIds = (subjectsResponse as List).map((s) => s['id'].toString()).toList();
     if (subjectIds.isEmpty) return [];
     final response = await _client
         .from('schedule')
         .select('*, subject:subjects(*), group:groups(*)')
         .filter('subject_id', 'in', '(${subjectIds.join(',')})');
-    final schedules =
-        (response as List)
-            .map((e) => Schedule.fromMap(e as Map<String, dynamic>))
-            .toList();
+    final schedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
     schedules.sort((a, b) {
       if (a.date != null && b.date != null) {
         return a.date!.compareTo(b.date!);

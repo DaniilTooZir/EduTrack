@@ -1,9 +1,11 @@
+import 'package:edu_track/data/services/schedule_service.dart';
+import 'package:edu_track/data/services/session_service.dart';
+import 'package:edu_track/models/schedule.dart';
+import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/data/services/session_service.dart';
-import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
 
 class ScheduleOperatorHomeScreen extends StatefulWidget {
   const ScheduleOperatorHomeScreen({super.key});
@@ -19,6 +21,41 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   final Color primaryColor = const Color(0xFF9575CD);
   final Color drawerStart = const Color(0xFF7E57C2);
   final Color drawerEnd = const Color(0xFF5E35B1);
+
+  final ScheduleService _scheduleService = ScheduleService();
+  late Future<List<Schedule>> _scheduleFuture;
+
+  Key _refreshKey = UniqueKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final institutionId = userProvider.institutionId;
+
+    if (institutionId != null) {
+      _scheduleFuture = _scheduleService.getScheduleForInstitution(institutionId);
+    } else {
+      _scheduleFuture = Future.error('ID учреждения не найден');
+    }
+  }
+
+  void _refreshDashboard() {
+    setState(() {
+      _refreshKey = UniqueKey();
+      _loadData();
+    });
+  }
+
+  void _navigateToTab(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +76,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
         backgroundColor: primaryColor,
         elevation: 4,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(16))),
-        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white)),
+        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -48,7 +85,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             onPressed: () async {
               await SessionService.clearSession();
               userProvider.clearUser();
-              context.go('/');
+              if (context.mounted) context.go('/');
             },
           ),
         ],
@@ -74,11 +111,13 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
               ),
             ),
             _buildDrawerItem(Icons.dashboard, 'Главная', 0),
-            _buildDrawerItem(Icons.schedule, 'Расписание', 1),
+            _buildDrawerItem(Icons.edit_calendar, 'Редактор расписания', 1),
           ],
         ),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
@@ -86,7 +125,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             end: Alignment.bottomRight,
           ),
         ),
-        child: Padding(padding: const EdgeInsets.all(16.0), child: bodyContent),
+        child: bodyContent,
       ),
     );
   }
@@ -113,34 +152,192 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   }
 
   Widget _buildDashboard() {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Добро пожаловать!',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+    return RefreshIndicator(
+      onRefresh: () async {
+        _refreshDashboard();
+        await Future.delayed(const Duration(seconds: 1));
+      },
+      color: primaryColor,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildWelcomeCard(),
+            const SizedBox(height: 24),
+            const Text(
+              'Действия',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToTab(1),
+                icon: const Icon(Icons.edit_calendar),
+                label: const Text('Перейти к редактированию расписания'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF5E35B1),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
-              SizedBox(height: 12),
-              Text(
-                'Вы вошли как оператор расписания. Здесь вы можете управлять расписанием и уроками образовательной организации.',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 24),
-              Text(
-                'Разделы панели:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
-              ),
-              SizedBox(height: 12),
-              Text('• Расписание — создание, редактирование и просмотр расписания занятий.'),
-              Text('• Уроки — управление уроками и их параметрами.'),
-              Text('• Профиль — информация об учетной записи.'),
-            ],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Текущее расписание',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Ниже представлено полное расписание учреждения по дням недели.',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            FutureBuilder<List<Schedule>>(
+              key: _refreshKey,
+              future: _scheduleFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Card(
+                      color: Colors.red.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text('Ошибка: ${snapshot.error}', style: TextStyle(color: Colors.red[900])),
+                      ),
+                    ),
+                  );
+                }
+                final schedules = snapshot.data ?? [];
+                if (schedules.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: Text('Расписание пока пусто.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    ),
+                  );
+                }
+                final Map<int, List<Schedule>> grouped = {};
+                for (final s in schedules) {
+                  grouped.putIfAbsent(s.weekday, () => []).add(s);
+                }
+                final sortedDays = grouped.keys.toList()..sort();
+                return Column(
+                  children:
+                      sortedDays.map((day) {
+                        return _buildDayScheduleCard(day, grouped[day]!);
+                      }).toList(),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7E57C2), Color(0xFF512DA8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Панель управления', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(
+            'Добро пожаловать, Оператор. Здесь вы можете просматривать и корректировать учебное расписание.',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayScheduleCard(int weekday, List<Schedule> dailySchedules) {
+    dailySchedules.sort((a, b) => a.startTime.compareTo(b.startTime));
+    final dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    final dayName = (weekday >= 1 && weekday <= 7) ? dayNames[weekday - 1] : 'Неизвестный день';
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: const Color(0xFFEDE7F6), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.calendar_today, color: Color(0xFF5E35B1), size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    dayName,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 24),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columnSpacing: 20,
+                headingRowHeight: 40,
+                columns: const [
+                  DataColumn(label: Text('Время', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Группа', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Предмет', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Преподаватель', style: TextStyle(fontWeight: FontWeight.bold))),
+                ],
+                rows:
+                    dailySchedules.map((schedule) {
+                      final timeStr = '${schedule.startTime.substring(0, 5)} - ${schedule.endTime.substring(0, 5)}';
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(timeStr, style: const TextStyle(fontWeight: FontWeight.w500))),
+                          DataCell(
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(schedule.groupName ?? '—', style: TextStyle(color: Colors.blue.shade800)),
+                            ),
+                          ),
+                          DataCell(Text(schedule.subjectName ?? '—')),
+                          DataCell(Text(schedule.teacherName, style: const TextStyle(fontSize: 14))),
+                        ],
+                      );
+                    }).toList(),
+              ),
+            ),
+          ],
         ),
       ),
     );

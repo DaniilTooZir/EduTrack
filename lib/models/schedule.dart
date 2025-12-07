@@ -1,5 +1,6 @@
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/subject.dart';
+import 'package:edu_track/models/teacher.dart';
 
 // Модель для расписания уроков
 class Schedule {
@@ -14,6 +15,7 @@ class Schedule {
   final String endTime;
   final Subject? subject;
   final Group? group;
+  final Teacher? teacher;
 
   Schedule({
     required this.id,
@@ -27,14 +29,23 @@ class Schedule {
     required this.endTime,
     this.subject,
     this.group,
+    this.teacher,
   });
 
   String? get subjectName => subject?.name;
   String? get groupName => group?.name;
 
+  String get teacherName {
+    if (teacher != null) {
+      return '${teacher!.surname} ${teacher!.name}';
+    }
+    return 'Неизвестно';
+  }
+
   factory Schedule.fromMap(Map<String, dynamic> map) {
     final subjectMap = map['subject'] as Map<String, dynamic>?;
     final groupMap = map['group'] as Map<String, dynamic>?;
+    final teacherMap = map['teacher'] as Map<String, dynamic>?;
     return Schedule(
       id: map['id']?.toString() ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
@@ -47,6 +58,7 @@ class Schedule {
       endTime: map['end_time']?.toString() ?? '',
       subject: subjectMap != null ? Subject.fromMap(subjectMap) : null,
       group: groupMap != null ? Group.fromMap(groupMap) : null,
+      teacher: teacherMap != null ? Teacher.fromMap(teacherMap) : null,
     );
   }
 
