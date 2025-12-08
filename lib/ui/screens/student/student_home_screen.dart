@@ -43,31 +43,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   Future<void> _loadDashboardData() async {
-    setState(() {
-      _isDashboardLoading = true;
-      _dashboardError = null;
-    });
-
+    if (!_isDashboardLoading) {
+      setState(() {
+        _isDashboardLoading = true;
+        _dashboardError = null;
+      });
+    }
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final studentId = userProvider.userId;
       if (studentId == null) {
-        setState(() {
-          _dashboardError = 'Не удалось получить ID студента';
-          _isDashboardLoading = false;
-        });
+        if (mounted)
+          setState(() {
+            _dashboardError = 'Не удалось получить ID студента';
+            _isDashboardLoading = false;
+          });
         return;
       }
       final groupResponse = await _homeworkService.getGroupByStudentId(studentId);
-      if (groupResponse == null) {
-        setState(() {
-          _dashboardError = 'Не удалось получить группу студента';
-          _isDashboardLoading = false;
-        });
-        return;
+      String? groupName;
+      if (groupResponse != null) {
+        groupName = groupResponse['name'] as String;
       }
-      final groupId = groupResponse['id'] as String;
-      final groupName = groupResponse['name'] as String;
       final homeworks = await _homeworkService.getHomeworksByStudentGroup(studentId);
       final statuses = await _homeworkService.getHomeworkStatusesForStudent(studentId);
       final statusMap = {for (final s in statuses) s.homeworkId: s};
@@ -81,19 +78,22 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           pending++;
         }
       }
-
-      setState(() {
-        _groupName = groupName;
-        _totalHomework = homeworks.length;
-        _completedHomework = completed;
-        _pendingHomework = pending;
-        _isDashboardLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _groupName = groupName;
+          _totalHomework = homeworks.length;
+          _completedHomework = completed;
+          _pendingHomework = pending;
+          _isDashboardLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _dashboardError = 'Ошибка загрузки данных: $e';
-        _isDashboardLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _dashboardError = 'Ошибка загрузки данных: $e';
+          _isDashboardLoading = false;
+        });
+      }
     }
   }
 
@@ -125,77 +125,171 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     );
   }
 
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color iconColor,
+    required Color bgColor,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 32, color: iconColor),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 4),
+                  Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard(IconData icon, String label, VoidCallback onTap) {
+    return Container(
+      width: 110,
+      margin: const EdgeInsets.only(right: 12),
+      child: Material(
+        color: Colors.white,
+        elevation: 2,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: const Color(0xFF5E35B1), size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDashboard() {
     final theme = Theme.of(context);
-    if (_isDashboardLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_dashboardError != null) {
-      return Center(
-        child: Text(
-          _dashboardError!,
-          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.red),
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Привет, студент!',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF4A148C),
+    return RefreshIndicator(
+      onRefresh: _loadDashboardData,
+      color: primaryColor,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7E57C2), Color(0xFF512DA8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(color: Colors.deepPurple.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+                ],
               ),
-              const SizedBox(height: 12),
-              if (_groupName != null) Text('Ваша группа: $_groupName', style: theme.textTheme.titleMedium),
-              const SizedBox(height: 24),
-              Card(
-                elevation: 6,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.assignment, size: 40, color: Color(0xFF5E35B1)),
-                  title: const Text('Всего домашних заданий'),
-                  trailing: Text('$_totalHomework', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              Card(
-                elevation: 6,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.check_circle, size: 40, color: Colors.green),
-                  title: const Text('Выполнено'),
-                  trailing: Text(
-                    '$_completedHomework',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Привет, студент!',
+                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  if (_groupName != null)
+                    Text('Твоя группа: $_groupName', style: const TextStyle(color: Colors.white70, fontSize: 16))
+                  else
+                    const Text('Добро пожаловать в EduTrack', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                ],
               ),
-              Card(
-                elevation: 6,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.radio_button_unchecked, size: 40, color: Colors.red),
-                  title: const Text('Осталось выполнить'),
-                  trailing: Text(
-                    '$_pendingHomework',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Быстрые действия',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 110,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _buildQuickActionCard(Icons.assignment, 'Мои задания', () => _onItemTapped(1)),
+                  _buildQuickActionCard(Icons.calendar_month, 'Расписание', () => _onItemTapped(3)),
+                  _buildQuickActionCard(Icons.menu_book, 'Уроки', () => _onItemTapped(2)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Твоя успеваемость',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+            ),
+            const SizedBox(height: 12),
+            if (_isDashboardLoading)
+              const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+            else if (_dashboardError != null)
+              Center(child: Text(_dashboardError!, style: const TextStyle(color: Colors.red)))
+            else
+              Column(
+                children: [
+                  _buildStatCard(
+                    icon: Icons.assignment,
+                    title: 'Всего заданий',
+                    value: '$_totalHomework',
+                    iconColor: const Color(0xFF5E35B1),
+                    bgColor: const Color(0xFFEDE7F6),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  _buildStatCard(
+                    icon: Icons.check_circle,
+                    title: 'Выполнено',
+                    value: '$_completedHomework',
+                    iconColor: Colors.green,
+                    bgColor: Colors.green.shade50,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildStatCard(
+                    icon: Icons.pending_actions,
+                    title: 'Осталось',
+                    value: '$_pendingHomework',
+                    iconColor: Colors.orange,
+                    bgColor: Colors.orange.shade50,
+                  ),
+                ],
               ),
-            ],
-          ),
+            const SizedBox(height: 24),
+          ],
         ),
       ),
     );
@@ -220,21 +314,29 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final bool isDashboard = _selectedIndex == 0;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primaryColor,
-        elevation: 4,
-        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white)),
+        elevation: 0,
+        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
+          if (isDashboard)
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              tooltip: 'Обновить',
+              onPressed: _loadDashboardData,
+            ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
             tooltip: 'Выйти',
             onPressed: () async {
               await SessionService.clearSession();
-              userProvider.clearUser();
-              context.go('/');
+              if (context.mounted) {
+                Provider.of<UserProvider>(context, listen: false).clearUser();
+                context.go('/');
+              }
             },
           ),
         ],
@@ -255,19 +357,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню студента',
-                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.dashboard, 'Главная', 0),
-            _buildDrawerItem(Icons.assignment, 'Домашние задания', 1),
-            _buildDrawerItem(Icons.school, 'Уроки', 2),
-            _buildDrawerItem(Icons.schedule, 'Расписание', 3),
-            _buildDrawerItem(Icons.person, 'Профиль', 4),
+            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0),
+            _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1),
+            _buildDrawerItem(Icons.menu_book_rounded, 'Уроки', 2),
+            _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3),
+            _buildDrawerItem(Icons.person_rounded, 'Профиль', 4),
           ],
         ),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
@@ -275,7 +379,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Padding(padding: const EdgeInsets.all(16.0), child: _buildBody()),
+        child: _buildBody(),
       ),
     );
   }
