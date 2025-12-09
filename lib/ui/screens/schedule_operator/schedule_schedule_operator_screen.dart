@@ -146,6 +146,34 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     }
     setState(() => _isAdding = true);
     try {
+      final sTime = _formatTimeOfDay(_startTime!);
+      final eTime = _formatTimeOfDay(_endTime!);
+      final conflictError = await _scheduleService.checkConflict(
+        institutionId: _institutionId!,
+        date: _selectedDate!,
+        startTime: sTime,
+        endTime: eTime,
+        teacherId: _selectedTeacherId!,
+        groupId: _selectedGroupId!,
+      );
+      if (conflictError != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(child: Text(conflictError)),
+              ],
+            ),
+            backgroundColor: Colors.orange[800],
+          ),
+        );
+        setState(() => _isAdding = false);
+        return;
+      }
+
       final int targetWeekday = _selectedDate!.weekday;
       await _scheduleService.addScheduleEntry(
         institutionId: _institutionId!,

@@ -101,4 +101,39 @@ class ScheduleService {
 
     return schedules;
   }
+
+  Future<String?> checkConflict({
+    required String institutionId,
+    required DateTime date,
+    required String startTime,
+    required String endTime,
+    required String teacherId,
+    required String groupId,
+  }) async {
+    try {
+      final dateStr = date.toIso8601String();
+      final response = await _client
+          .from('schedule')
+          .select('group_id, teacher_id, start_time, end_time')
+          .eq('institution_id', institutionId)
+          .eq('date', dateStr)
+          .lt('start_time', endTime)
+          .gt('end_time', startTime);
+      final List<dynamic> conflicts = response as List<dynamic>;
+      for (final lesson in conflicts) {
+        final existingTeacher = lesson['teacher_id'] as String;
+        final existingGroup = lesson['group_id'] as String;
+        if (existingTeacher == teacherId) {
+          return 'Этот преподаватель уже занят в указанное время!';
+        }
+        if (existingGroup == groupId) {
+          return 'У этой группы уже есть урок в указанное время!';
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Ошибка при проверке конфликтов: $e');
+      return null;
+    }
+  }
 }
