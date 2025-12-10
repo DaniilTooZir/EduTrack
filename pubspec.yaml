@@ -44,7 +44,9 @@ dependencies:
 
   #Defense
   flutter_dotenv: ^5.2.1
-
+  
+  image_picker: ^1.2.1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
