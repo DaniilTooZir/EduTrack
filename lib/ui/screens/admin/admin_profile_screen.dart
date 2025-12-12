@@ -1,3 +1,4 @@
+import 'package:edu_track/data/services/avatar_service.dart';
 import 'package:edu_track/data/services/education_head_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/models/education_head.dart';
@@ -31,6 +32,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   late final EducationHeadService _headService;
   late final InstitutionService _institutionService;
+  final _avatarService = AvatarService();
+
   EducationHead? _admin;
   Institution? _institution;
 
@@ -60,6 +63,27 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateAvatar() async {
+    final file = await _avatarService.pickImage();
+    if (file == null) return;
+    setState(() => _isSaving = true);
+    try {
+      final url = await _avatarService.uploadAvatar(file: file, userId: _admin!.id);
+      if (url != null) {
+        await _headService.updateHeadData(_admin!.id, {'avatar_url': url});
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Фото профиля обновлено')));
+        _loadAdminData();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -220,13 +244,48 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   }
 
   Widget _buildAvatar() {
-    final initials = '${_admin!.name[0]}${_admin!.surname[0]}';
-    return CircleAvatar(
-      radius: 40,
-      backgroundColor: Colors.deepPurple.shade200,
-      child: Text(
-        initials.toUpperCase(),
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+    final initials = '${_admin!.name[0]}${_admin!.surname[0]}'.toUpperCase();
+    final avatarUrl = _admin!.avatarUrl;
+    return Center(
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 60,
+            backgroundColor: Colors.deepPurple.shade200,
+            backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+            child:
+                avatarUrl == null
+                    ? Text(
+                      initials,
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                    )
+                    : null,
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Material(
+              color: const Color(0xFF5E35B1),
+              shape: const CircleBorder(),
+              elevation: 2,
+              child: InkWell(
+                onTap: _isSaving ? null : _updateAvatar,
+                customBorder: const CircleBorder(),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child:
+                      _isSaving
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                          : const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

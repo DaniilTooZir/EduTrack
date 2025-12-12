@@ -9,6 +9,7 @@ class EducationHead {
   final String institutionId;
   final String phone;
   final DateTime createdAt;
+  final String? avatarUrl;
 
   EducationHead({
     required this.id,
@@ -20,6 +21,7 @@ class EducationHead {
     required this.institutionId,
     required this.phone,
     required this.createdAt,
+    this.avatarUrl,
   });
 
   factory EducationHead.fromMap(Map<String, dynamic> map) {
@@ -36,6 +38,7 @@ class EducationHead {
           map['created_at'] != null
               ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
               : DateTime.now(),
+      avatarUrl: map['avatar_url'],
     );
   }
 
@@ -50,6 +53,7 @@ class EducationHead {
       'institution_id': institutionId,
       'phone': phone,
       'created_at': createdAt.toIso8601String(),
+      'avatar_url': avatarUrl,
     };
   }
 }

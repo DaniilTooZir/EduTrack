@@ -13,6 +13,7 @@ class Student {
   final bool isHeadman;
   final DateTime createdAt;
   final Group? group;
+  final String? avatarUrl;
 
   Student({
     required this.id,
@@ -26,6 +27,7 @@ class Student {
     required this.isHeadman,
     required this.createdAt,
     this.group,
+    this.avatarUrl,
   });
 
   factory Student.fromMap(Map<String, dynamic> map) {
@@ -45,6 +47,7 @@ class Student {
               ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
               : DateTime.now(),
       group: groupMap != null ? Group.fromMap(groupMap) : null,
+      avatarUrl: map['avatar_url'],
     );
   }
 
@@ -60,6 +63,7 @@ class Student {
       'group_id': groupId,
       'isHeadman': isHeadman,
       'created_at': createdAt.toIso8601String(),
+      'avatar_url': avatarUrl,
     };
   }
 }

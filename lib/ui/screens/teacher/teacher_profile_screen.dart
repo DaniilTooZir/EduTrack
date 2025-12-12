@@ -1,12 +1,13 @@
+import 'package:edu_track/data/services/avatar_service.dart';
+import 'package:edu_track/data/services/institution_service.dart';
+import 'package:edu_track/data/services/teacher_service.dart';
+import 'package:edu_track/models/institution.dart';
+import 'package:edu_track/models/teacher.dart';
+import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/models/teacher.dart';
-import 'package:edu_track/models/institution.dart';
-import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/data/services/teacher_service.dart';
-import 'package:edu_track/data/services/institution_service.dart';
-import 'package:edu_track/utils/validators.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({super.key});
@@ -32,6 +33,8 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
   late final TeacherService _teacherService;
   late final InstitutionService _institutionService;
+  final _avatarService = AvatarService();
+
   Teacher? _teacher;
   Institution? _institution;
 
@@ -61,6 +64,27 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateAvatar() async {
+    final file = await _avatarService.pickImage();
+    if (file == null) return;
+    setState(() => _isSaving = true);
+    try {
+      final url = await _avatarService.uploadAvatar(file: file, userId: _teacher!.id);
+      if (url != null) {
+        await _teacherService.updateTeacherData(_teacher!.id, {'avatar_url': url});
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Фото профиля обновлено')));
+        _loadTeacherData();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -233,13 +257,48 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   }
 
   Widget _buildAvatar() {
-    final initials = '${_teacher!.name[0]}${_teacher!.surname[0]}';
-    return CircleAvatar(
-      radius: 40,
-      backgroundColor: Colors.deepPurple.shade200,
-      child: Text(
-        initials.toUpperCase(),
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+    final initials = '${_teacher!.name[0]}${_teacher!.surname[0]}'.toUpperCase();
+    final avatarUrl = _teacher!.avatarUrl;
+    return Center(
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 60,
+            backgroundColor: Colors.deepPurple.shade200,
+            backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+            child:
+                avatarUrl == null
+                    ? Text(
+                      initials,
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                    )
+                    : null,
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Material(
+              color: const Color(0xFF5E35B1),
+              shape: const CircleBorder(),
+              elevation: 2,
+              child: InkWell(
+                onTap: _isSaving ? null : _updateAvatar,
+                customBorder: const CircleBorder(),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child:
+                      _isSaving
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                          : const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

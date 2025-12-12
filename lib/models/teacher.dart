@@ -9,6 +9,7 @@ class Teacher {
   final String institutionId;
   final String? department;
   final DateTime createdAt;
+  final String? avatarUrl;
 
   Teacher({
     required this.id,
@@ -20,6 +21,7 @@ class Teacher {
     required this.institutionId,
     this.department,
     required this.createdAt,
+    this.avatarUrl,
   });
 
   factory Teacher.fromMap(Map<String, dynamic> map) {
@@ -36,6 +38,7 @@ class Teacher {
           map['created_at'] != null
               ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
               : DateTime.now(),
+      avatarUrl: map['avatar_url'],
     );
   }
 
@@ -50,6 +53,7 @@ class Teacher {
       'institution_id': institutionId,
       'department': department,
       'created_at': createdAt.toIso8601String(),
+      'avatar_url': avatarUrl,
     };
   }
 }
