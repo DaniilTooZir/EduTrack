@@ -65,6 +65,8 @@ class HomeworkService {
     required String title,
     String? description,
     DateTime? dueDate,
+    String? fileUrl,
+    String? fileName,
   }) async {
     try {
       await _client.from('homework').insert({
@@ -74,6 +76,8 @@ class HomeworkService {
         'title': title,
         'description': description,
         'due_date': dueDate?.toIso8601String(),
+        'file_url': fileUrl,
+        'file_name': fileName,
       });
     } catch (e) {
       throw Exception('Ошибка при создании ДЗ: $e');
@@ -86,6 +90,9 @@ class HomeworkService {
     String? description,
     DateTime? dueDate,
     String? groupId,
+    String? fileUrl,
+    String? fileName,
+    bool deleteFile = false,
   }) async {
     try {
       final Map<String, dynamic> updateData = {};
@@ -93,6 +100,13 @@ class HomeworkService {
       if (description != null) updateData['description'] = description;
       if (dueDate != null) updateData['due_date'] = dueDate.toIso8601String();
       if (groupId != null) updateData['group_id'] = groupId;
+      if (deleteFile) {
+        updateData['file_url'] = null;
+        updateData['file_name'] = null;
+      } else {
+        if (fileUrl != null) updateData['file_url'] = fileUrl;
+        if (fileName != null) updateData['file_name'] = fileName;
+      }
       await _client.from('homework').update(updateData).eq('id', id);
     } catch (e) {
       throw Exception('Ошибка при обновлении домашнего задания: $e');

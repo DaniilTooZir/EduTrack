@@ -1,3 +1,4 @@
+import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
@@ -6,6 +7,7 @@ import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/utils/validators.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -22,9 +24,13 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   final _homeworkService = HomeworkService();
   final _subjectService = SubjectService();
   final _groupService = GroupService();
+  final _fileService = FileService();
+
+  PlatformFile? _selectedFile;
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isUploadingFile = false;
 
   List<Homework> _homeworks = [];
   List<Subject> _subjects = [];
@@ -101,6 +107,18 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
     setState(() => _isSaving = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
+      String? fileUrl;
+      String? fileName;
+      if (_selectedFile != null) {
+        setState(() => _isUploadingFile = true);
+        fileUrl = await _fileService.uploadFile(file: _selectedFile!, folderName: 'homework_files');
+        fileName = _selectedFile!.name;
+        setState(() => _isUploadingFile = false);
+        if (fileUrl == null) {
+          throw Exception('Не удалось загрузить файл');
+        }
+      }
+
       await _homeworkService.addHomework(
         institutionId: userProvider.institutionId!,
         subjectId: _selectedSubjectId!,
@@ -108,6 +126,8 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         dueDate: _dueDate,
+        fileUrl: fileUrl,
+        fileName: fileName,
       );
 
       if (!mounted) return;
@@ -116,7 +136,10 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
       ).showSnackBar(const SnackBar(content: Text('Домашнее задание добавлено'), backgroundColor: Colors.green));
       _titleController.clear();
       _descriptionController.clear();
-      setState(() => _dueDate = null);
+      setState(() {
+        _dueDate = null;
+        _selectedFile = null;
+      });
       await _loadData();
     } catch (e) {
       if (!mounted) return;
@@ -128,17 +151,39 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
     }
   }
 
+  Future<void> _pickFile() async {
+    final file = await _fileService.pickFile();
+    if (file != null) {
+      setState(() => _selectedFile = file);
+    }
+  }
+
   void _showEditHomeworkDialog(Homework hw) {
     final editTitleController = TextEditingController(text: hw.title);
     final editDescriptionController = TextEditingController(text: hw.description ?? '');
     DateTime? editDueDate = hw.dueDate;
     String? editSelectedGroupId = hw.group?.id;
+    PlatformFile? editNewFile;
+    final bool hasExistingFile = hw.fileUrl != null;
+    bool isFileDeleted = false;
+    bool isDialogUploading = false;
     final editFormKey = GlobalKey<FormState>();
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
+            Future<void> pickFileForEdit() async {
+              final file = await _fileService.pickFile();
+              if (file != null) {
+                setStateDialog(() {
+                  editNewFile = file;
+                  isFileDeleted = false;
+                });
+              }
+            }
+
             return AlertDialog(
               title: const Text('Редактировать ДЗ'),
               content: SingleChildScrollView(
@@ -165,6 +210,55 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                         controller: editDescriptionController,
                         maxLines: 3,
                         decoration: const InputDecoration(labelText: 'Описание', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            if (editNewFile != null) ...[
+                              const Icon(Icons.upload_file, color: Colors.green),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(editNewFile!.name, overflow: TextOverflow.ellipsis)),
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.red),
+                                tooltip: 'Отменить выбор',
+                                onPressed: () => setStateDialog(() => editNewFile = null),
+                              ),
+                            ] else if (hasExistingFile && !isFileDeleted) ...[
+                              const Icon(Icons.attachment, color: Colors.blue),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(hw.fileName ?? 'Файл', overflow: TextOverflow.ellipsis)),
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.orange),
+                                tooltip: 'Заменить файл',
+                                onPressed: pickFileForEdit,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                tooltip: 'Удалить файл',
+                                onPressed: () => setStateDialog(() => isFileDeleted = true),
+                              ),
+                            ] else ...[
+                              IconButton.filledTonal(onPressed: pickFileForEdit, icon: const Icon(Icons.attach_file)),
+                              const SizedBox(width: 8),
+                              const Text('Прикрепить файл', style: TextStyle(color: Colors.grey)),
+                              if (isFileDeleted) ...[
+                                const Spacer(),
+                                const Text('Удалено', style: TextStyle(color: Colors.red, fontSize: 12)),
+                                IconButton(
+                                  icon: const Icon(Icons.undo, color: Colors.grey),
+                                  tooltip: 'Вернуть',
+                                  onPressed: () => setStateDialog(() => isFileDeleted = false),
+                                ),
+                              ],
+                            ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -195,28 +289,56 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+                TextButton(
+                  onPressed: isDialogUploading ? null : () => Navigator.pop(context),
+                  child: const Text('Отмена'),
+                ),
                 ElevatedButton(
-                  onPressed: () async {
-                    if (!editFormKey.currentState!.validate()) return;
-                    if (editSelectedGroupId == null) return;
-                    try {
-                      await _homeworkService.updateHomework(
-                        id: hw.id,
-                        title: editTitleController.text.trim(),
-                        description: editDescriptionController.text.trim(),
-                        dueDate: editDueDate,
-                        groupId: editSelectedGroupId!,
-                      );
-                      if (!mounted) return;
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ДЗ обновлено')));
-                      _loadData();
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
-                    }
-                  },
-                  child: const Text('Сохранить'),
+                  onPressed:
+                      isDialogUploading
+                          ? null
+                          : () async {
+                            if (!editFormKey.currentState!.validate()) return;
+                            if (editSelectedGroupId == null) return;
+                            setStateDialog(() => isDialogUploading = true);
+                            try {
+                              String? newFileUrl;
+                              String? newFileName;
+                              if (editNewFile != null) {
+                                newFileUrl = await _fileService.uploadFile(
+                                  file: editNewFile!,
+                                  folderName: 'homework_files',
+                                );
+                                newFileName = editNewFile!.name;
+                                if (newFileUrl == null) throw Exception('Ошибка загрузки файла');
+                              }
+                              await _homeworkService.updateHomework(
+                                id: hw.id,
+                                title: editTitleController.text.trim(),
+                                description: editDescriptionController.text.trim(),
+                                dueDate: editDueDate,
+                                groupId: editSelectedGroupId!,
+                                fileUrl: newFileUrl,
+                                fileName: newFileName,
+                                deleteFile: editNewFile == null && isFileDeleted,
+                              );
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ДЗ обновлено')));
+                              _loadData();
+                            } catch (e) {
+                              setStateDialog(() => isDialogUploading = false);
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+                            }
+                          },
+                  child:
+                      isDialogUploading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                          : const Text('Сохранить'),
                 ),
               ],
             );
@@ -410,6 +532,49 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                     decoration: const InputDecoration(
                                       labelText: 'Описание (опционально)',
                                       border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        if (_selectedFile != null) ...[
+                                          const Icon(Icons.attach_file, color: Color(0xFF5E35B1)),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              _selectedFile!.name,
+                                              style: const TextStyle(fontWeight: FontWeight.w500),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.close, color: Colors.redAccent),
+                                            onPressed: () => setState(() => _selectedFile = null),
+                                            tooltip: 'Удалить файл',
+                                          ),
+                                        ] else ...[
+                                          IconButton.filledTonal(
+                                            onPressed: _pickFile,
+                                            icon: const Icon(Icons.upload_file),
+                                            style: IconButton.styleFrom(
+                                              backgroundColor: const Color(0xFFEDE7F6),
+                                              foregroundColor: const Color(0xFF5E35B1),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            'Прикрепить файл (PDF, Doc, Img)',
+                                            style: TextStyle(color: Colors.grey),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(height: 12),

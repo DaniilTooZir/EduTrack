@@ -14,6 +14,8 @@ class Homework {
   final DateTime? createdAt;
   final Subject? subject;
   final Group? group;
+  final String? fileUrl;
+  final String? fileName;
 
   Homework({
     required this.id,
@@ -27,6 +29,8 @@ class Homework {
     this.createdAt,
     this.subject,
     this.group,
+    this.fileUrl,
+    this.fileName,
   });
 
   factory Homework.fromMap(Map<String, dynamic> map) {
@@ -42,6 +46,8 @@ class Homework {
       createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'].toString()) : null,
       subject: map['subject'] != null ? Subject.fromMap(map['subject'] as Map<String, dynamic>) : null,
       group: map['group'] != null ? Group.fromMap(map['group'] as Map<String, dynamic>) : null,
+      fileUrl: map['file_url'],
+      fileName: map['file_name'],
     );
   }
 
@@ -56,6 +62,8 @@ class Homework {
       'description': description,
       if (dueDate != null) 'due_date': dueDate!.toIso8601String(),
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+      'file_url': fileUrl,
+      'file_name': fileName,
     };
   }
 }
