@@ -107,11 +107,6 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                       label: 'Оценки',
                       onTap: () => context.push('/teacher/grades', extra: lesson),
                     ),
-                    _ActionButton(
-                      icon: Icons.check_circle,
-                      label: 'Посещ.',
-                      onTap: () => context.push('/teacher/attendance', extra: lesson),
-                    ),
                   ],
                 ),
               ),
