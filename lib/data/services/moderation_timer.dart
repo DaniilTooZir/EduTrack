@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+
 import 'package:edu_track/data/services/institution_request_moderation_service.dart';
+import 'package:flutter/foundation.dart';
 
 class ModerationTimer {
   static Timer? _timer;

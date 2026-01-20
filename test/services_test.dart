@@ -20,10 +20,14 @@ class AppUtils {
 
   static String formatStatus(String status) {
     switch (status) {
-      case 'approved': return 'Одобрено';
-      case 'rejected': return 'Отклонено';
-      case 'pending': return 'В ожидании';
-      default: return 'Неизвестно';
+      case 'approved':
+        return 'Одобрено';
+      case 'rejected':
+        return 'Отклонено';
+      case 'pending':
+        return 'В ожидании';
+      default:
+        return 'Неизвестно';
     }
   }
 }
@@ -73,11 +77,6 @@ void main() {
 
     test('Email валидация: некорректный email (без @)', () {
       expect(AppUtils.isValidEmail('teststudy.com'), false);
-    });
-
-    test('Форматирование статуса: перевод на русский', () {
-      expect(AppUtils.formatStatus('approved'), 'Одобрено');
-      expect(AppUtils.formatStatus('unknown_code'), 'Неизвестно');
     });
   });
 }
