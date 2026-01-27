@@ -1,7 +1,7 @@
+import 'package:edu_track/data/services/users_fetch_service.dart';
+import 'package:edu_track/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/data/services/users_fetch_service.dart';
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
@@ -13,6 +13,7 @@ class UserListScreen extends StatefulWidget {
 class _UserListScreenState extends State<UserListScreen> {
   List<Map<String, dynamic>> _allTeachers = [];
   List<Map<String, dynamic>> _allStudents = [];
+  List<Map<String, dynamic>> _allOperators = [];
   List<Map<String, dynamic>> _filteredUsers = [];
 
   bool _isLoading = true;
@@ -37,9 +38,11 @@ class _UserListScreenState extends State<UserListScreen> {
     try {
       final teachers = await service.fetchTeachers(institutionId);
       final students = await service.fetchStudents(institutionId);
+      final operators = await service.fetchScheduleOperators(institutionId);
       setState(() {
         _allTeachers = teachers;
         _allStudents = students;
+        _allOperators = operators;
         _applyFilters();
         _isLoading = false;
       });
@@ -56,6 +59,9 @@ class _UserListScreenState extends State<UserListScreen> {
     if (_selectedRole == 'teacher' || _selectedRole == 'all') {
       combined += _allTeachers.map((t) => {...t, 'role': 'teacher'}).toList();
     }
+    if (_selectedRole == 'schedule_operator' || _selectedRole == 'all') {
+      combined += _allOperators.map((o) => {...o, 'role': 'schedule_operator'}).toList();
+    }
     if (_selectedRole == 'student' || _selectedRole == 'all') {
       combined += _allStudents.map((s) => {...s, 'role': 'student'}).toList();
     }
@@ -63,10 +69,10 @@ class _UserListScreenState extends State<UserListScreen> {
       combined =
           combined.where((user) {
             final query = _searchQuery.toLowerCase();
-            return user['name'].toLowerCase().contains(query) ||
-                user['surname'].toLowerCase().contains(query) ||
-                user['email'].toLowerCase().contains(query) ||
-                user['login'].toLowerCase().contains(query);
+            return (user['name']?.toLowerCase().contains(query) ?? false) ||
+                (user['surname']?.toLowerCase().contains(query) ?? false) ||
+                (user['email']?.toLowerCase().contains(query) ?? false) ||
+                (user['login']?.toLowerCase().contains(query) ?? false);
           }).toList();
     }
     setState(() {
@@ -155,6 +161,8 @@ class _UserListScreenState extends State<UserListScreen> {
                 const SizedBox(width: 10),
                 _filterChip('Преподаватели', 'teacher'),
                 const SizedBox(width: 10),
+                _filterChip('Операторы', 'schedule_operator'),
+                const SizedBox(width: 10),
                 _filterChip('Студенты', 'student'),
               ],
             ),
@@ -188,19 +196,33 @@ class _UserListScreenState extends State<UserListScreen> {
     final fullName = '${user['surname']} ${user['name']}';
     final role = user['role'] as String;
     final isTeacher = role == 'teacher';
-    final subtitle =
-        isTeacher
-            ? '${user['email']} • ${user['login']}'
-            : '${user['email']} • ${user['login']} • Группа ${user['group_name']}';
+    final isOperator = role == 'schedule_operator';
+    String subtitle;
+    if (isTeacher) {
+      subtitle = '${user['email']} • ${user['login']}';
+    } else if (isOperator) {
+      subtitle = '${user['email']} • ${user['login']} (Оператор)';
+    } else {
+      subtitle = '${user['email']} • ${user['login']} • Группа ${user['group_name']}';
+    }
+    Color avatarColor;
+    IconData icon;
+    if (isTeacher) {
+      avatarColor = const Color(0xFF9575CD);
+      icon = Icons.school;
+    } else if (isOperator) {
+      avatarColor = Colors.orange.shade400;
+      icon = Icons.edit_calendar;
+    } else {
+      avatarColor = const Color(0xFF673AB7);
+      icon = Icons.person;
+    }
 
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isTeacher ? const Color(0xFF9575CD) : const Color(0xFF673AB7),
-          child: Icon(isTeacher ? Icons.person : Icons.school, color: Colors.white),
-        ),
+        leading: CircleAvatar(backgroundColor: avatarColor, child: Icon(icon, color: Colors.white)),
         title: Text(fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
         trailing: IconButton(

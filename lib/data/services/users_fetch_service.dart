@@ -13,6 +13,14 @@ class UsersFetchService {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  Future<List<Map<String, dynamic>>> fetchScheduleOperators(String institutionId) async {
+    final response = await _client
+        .from('schedule_operators')
+        .select('id, name, surname, email, login')
+        .eq('institution_id', institutionId);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
   Future<List<Map<String, dynamic>>> fetchStudents(String institutionId) async {
     final response = await _client
         .from('students')
@@ -30,7 +38,17 @@ class UsersFetchService {
   }
 
   Future<void> deleteUserById(String id, String role) async {
-    final table = role == 'teacher' ? 'teachers' : 'students';
+    String table;
+    switch (role) {
+      case 'teacher':
+        table = 'teachers';
+        break;
+      case 'schedule_operator':
+        table = 'schedule_operators';
+        break;
+      default:
+        table = 'students';
+    }
     await _client.from(table).delete().eq('id', id);
   }
 }
