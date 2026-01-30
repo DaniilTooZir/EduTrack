@@ -1,7 +1,5 @@
 import 'package:edu_track/data/services/subject_service.dart';
-import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/subject.dart';
-import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -17,25 +15,18 @@ class SubjectAdminScreen extends StatefulWidget {
 
 class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
   late final SubjectService _subjectService;
-  late final TeacherService _teacherService;
-
   List<Subject> _subjects = [];
-  List<Teacher> _teachers = [];
   bool _isLoading = true;
   bool _isAdding = false;
-
   String? _institutionId;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  String? _selectedTeacherId;
-
   final _subjectNameAllowList = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s\-\.\(\)]');
 
   @override
   void initState() {
     super.initState();
     _subjectService = SubjectService();
-    _teacherService = TeacherService();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _institutionId = userProvider.institutionId;
     _loadData();
@@ -46,11 +37,9 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
     setState(() => _isLoading = true);
     try {
       final subjects = await _subjectService.getSubjectsForInstitution(_institutionId!);
-      final teachers = await _teacherService.getTeachers(_institutionId!);
       if (mounted) {
         setState(() {
           _subjects = subjects;
-          _teachers = teachers;
           _isLoading = false;
         });
       }
@@ -70,27 +59,17 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
 
   Future<void> _addSubject() async {
     FocusScope.of(context).unfocus();
-
     if (!_formKey.currentState!.validate()) return;
-    if (_institutionId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ошибка: ID учреждения не найден')));
-      return;
-    }
+    if (_institutionId == null) return;
     setState(() => _isAdding = true);
     try {
-      await _subjectService.addSubject(
-        name: _nameController.text.trim(),
-        institutionId: _institutionId!,
-        teacherId: _selectedTeacherId!,
-      );
+      await _subjectService.addSubject(name: _nameController.text.trim(), institutionId: _institutionId!);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Предмет успешно добавлен'), backgroundColor: Colors.green));
       _nameController.clear();
-      setState(() => _selectedTeacherId = null);
-      final updatedSubjects = await _subjectService.getSubjectsForInstitution(_institutionId!);
-      setState(() => _subjects = updatedSubjects);
+      _loadData();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -103,7 +82,6 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
 
   Future<void> _editSubject(Subject subject) async {
     final editNameController = TextEditingController(text: subject.name);
-    String? editTeacherId = subject.teacherId;
     final editFormKey = GlobalKey<FormState>();
     await showDialog(
       context: context,
@@ -114,31 +92,11 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                 title: const Text('Изменить предмет'),
                 content: Form(
                   key: editFormKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        controller: editNameController,
-                        decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
-                        inputFormatters: [FilteringTextInputFormatter.allow(_subjectNameAllowList)],
-                        validator: (val) => Validators.requiredField(val, fieldName: 'Название'),
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: editTeacherId,
-                        isExpanded: true,
-                        decoration: const InputDecoration(labelText: 'Преподаватель', border: OutlineInputBorder()),
-                        items:
-                            _teachers.map((teacher) {
-                              return DropdownMenuItem(
-                                value: teacher.id,
-                                child: Text('${teacher.surname} ${teacher.name}', overflow: TextOverflow.ellipsis),
-                              );
-                            }).toList(),
-                        onChanged: (val) => setState(() => editTeacherId = val),
-                        validator: (val) => val == null ? 'Выберите преподавателя' : null,
-                      ),
-                    ],
+                  child: TextFormField(
+                    controller: editNameController,
+                    decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
+                    inputFormatters: [FilteringTextInputFormatter.allow(_subjectNameAllowList)],
+                    validator: (val) => Validators.requiredField(val, fieldName: 'Название'),
                   ),
                 ),
                 actions: [
@@ -149,15 +107,10 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                       try {
                         Navigator.pop(ctx);
                         this.setState(() => _isLoading = true);
-                        await _subjectService.updateSubject(
-                          id: subject.id,
-                          name: editNameController.text.trim(),
-                          teacherId: editTeacherId!,
-                        );
-
+                        await _subjectService.updateSubject(id: subject.id, name: editNameController.text.trim());
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Предмет обновлен')));
-                        _loadData(); // Перезагружаем данные
+                        _loadData();
                       } catch (e) {
                         if (!mounted) return;
                         this.setState(() => _isLoading = false);
@@ -193,6 +146,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
             ],
           ),
     );
+
     if (confirmed == true) {
       setState(() => _isLoading = true);
       try {
@@ -208,31 +162,12 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
     }
   }
 
-  String _getTeacherName(String teacherId) {
-    final teacher = _teachers.firstWhere(
-      (t) => t.id == teacherId,
-      orElse:
-          () => Teacher(
-            id: '',
-            name: 'Неизвестно',
-            surname: '',
-            email: '',
-            login: '',
-            password: '',
-            institutionId: '',
-            createdAt: DateTime.now(),
-          ),
-    );
-    return '${teacher.surname} ${teacher.name}';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       body: Container(
         constraints: const BoxConstraints.expand(),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
             begin: Alignment.topLeft,
@@ -264,22 +199,6 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                             validator: (val) => Validators.requiredField(val, fieldName: 'Название'),
                           ),
                           const SizedBox(height: 16),
-                          DropdownButtonFormField<String>(
-                            value: _selectedTeacherId,
-                            decoration: const InputDecoration(
-                              labelText: 'Преподаватель',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.person, color: Color(0xFF5E35B1)),
-                            ),
-                            items:
-                                _teachers.map((teacher) {
-                                  final fullName = '${teacher.surname} ${teacher.name}';
-                                  return DropdownMenuItem(value: teacher.id, child: Text(fullName));
-                                }).toList(),
-                            onChanged: (val) => setState(() => _selectedTeacherId = val),
-                            validator: (val) => val == null ? 'Выберите преподавателя' : null,
-                          ),
-                          const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -308,10 +227,9 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                 const SizedBox(height: 24),
                 Text(
                   'Список предметов',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple[700],
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.deepPurple[700]),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -322,7 +240,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                           ? Center(
                             child: Text(
                               'Список предметов пуст',
-                              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                             ),
                           )
                           : ListView.separated(
@@ -342,7 +260,6 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                                     ),
                                   ),
                                   title: Text(subject.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  subtitle: Text('Преподаватель: ${_getTeacherName(subject.teacherId)}'),
                                   trailing: PopupMenuButton<String>(
                                     onSelected: (value) {
                                       if (value == 'edit') _editSubject(subject);

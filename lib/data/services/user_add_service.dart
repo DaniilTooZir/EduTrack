@@ -5,8 +5,9 @@ class UserAddService {
   UserAddService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
 
   Future<void> addStudent({required Map<String, dynamic> userData, required String groupId}) async {
-    final fullData = {...userData, 'group_id': groupId, 'isHeadman': false};
-
+    final dataToInsert = Map<String, dynamic>.from(userData);
+    dataToInsert.remove('institution_id');
+    final fullData = {...dataToInsert, 'group_id': groupId, 'isHeadman': false};
     await _insertUser('students', fullData, 'студента');
   }
 

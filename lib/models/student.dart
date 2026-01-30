@@ -8,7 +8,6 @@ class Student {
   final String email;
   final String login;
   final String password;
-  final String institutionId;
   final String? groupId;
   final bool isHeadman;
   final DateTime createdAt;
@@ -22,7 +21,6 @@ class Student {
     required this.email,
     required this.login,
     required this.password,
-    required this.institutionId,
     this.groupId,
     required this.isHeadman,
     required this.createdAt,
@@ -31,7 +29,8 @@ class Student {
   });
 
   factory Student.fromMap(Map<String, dynamic> map) {
-    final groupMap = map['group'] as Map<String, dynamic>?;
+    final groupMap =
+        map['group'] != null ? map['group'] as Map<String, dynamic>? : map['groups'] as Map<String, dynamic>?;
     return Student(
       id: map['id']?.toString() ?? '',
       name: map['name'] ?? '',
@@ -39,7 +38,6 @@ class Student {
       email: map['email'] ?? '',
       login: map['login'] ?? '',
       password: map['password'] ?? '',
-      institutionId: map['institution_id']?.toString() ?? '',
       groupId: map['group_id']?.toString(),
       isHeadman: map['isHeadman'] ?? false,
       createdAt:
@@ -59,7 +57,6 @@ class Student {
       'email': email,
       'login': login,
       'password': password,
-      'institution_id': institutionId,
       'group_id': groupId,
       'isHeadman': isHeadman,
       'created_at': createdAt.toIso8601String(),

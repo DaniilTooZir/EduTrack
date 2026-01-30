@@ -24,8 +24,8 @@ class UsersFetchService {
   Future<List<Map<String, dynamic>>> fetchStudents(String institutionId) async {
     final response = await _client
         .from('students')
-        .select('id, name, surname, email, login, group_id, groups(name)')
-        .eq('institution_id', institutionId);
+        .select('id, name, surname, email, login, group_id, groups!inner(name, institution_id)')
+        .eq('groups.institution_id', institutionId);
     final List<Map<String, dynamic>> students = List<Map<String, dynamic>>.from(response);
     return students.map((student) {
       final group = (student['groups'] as Map<String, dynamic>?);

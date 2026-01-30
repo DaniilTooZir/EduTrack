@@ -5,7 +5,10 @@ class DashboardService {
 
   DashboardService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
   Future<int> getStudentCount(String institutionId) async {
-    final response = await _client.from('students').select('id').eq('institution_id', institutionId);
+    final response = await _client
+        .from('students')
+        .select('id, groups!inner(institution_id)')
+        .eq('groups.institution_id', institutionId);
     return (response as List).length;
   }
 

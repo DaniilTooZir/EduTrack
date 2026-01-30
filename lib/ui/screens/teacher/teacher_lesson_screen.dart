@@ -233,7 +233,11 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                     if (!formKey.currentState!.validate()) return;
                     if (selectedSchedule == null) return;
                     try {
-                      final lesson = Lesson(scheduleId: selectedSchedule!.id, topic: topicController.text.trim());
+                      final lesson = Lesson(
+                        scheduleId: selectedSchedule!.id,
+                        topic: topicController.text.trim(),
+                        attendanceStatus: 'pending',
+                      );
                       await _lessonService.addLesson(lesson);
                       if (!mounted) return;
                       Navigator.pop(context);

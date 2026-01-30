@@ -1,6 +1,6 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/models/subject.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SubjectService {
   final SupabaseClient _client;
@@ -8,11 +8,18 @@ class SubjectService {
 
   Future<List<Subject>> getSubjectsByTeacherId(String teacherId) async {
     try {
-      final response = await _client.from('subjects').select().eq('teacher_id', teacherId).order('created_at');
+      final response = await _client.from('schedule').select('subject:subjects(*)').eq('teacher_id', teacherId);
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((e) => Subject.fromMap(e as Map<String, dynamic>)).toList();
+      final uniqueSubjects = <String, Subject>{};
+      for (final item in data) {
+        if (item['subject'] != null) {
+          final subject = Subject.fromMap(item['subject']);
+          uniqueSubjects[subject.id] = subject;
+        }
+      }
+      return uniqueSubjects.values.toList();
     } catch (e) {
-      throw Exception('Ошибка при загрузке предметов: $e');
+      throw Exception('Ошибка при загрузке предметов учителя: $e');
     }
   }
 
@@ -26,9 +33,9 @@ class SubjectService {
     }
   }
 
-  Future<void> addSubject({required String name, required String institutionId, required String teacherId}) async {
+  Future<void> addSubject({required String name, required String institutionId}) async {
     try {
-      await _client.from('subjects').insert({'name': name, 'institution_id': institutionId, 'teacher_id': teacherId});
+      await _client.from('subjects').insert({'name': name, 'institution_id': institutionId});
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
         throw Exception('Предмет с таким названием уже существует');
@@ -39,9 +46,9 @@ class SubjectService {
     }
   }
 
-  Future<void> updateSubject({required String id, required String name, required String teacherId}) async {
+  Future<void> updateSubject({required String id, required String name}) async {
     try {
-      await _client.from('subjects').update({'name': name, 'teacher_id': teacherId}).eq('id', id);
+      await _client.from('subjects').update({'name': name}).eq('id', id);
     } catch (e) {
       throw Exception('Ошибка при обновлении предмета: $e');
     }

@@ -4,7 +4,6 @@ import 'package:edu_track/models/subject.dart';
 // Модель для домашнего задания
 class Homework {
   final String id;
-  final String institutionId;
   final String subjectId;
   final String groupId;
   final String? lessonId;
@@ -19,7 +18,6 @@ class Homework {
 
   Homework({
     required this.id,
-    required this.institutionId,
     required this.subjectId,
     required this.groupId,
     this.lessonId,
@@ -36,7 +34,6 @@ class Homework {
   factory Homework.fromMap(Map<String, dynamic> map) {
     return Homework(
       id: map['id']?.toString() ?? '',
-      institutionId: map['institution_id']?.toString() ?? '',
       subjectId: map['subject_id']?.toString() ?? '',
       groupId: map['group_id']?.toString() ?? '',
       lessonId: map['lesson_id']?.toString(),
@@ -54,7 +51,6 @@ class Homework {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'institution_id': institutionId,
       'subject_id': subjectId,
       'group_id': groupId,
       if (lessonId != null) 'lesson_id': lessonId,

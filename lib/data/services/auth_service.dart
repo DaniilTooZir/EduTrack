@@ -32,12 +32,32 @@ class AuthService {
   }) async {
     final client = SupabaseConnection.client;
     try {
-      final data = await client.from(table).select('id, password, institution_id').eq('login', login).maybeSingle();
+      Map<String, dynamic>? data;
+      if (role == 'student') {
+        final response =
+            await client.from(table).select('id, password, groups(institution_id)').eq('login', login).maybeSingle();
+        data = response;
+      } else {
+        final response =
+            await client.from(table).select('id, password, institution_id').eq('login', login).maybeSingle();
+        data = response;
+      }
       if (data != null && data['password'] == password) {
-        return AuthResult(role: role, userId: data['id'], institutionId: data['institution_id']);
+        String institutionId;
+        if (role == 'student') {
+          final groupData = data['groups'] as Map<String, dynamic>?;
+          if (groupData != null && groupData['institution_id'] != null) {
+            institutionId = groupData['institution_id'].toString();
+          } else {
+            throw Exception('Студент не привязан к группе или учреждению');
+          }
+        } else {
+          institutionId = data['institution_id'].toString();
+        }
+        return AuthResult(role: role, userId: data['id'].toString(), institutionId: institutionId);
       }
     } catch (e) {
-      print('Ошибка при проверке роли $role: $e');
+      print('Инфо: Пользователь не найден в $table ($e)');
     }
     return null;
   }

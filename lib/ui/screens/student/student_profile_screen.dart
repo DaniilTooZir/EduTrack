@@ -47,12 +47,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   }
 
   Future<void> _loadStudentData() async {
-    final userId = Provider.of<UserProvider>(context, listen: false).userId;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.userId;
+    final institutionId = userProvider.institutionId;
     if (userId == null) return;
     try {
       final student = await _studentService.getStudentById(userId);
-      if (student != null) {
-        final inst = await _institutionService.getInstitutionById(student.institutionId);
+      if (student != null && institutionId != null) {
+        final inst = await _institutionService.getInstitutionById(institutionId);
         if (mounted) {
           setState(() {
             _student = student;

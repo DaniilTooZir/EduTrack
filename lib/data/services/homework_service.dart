@@ -1,4 +1,5 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,13 +10,12 @@ class HomeworkService {
 
   Future<List<Homework>> getHomeworkByTeacherId(String teacherId) async {
     try {
-      final subjectsResponse = await _client.from('subjects').select('id').eq('teacher_id', teacherId);
-      final List<dynamic> subjectsData = subjectsResponse as List<dynamic>;
-      if (subjectsData.isEmpty) {
+      final subjectService = SubjectService(client: _client);
+      final subjects = await subjectService.getSubjectsByTeacherId(teacherId);
+      if (subjects.isEmpty) {
         return [];
       }
-      final subjectIds = subjectsData.map((s) => s['id'].toString()).toList();
-
+      final subjectIds = subjects.map((s) => s.id).toList();
       final response = await _client
           .from('homework')
           .select('*, subject:subjects(*), group:groups(*)')
@@ -41,7 +41,6 @@ class HomeworkService {
           .select('*, subject:subjects(*), group:groups(*)')
           .eq('group_id', groupId)
           .order('due_date', ascending: true);
-
       final List<dynamic> data = response as List<dynamic>;
       return data.map((e) => Homework.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -70,7 +69,6 @@ class HomeworkService {
   }) async {
     try {
       await _client.from('homework').insert({
-        'institution_id': institutionId,
         'subject_id': subjectId,
         'group_id': groupId,
         'title': title,
