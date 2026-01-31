@@ -5,6 +5,7 @@ import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
 import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
 import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
+import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -366,6 +367,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             _buildDrawerItem(Icons.menu_book_rounded, 'Уроки', 2),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Настройки'),
+              onTap: () {
+                Navigator.pop(context);
+                showSettingsSheet(context);
+              },
+            ),
           ],
         ),
       ),

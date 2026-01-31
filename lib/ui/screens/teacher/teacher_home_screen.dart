@@ -7,6 +7,7 @@ import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
+import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -113,6 +114,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Настройки'),
+              onTap: () {
+                Navigator.pop(context);
+                showSettingsSheet(context);
+              },
+            ),
           ],
         ),
       ),

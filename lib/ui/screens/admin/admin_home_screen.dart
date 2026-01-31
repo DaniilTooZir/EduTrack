@@ -6,6 +6,7 @@ import 'package:edu_track/ui/screens/admin/admin_profile_screen.dart';
 import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/subject_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
+import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -114,6 +115,15 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             _buildDrawerItem(Icons.menu_book_rounded, 'Предметы', 3),
             _buildDrawerItem(Icons.groups_rounded, 'Группы', 4),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 5),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Настройки'),
+              onTap: () {
+                Navigator.pop(context);
+                showSettingsSheet(context);
+              },
+            ),
           ],
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
+import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -118,6 +119,15 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             ),
             _buildDrawerItem(Icons.dashboard, 'Главная', 0),
             _buildDrawerItem(Icons.edit_calendar, 'Редактор расписания', 1),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Настройки'),
+              onTap: () {
+                Navigator.pop(context);
+                showSettingsSheet(context);
+              },
+            ),
           ],
         ),
       ),

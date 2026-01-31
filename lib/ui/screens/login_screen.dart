@@ -1,5 +1,6 @@
 import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -96,6 +97,13 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Stack(
             children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  onPressed: () => showSettingsSheet(context),
+                  icon: const Icon(Icons.settings, color: Color(0xFF5E35B1)),
+                ),
+              ),
               Align(
                 alignment: Alignment.topLeft,
                 child: IconButton(

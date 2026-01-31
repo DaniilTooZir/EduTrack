@@ -1,3 +1,4 @@
+import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -38,6 +39,13 @@ class WelcomeScreen extends StatelessWidget {
                     child: IntrinsicHeight(
                       child: Column(
                         children: [
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: IconButton(
+                              onPressed: () => showSettingsSheet(context),
+                              icon: Icon(Icons.settings, color: const Color(0xFF453190)),
+                            ),
+                          ),
                           const Spacer(flex: 2),
                           Image.asset(
                             'assets/images/logo.png',
