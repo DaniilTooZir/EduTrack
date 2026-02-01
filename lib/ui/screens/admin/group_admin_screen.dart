@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -15,12 +16,10 @@ class GroupAdminScreen extends StatefulWidget {
 class _GroupAdminScreenState extends State<GroupAdminScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-
   final _service = GroupService();
   List<Group> _groups = [];
   bool _isLoading = true;
   bool _isAdding = false;
-
   final _groupNameRegex = RegExp(r'^[a-zA-Zа-яА-ЯёЁ0-9-]+$');
   final _groupNameAllowList = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9-]');
 
@@ -50,16 +49,13 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Colors.redAccent));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e')));
       }
     }
   }
 
   Future<void> _addGroup() async {
     FocusScope.of(context).unfocus();
-
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isAdding = true);
     try {
@@ -67,11 +63,10 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
       if (institutionId == null) throw Exception('ID учреждения не найден');
       final newGroup = Group(name: _nameController.text.trim(), institutionId: institutionId);
       await _service.addGroup(newGroup);
-
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Группа успешно добавлена'), backgroundColor: Colors.green));
+      ).showSnackBar(const SnackBar(content: Text('Группа добавлена'), backgroundColor: Colors.green));
       _nameController.clear();
       await _loadGroups();
     } catch (e) {
@@ -80,9 +75,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.redAccent));
     } finally {
-      if (mounted) {
-        setState(() => _isAdding = false);
-      }
+      if (mounted) setState(() => _isAdding = false);
     }
   }
 
@@ -150,7 +143,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
       builder:
           (ctx) => AlertDialog(
             title: const Text('Удалить группу?'),
-            content: Text('Вы уверены, что хотите удалить группу "${group.name}"? Это действие нельзя отменить.'),
+            content: Text('Вы уверены, что хотите удалить группу "${group.name}"?'),
             actions: [
               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
               TextButton(
@@ -177,17 +170,12 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
         constraints: const BoxConstraints.expand(),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -210,7 +198,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                               decoration: InputDecoration(
                                 labelText: 'Название группы',
                                 hintText: 'Например: 10-А',
-                                prefixIcon: const Icon(Icons.group_work, color: Color(0xFF5E35B1)),
+                                prefixIcon: Icon(Icons.group_work, color: colors.primary),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 isDense: true,
                                 counterText: '',
@@ -219,9 +207,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                               inputFormatters: [FilteringTextInputFormatter.allow(_groupNameAllowList)],
                               validator: (val) {
                                 if (val == null || val.trim().isEmpty) return 'Введите название';
-                                if (!_groupNameRegex.hasMatch(val)) {
-                                  return 'Только буквы, цифры и "-"';
-                                }
+                                if (!_groupNameRegex.hasMatch(val)) return 'Только буквы, цифры и "-"';
                                 return null;
                               },
                             ),
@@ -229,8 +215,8 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                           const SizedBox(width: 16),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF5E35B1),
-                              foregroundColor: Colors.white,
+                              backgroundColor: colors.primary,
+                              foregroundColor: colors.onPrimary,
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               minimumSize: const Size(0, 50),
@@ -238,10 +224,10 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                             onPressed: _isAdding ? null : _addGroup,
                             child:
                                 _isAdding
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                     )
                                     : const Icon(Icons.add),
                           ),
@@ -253,10 +239,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                 const SizedBox(height: 24),
                 Text(
                   'Список групп',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple[700],
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.primary, fontSize: 20),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -264,12 +247,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                       _isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : _groups.isEmpty
-                          ? Center(
-                            child: Text(
-                              'Группы не найдены',
-                              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                            ),
-                          )
+                          ? Center(child: Text('Группы не найдены', style: TextStyle(color: colors.onSurfaceVariant)))
                           : ListView.separated(
                             itemCount: _groups.length,
                             separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -280,20 +258,20 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                                 elevation: 3,
                                 child: ListTile(
                                   leading: CircleAvatar(
-                                    backgroundColor: Colors.deepPurple[200],
+                                    backgroundColor: colors.primaryContainer,
                                     child: Text(
                                       group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
                                     ),
                                   ),
-                                  title: Text(group.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  title: Text(
+                                    group.name,
+                                    style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
+                                  ),
                                   trailing: PopupMenuButton<String>(
                                     onSelected: (value) {
-                                      if (value == 'edit') {
-                                        _editGroup(group);
-                                      } else if (value == 'delete') {
-                                        _deleteGroup(group);
-                                      }
+                                      if (value == 'edit') _editGroup(group);
+                                      if (value == 'delete') _deleteGroup(group);
                                     },
                                     itemBuilder:
                                         (BuildContext context) => [
@@ -318,7 +296,6 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                                             ),
                                           ),
                                         ],
-                                    icon: const Icon(Icons.more_vert, color: Colors.grey),
                                   ),
                                 ),
                               );

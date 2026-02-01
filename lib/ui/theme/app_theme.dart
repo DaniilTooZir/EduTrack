@@ -92,6 +92,18 @@ class AppTheme {
         );
     }
   }
+
+  static String getLogoPath(AppThemeMode mode) {
+    switch (mode) {
+      case AppThemeMode.light:
+        return 'assets/images/logo_light.png';
+      case AppThemeMode.dark:
+        return 'assets/images/logo_dark.png';
+      case AppThemeMode.purple:
+      default:
+        return 'assets/images/logo_purple.png';
+    }
+  }
 }
 
 class ThemeProvider with ChangeNotifier {

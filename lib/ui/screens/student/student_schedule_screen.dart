@@ -1,11 +1,13 @@
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class StudentScheduleScreen extends StatefulWidget {
   const StudentScheduleScreen({super.key});
+
   @override
   State<StudentScheduleScreen> createState() => _StudentScheduleScreenState();
 }
@@ -38,7 +40,6 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
         if (w != 0) return w;
         return a.startTime.compareTo(b.startTime);
       });
-
       final Map<String, List<Schedule>> grouped = {};
       for (final s in list) {
         String header = _getWeekdayName(s.weekday);
@@ -47,12 +48,13 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
         }
         grouped.putIfAbsent(header, () => []).add(s);
       }
-
-      setState(() {
-        _scheduleList = list;
-        _groupedSchedule = grouped;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _scheduleList = list;
+          _groupedSchedule = grouped;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -70,21 +72,16 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_scheduleList.isEmpty) {
       return Center(
-        child: Text('Расписание отсутствует.', style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey[700])),
+        child: Text('Расписание отсутствует.', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
       );
     }
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+      decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
@@ -97,10 +94,10 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
                     children: [
                       Text(
                         entry.key,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
                       ),
                       const SizedBox(height: 10),
-                      ...entry.value.map(_buildScheduleCard),
+                      ...entry.value.map((s) => _buildScheduleCard(s, colors)),
                       const SizedBox(height: 20),
                     ],
                   );
@@ -111,12 +108,12 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     );
   }
 
-  Widget _buildScheduleCard(Schedule s) {
+  Widget _buildScheduleCard(Schedule s, ColorScheme colors) {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      color: Colors.white.withOpacity(0.9),
+      color: colors.surface.withOpacity(0.9),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(
@@ -124,23 +121,23 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.access_time, size: 20, color: Colors.deepPurple),
+                Icon(Icons.access_time, size: 20, color: colors.primary),
                 const SizedBox(width: 8),
                 Text(
                   '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.book, size: 20, color: Colors.deepPurple),
+                Icon(Icons.book, size: 20, color: colors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     s.subjectName ?? 'Предмет',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
                   ),
                 ),
               ],
@@ -148,9 +145,9 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.person, size: 20, color: Colors.grey),
+                Icon(Icons.person, size: 20, color: colors.onSurfaceVariant),
                 const SizedBox(width: 8),
-                Expanded(child: Text(s.teacherName, style: TextStyle(fontSize: 14, color: Colors.grey[700]))),
+                Expanded(child: Text(s.teacherName, style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant))),
               ],
             ),
           ],

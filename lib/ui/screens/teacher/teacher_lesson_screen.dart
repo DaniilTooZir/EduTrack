@@ -7,6 +7,7 @@ import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -24,11 +25,9 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   final SubjectService _subjectService = SubjectService();
   final GroupService _groupService = GroupService();
-
   List<Lesson> _lessons = [];
   List<Subject> _subjects = [];
   List<Group> _groups = [];
-
   bool _isLoading = true;
   String? get teacherId => Provider.of<UserProvider>(context, listen: false).userId;
   String? get institutionId => Provider.of<UserProvider>(context, listen: false).institutionId;
@@ -66,7 +65,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     }
   }
 
-  Widget _buildLessonTile(Lesson lesson) {
+  Widget _buildLessonTile(Lesson lesson, ColorScheme colors) {
     return FutureBuilder<Schedule?>(
       future: _scheduleService.getScheduleById(lesson.scheduleId),
       builder: (context, snapshot) {
@@ -74,8 +73,8 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
           return const Card(child: ListTile(title: LinearProgressIndicator()));
         }
         final schedule = snapshot.data!;
-        final subjectName = schedule.subject?.name ?? 'Неизвестный предмет';
-        final groupName = schedule.group?.name ?? 'Неизвестная группа';
+        final subjectName = schedule.subject?.name ?? 'Предмет';
+        final groupName = schedule.group?.name ?? 'Группа';
         final dateStr =
             schedule.date != null
                 ? '${schedule.date!.day.toString().padLeft(2, '0')}.${schedule.date!.month.toString().padLeft(2, '0')}'
@@ -84,28 +83,41 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
           elevation: 3,
           margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ExpansionTile(
-            leading: CircleAvatar(
-              backgroundColor: const Color(0xFF9575CD),
-              child: Text(subjectName[0], style: const TextStyle(color: Colors.white)),
-            ),
-            title: Text(lesson.topic ?? 'Без темы', style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('$dateStr • $groupName • ${schedule.startTime}'),
+          color: colors.surface,
+          child: Column(
             children: [
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: colors.primaryContainer,
+                  child: Text(
+                    subjectName[0],
+                    style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                title: Text(
+                  lesson.topic ?? 'Без темы',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
+                ),
+                subtitle: Text(
+                  '$dateStr • $groupName • ${schedule.startTime}',
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+              ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    _ActionButton(
-                      icon: Icons.chat,
-                      label: 'Чат',
-                      onTap: () => context.push('/teacher/lesson_comments', extra: lesson.id),
+                    FilledButton.tonalIcon(
+                      onPressed: () => context.push('/teacher/lesson_comments', extra: lesson.id),
+                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                      label: const Text('Чат'),
                     ),
-                    _ActionButton(
-                      icon: Icons.grade,
-                      label: 'Оценки',
-                      onTap: () => context.push('/teacher/grades', extra: lesson),
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: () => context.push('/teacher/grades', extra: lesson),
+                      icon: const Icon(Icons.grade, size: 18),
+                      label: const Text('Оценки'),
                     ),
                   ],
                 ),
@@ -197,11 +209,10 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                                     s.date != null
                                         ? '${s.date!.day.toString().padLeft(2, '0')}.${s.date!.month.toString().padLeft(2, '0')}'
                                         : 'Еженедельно';
-                                final weekday = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'][s.weekday - 1];
                                 return DropdownMenuItem(
                                   value: s,
                                   child: Text(
-                                    '$dateStr ($weekday) ${s.startTime}-${s.endTime}',
+                                    '$dateStr ${s.startTime}-${s.endTime}',
                                     style: const TextStyle(fontSize: 14),
                                   ),
                                 );
@@ -210,13 +221,8 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                           validator: (val) => val == null ? 'Выберите время' : null,
                         )
                       else if (selectedGroup != null && selectedSubject != null)
-                        const Text(
-                          'В расписании нет занятий по этому предмету для этой группы.',
-                          style: TextStyle(color: Colors.redAccent, fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
+                        const Text('В расписании нет занятий.', style: TextStyle(color: Colors.redAccent)),
                       const SizedBox(height: 12),
-                      // 4. Тема занятия
                       TextFormField(
                         controller: topicController,
                         decoration: const InputDecoration(labelText: 'Тема занятия', border: OutlineInputBorder()),
@@ -263,53 +269,29 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         actions: [
           IconButton(icon: const Icon(Icons.add), tooltip: 'Провести занятие', onPressed: _showAddLessonDialog),
         ],
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _lessons.isEmpty
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.class_outlined, size: 64, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    const Text('Проведенных занятий пока нет', style: TextStyle(color: Colors.grey)),
-                  ],
-                ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: _lessons.length,
-                itemBuilder: (context, index) => _buildLessonTile(_lessons[index]),
-              ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  const _ActionButton({required this.icon, required this.label, required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            Icon(icon, color: const Color(0xFF5E35B1)),
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF5E35B1))),
-          ],
+      body: Container(
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        child: SafeArea(
+          child:
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _lessons.isEmpty
+                  ? Center(
+                    child: Text('Проведенных занятий пока нет', style: TextStyle(color: colors.onSurfaceVariant)),
+                  )
+                  : ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: _lessons.length,
+                    itemBuilder: (context, index) => _buildLessonTile(_lessons[index], colors),
+                  ),
         ),
       ),
     );

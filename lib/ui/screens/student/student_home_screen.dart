@@ -5,6 +5,7 @@ import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
 import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
 import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -21,19 +22,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _selectedIndex = 0;
   bool _isDashboardLoading = true;
   String? _dashboardError;
-
   String? _groupName;
   int _totalHomework = 0;
   int _completedHomework = 0;
   int _pendingHomework = 0;
-
   final HomeworkService _homeworkService = HomeworkService();
-
   final List<String> _titles = ['Главная', 'Домашние задания', 'Уроки', 'Расписание', 'Профиль'];
-
-  final Color primaryColor = const Color(0xFF9575CD);
-  final Color drawerStart = const Color(0xFF7E57C2);
-  final Color drawerEnd = const Color(0xFF5E35B1);
 
   @override
   void initState() {
@@ -54,11 +48,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final studentId = userProvider.userId;
       if (studentId == null) {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _dashboardError = 'Не удалось получить ID студента';
             _isDashboardLoading = false;
           });
+        }
         return;
       }
       final groupResponse = await _homeworkService.getGroupByStudentId(studentId);
@@ -107,230 +102,42 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     });
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, int index) {
-    final selected = _selectedIndex == index;
-    return ListTile(
-      leading: Icon(icon, color: selected ? const Color(0xFF5E35B1) : null),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: selected ? const Color(0xFF5E35B1) : null,
-          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      selected: selected,
-      onTap: () {
-        _onItemTapped(index);
-        Navigator.of(context).pop();
-      },
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color iconColor,
-    required Color bgColor,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(16)),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, size: 32, color: iconColor),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 4),
-                  Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard(IconData icon, String label, VoidCallback onTap) {
-    return Container(
-      width: 110,
-      margin: const EdgeInsets.only(right: 12),
-      child: Material(
-        color: Colors.white,
-        elevation: 2,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: const Color(0xFF5E35B1), size: 32),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDashboard() {
-    final theme = Theme.of(context);
-    return RefreshIndicator(
-      onRefresh: _loadDashboardData,
-      color: primaryColor,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF7E57C2), Color(0xFF512DA8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(color: Colors.deepPurple.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Привет, студент!',
-                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_groupName != null)
-                    Text('Твоя группа: $_groupName', style: const TextStyle(color: Colors.white70, fontSize: 16))
-                  else
-                    const Text('Добро пожаловать в EduTrack', style: TextStyle(color: Colors.white70, fontSize: 16)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Быстрые действия',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 110,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _buildQuickActionCard(Icons.assignment, 'Мои задания', () => _onItemTapped(1)),
-                  _buildQuickActionCard(Icons.calendar_month, 'Расписание', () => _onItemTapped(3)),
-                  _buildQuickActionCard(Icons.menu_book, 'Уроки', () => _onItemTapped(2)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Твоя успеваемость',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
-            ),
-            const SizedBox(height: 12),
-            if (_isDashboardLoading)
-              const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-            else if (_dashboardError != null)
-              Center(child: Text(_dashboardError!, style: const TextStyle(color: Colors.red)))
-            else
-              Column(
-                children: [
-                  _buildStatCard(
-                    icon: Icons.assignment,
-                    title: 'Всего заданий',
-                    value: '$_totalHomework',
-                    iconColor: const Color(0xFF5E35B1),
-                    bgColor: const Color(0xFFEDE7F6),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildStatCard(
-                    icon: Icons.check_circle,
-                    title: 'Выполнено',
-                    value: '$_completedHomework',
-                    iconColor: Colors.green,
-                    bgColor: Colors.green.shade50,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildStatCard(
-                    icon: Icons.pending_actions,
-                    title: 'Осталось',
-                    value: '$_pendingHomework',
-                    iconColor: Colors.orange,
-                    bgColor: Colors.orange.shade50,
-                  ),
-                ],
-              ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    switch (_selectedIndex) {
-      case 0:
-        return _buildDashboard();
-      case 1:
-        return const StudentHomeworkScreen();
-      case 2:
-        return const StudentLessonScreen();
-      case 3:
-        return const StudentScheduleScreen();
-      case 4:
-        return const StudentProfileScreen();
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bool isDashboard = _selectedIndex == 0;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
+    Widget body;
+    switch (_selectedIndex) {
+      case 0:
+        body = _buildDashboard(colors);
+        break;
+      case 1:
+        body = const StudentHomeworkScreen();
+        break;
+      case 2:
+        body = const StudentLessonScreen();
+        break;
+      case 3:
+        body = const StudentScheduleScreen();
+        break;
+      case 4:
+        body = const StudentProfileScreen();
+        break;
+      default:
+        body = const SizedBox.shrink();
+    }
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         elevation: 0,
-        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
-          if (isDashboard)
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              tooltip: 'Обновить',
-              onPressed: _loadDashboardData,
-            ),
+          if (_selectedIndex == 0)
+            IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _loadDashboardData),
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout),
             tooltip: 'Выйти',
             onPressed: () async {
               await SessionService.clearSession();
@@ -349,28 +156,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [drawerStart, drawerEnd],
+                  colors: [colors.secondary, colors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
-              child: const Align(
+              child: Align(
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню студента',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0),
-            _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1),
-            _buildDrawerItem(Icons.menu_book_rounded, 'Уроки', 2),
-            _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3),
-            _buildDrawerItem(Icons.person_rounded, 'Профиль', 4),
+            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0, colors),
+            _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1, colors),
+            _buildDrawerItem(Icons.menu_book_rounded, 'Уроки', 2, colors),
+            _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
+            _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Настройки'),
+              leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
+              title: Text('Настройки', style: TextStyle(color: colors.onSurface)),
               onTap: () {
                 Navigator.pop(context);
                 showSettingsSheet(context);
@@ -382,14 +189,210 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        child: body,
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, int index, ColorScheme colors) {
+    final selected = _selectedIndex == index;
+    return ListTile(
+      leading: Icon(icon, color: selected ? colors.primary : colors.onSurfaceVariant),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: selected ? colors.primary : colors.onSurface,
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: selected,
+      selectedTileColor: colors.primaryContainer.withOpacity(0.3),
+      onTap: () {
+        _onItemTapped(index);
+        Navigator.of(context).pop();
+      },
+    );
+  }
+
+  Widget _buildDashboard(ColorScheme colors) {
+    return RefreshIndicator(
+      onRefresh: _loadDashboardData,
+      color: colors.primary,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [colors.primary.withOpacity(0.8), colors.primary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Привет, студент!',
+                    style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  if (_groupName != null)
+                    Text(
+                      'Твоя группа: $_groupName',
+                      style: TextStyle(color: colors.onPrimary.withOpacity(0.9), fontSize: 16),
+                    )
+                  else
+                    Text(
+                      'Добро пожаловать в EduTrack',
+                      style: TextStyle(color: colors.onPrimary.withOpacity(0.9), fontSize: 16),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Быстрые действия',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 110,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _buildQuickActionCard(Icons.assignment, 'Мои задания', () => _onItemTapped(1), colors),
+                  _buildQuickActionCard(Icons.calendar_month, 'Расписание', () => _onItemTapped(3), colors),
+                  _buildQuickActionCard(Icons.menu_book, 'Уроки', () => _onItemTapped(2), colors),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Твоя успеваемость',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+            ),
+            const SizedBox(height: 12),
+            if (_isDashboardLoading)
+              const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+            else if (_dashboardError != null)
+              Center(child: Text(_dashboardError!, style: TextStyle(color: colors.error)))
+            else
+              Column(
+                children: [
+                  _buildStatCard(
+                    icon: Icons.assignment,
+                    title: 'Всего заданий',
+                    value: '$_totalHomework',
+                    iconColor: colors.primary,
+                    bgColor: colors.primaryContainer,
+                    colors: colors,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildStatCard(
+                    icon: Icons.check_circle,
+                    title: 'Выполнено',
+                    value: '$_completedHomework',
+                    iconColor: Colors.green,
+                    bgColor: Colors.green.withOpacity(0.2),
+                    colors: colors,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildStatCard(
+                    icon: Icons.pending_actions,
+                    title: 'Осталось',
+                    value: '$_pendingHomework',
+                    iconColor: Colors.orange,
+                    bgColor: Colors.orange.withOpacity(0.2),
+                    colors: colors,
+                  ),
+                ],
+              ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color iconColor,
+    required Color bgColor,
+    required ColorScheme colors,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: colors.surface.withOpacity(0.9), borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 32, color: iconColor),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colors.onSurface)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard(IconData icon, String label, VoidCallback onTap, ColorScheme colors) {
+    return Container(
+      width: 110,
+      margin: const EdgeInsets.only(right: 12),
+      child: Material(
+        color: colors.surface,
+        elevation: 2,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: colors.primary, size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.onSurface),
+                ),
+              ],
+            ),
           ),
         ),
-        child: _buildBody(),
       ),
     );
   }

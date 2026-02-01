@@ -76,6 +76,9 @@ flutter:
   assets:
     - .env
     - assets/images/logo.png
+    - assets/images/logo_dark.png
+    - assets/images/logo_light.png
+    - assets/images/logo_purple.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

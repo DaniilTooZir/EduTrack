@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -164,16 +165,12 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
         constraints: const BoxConstraints.expand(),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -190,10 +187,10 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                         children: [
                           TextFormField(
                             controller: _nameController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Название предмета',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.book, color: Color(0xFF5E35B1)),
+                              border: const OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.book, color: colors.primary),
                             ),
                             inputFormatters: [FilteringTextInputFormatter.allow(_subjectNameAllowList)],
                             validator: (val) => Validators.requiredField(val, fieldName: 'Название'),
@@ -205,16 +202,16 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                backgroundColor: const Color(0xFF5E35B1),
-                                foregroundColor: Colors.white,
+                                backgroundColor: colors.primary,
+                                foregroundColor: colors.onPrimary,
                               ),
                               onPressed: _isAdding ? null : _addSubject,
                               child:
                                   _isAdding
-                                      ? const SizedBox(
+                                      ? SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                       )
                                       : const Text('Добавить предмет'),
                             ),
@@ -227,9 +224,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                 const SizedBox(height: 24),
                 Text(
                   'Список предметов',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.deepPurple[700]),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: colors.primary),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -238,10 +233,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                           ? const Center(child: CircularProgressIndicator())
                           : _subjects.isEmpty
                           ? Center(
-                            child: Text(
-                              'Список предметов пуст',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                            ),
+                            child: Text('Список предметов пуст', style: TextStyle(color: colors.onSurfaceVariant)),
                           )
                           : ListView.separated(
                             itemCount: _subjects.length,
@@ -253,13 +245,16 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 child: ListTile(
                                   leading: CircleAvatar(
-                                    backgroundColor: Colors.deepPurple[200],
+                                    backgroundColor: colors.primaryContainer,
                                     child: Text(
                                       subject.name.isNotEmpty ? subject.name[0].toUpperCase() : '?',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
                                     ),
                                   ),
-                                  title: Text(subject.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  title: Text(
+                                    subject.name,
+                                    style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
+                                  ),
                                   trailing: PopupMenuButton<String>(
                                     onSelected: (value) {
                                       if (value == 'edit') _editSubject(subject);

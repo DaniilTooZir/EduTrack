@@ -6,6 +6,7 @@ import 'package:edu_track/ui/screens/admin/admin_profile_screen.dart';
 import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/subject_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +21,6 @@ class AdminHomeScreen extends StatefulWidget {
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _selectedIndex = 0;
-
   final List<String> _titles = ['Главная', 'Пользователи', 'Добавить пользователя', 'Предметы', 'Группы', 'Профиль'];
   Key _refreshKey = UniqueKey();
 
@@ -39,10 +39,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     Widget bodyContent;
     switch (_selectedIndex) {
       case 0:
-        bodyContent = _buildDashboard();
+        bodyContent = _buildDashboard(userProvider.institutionId, colors);
         break;
       case 1:
         bodyContent = const UserListScreen();
@@ -64,22 +66,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF9575CD),
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         elevation: 0,
         title: Text(
           _selectedIndex < _titles.length ? _titles[_selectedIndex] : '',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         actions: [
           if (_selectedIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              tooltip: 'Обновить данные',
-              onPressed: _refreshDashboard,
-            ),
+            IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить данные', onPressed: _refreshDashboard),
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout),
             tooltip: 'Выйти',
             onPressed: () async {
               await SessionService.clearSession();
@@ -93,10 +92,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
+            DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF7E57C2), Color(0xFF5E35B1)],
+                  colors: [colors.secondary, colors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -105,20 +104,20 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню администратора',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0),
-            _buildDrawerItem(Icons.people_alt_rounded, 'Пользователи', 1),
-            _buildDrawerItem(Icons.person_add_alt_1_rounded, 'Добавить пользователя', 2),
-            _buildDrawerItem(Icons.menu_book_rounded, 'Предметы', 3),
-            _buildDrawerItem(Icons.groups_rounded, 'Группы', 4),
-            _buildDrawerItem(Icons.person_rounded, 'Профиль', 5),
+            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0, colors),
+            _buildDrawerItem(Icons.people_alt_rounded, 'Пользователи', 1, colors),
+            _buildDrawerItem(Icons.person_add_alt_1_rounded, 'Добавить пользователя', 2, colors),
+            _buildDrawerItem(Icons.menu_book_rounded, 'Предметы', 3, colors),
+            _buildDrawerItem(Icons.groups_rounded, 'Группы', 4, colors),
+            _buildDrawerItem(Icons.person_rounded, 'Профиль', 5, colors),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Настройки'),
+              leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
+              title: Text('Настройки', style: TextStyle(color: colors.onSurface)),
               onTap: () {
                 Navigator.pop(context);
                 showSettingsSheet(context);
@@ -130,31 +129,25 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: bodyContent,
       ),
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, int index) {
+  Widget _buildDrawerItem(IconData icon, String title, int index, ColorScheme colors) {
     final bool selected = _selectedIndex == index;
     return ListTile(
-      leading: Icon(icon, color: selected ? const Color(0xFF5E35B1) : Colors.grey[700]),
+      leading: Icon(icon, color: selected ? colors.primary : colors.onSurfaceVariant),
       title: Text(
         title,
         style: TextStyle(
-          color: selected ? const Color(0xFF5E35B1) : Colors.black87,
+          color: selected ? colors.primary : colors.onSurface,
           fontWeight: selected ? FontWeight.bold : FontWeight.w500,
         ),
       ),
       selected: selected,
-      selectedTileColor: const Color(0xFF5E35B1).withOpacity(0.1),
+      selectedTileColor: colors.primaryContainer.withOpacity(0.3),
       onTap: () {
         _navigateToTab(index);
         Navigator.of(context).pop();
@@ -172,16 +165,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     return {'students': studentCount, 'teachers': teacherCount, 'groups': groupCount, 'subjects': subjectCount};
   }
 
-  Widget _buildDashboard() {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final institutionId = userProvider.institutionId;
+  Widget _buildDashboard(String? institutionId, ColorScheme colors) {
     if (institutionId == null) return const Center(child: CircularProgressIndicator());
     return RefreshIndicator(
       onRefresh: () async {
         _refreshDashboard();
         await Future.delayed(const Duration(seconds: 1));
       },
-      color: const Color(0xFF9575CD),
+      color: colors.primary,
       child: FutureBuilder<Map<String, int>>(
         key: _refreshKey,
         future: _fetchStats(institutionId),
@@ -190,7 +181,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Ошибка при загрузке: ${snapshot.error}'));
+            return Center(child: Text('Ошибка при загрузке: ${snapshot.error}', style: TextStyle(color: colors.error)));
           }
           final data = snapshot.data ?? {'students': 0, 'teachers': 0, 'groups': 0, 'subjects': 0};
           return Center(
@@ -206,39 +197,35 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7E57C2), Color(0xFF512DA8)],
+                        gradient: LinearGradient(
+                          colors: [colors.primary.withOpacity(0.8), colors.primary],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
-                          BoxShadow(
-                            color: Colors.deepPurple.withOpacity(0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
+                          BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
                         ],
                       ),
-                      child: const Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Панель администратора',
-                            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
-                            'Управляйте пользователями, группами и учебным процессом в одном месте.',
-                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                            'Управляйте пользователями, группами и учебным процессом.',
+                            style: TextStyle(color: colors.onPrimary.withOpacity(0.8), fontSize: 16),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Статистика учреждения',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
                     ),
                     const SizedBox(height: 12),
                     LayoutBuilder(
@@ -247,18 +234,24 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                           spacing: 16,
                           runSpacing: 16,
                           children: [
-                            _statCard('Преподаватели', data['teachers'].toString(), Icons.school, Colors.orange),
-                            _statCard('Студенты', data['students'].toString(), Icons.people, Colors.blue),
-                            _statCard('Группы', data['groups'].toString(), Icons.groups, Colors.green),
-                            _statCard('Предметы', data['subjects'].toString(), Icons.menu_book, Colors.purple),
+                            _statCard(
+                              'Преподаватели',
+                              data['teachers'].toString(),
+                              Icons.school,
+                              Colors.orange,
+                              colors,
+                            ),
+                            _statCard('Студенты', data['students'].toString(), Icons.people, Colors.blue, colors),
+                            _statCard('Группы', data['groups'].toString(), Icons.groups, Colors.green, colors),
+                            _statCard('Предметы', data['subjects'].toString(), Icons.menu_book, Colors.purple, colors),
                           ],
                         );
                       },
                     ),
                     const SizedBox(height: 32),
-                    const Text(
+                    Text(
                       'Быстрые действия',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -266,9 +259,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: [
-                          _quickActionButton('Добавить\nпользователя', Icons.person_add, 2),
-                          _quickActionButton('Создать\nгруппу', Icons.group_add, 4),
-                          _quickActionButton('Назначить\nпредмет', Icons.book, 3),
+                          _quickActionButton('Добавить\nпользователя', Icons.person_add, 2, colors),
+                          _quickActionButton('Создать\nгруппу', Icons.group_add, 4, colors),
+                          _quickActionButton('Назначить\nпредмет', Icons.book, 3, colors),
                         ],
                       ),
                     ),
@@ -282,12 +275,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
-  Widget _quickActionButton(String label, IconData icon, int pageIndex) {
+  Widget _quickActionButton(String label, IconData icon, int pageIndex, ColorScheme colors) {
     return Container(
       width: 120,
       margin: const EdgeInsets.only(right: 12),
       child: Material(
-        color: Colors.white,
+        color: colors.surface,
         elevation: 2,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
@@ -298,12 +291,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 32, color: const Color(0xFF5E35B1)),
+                Icon(icon, size: 32, color: colors.primary),
                 const SizedBox(height: 8),
                 Text(
                   label,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colors.onSurface),
                 ),
               ],
             ),
@@ -313,12 +306,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
-  Widget _statCard(String title, String value, IconData icon, Color color) {
+  Widget _statCard(String title, String value, IconData icon, Color badgeColor, ColorScheme colors) {
     return Container(
       width: 160,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: colors.surface.withOpacity(0.9),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4))],
       ),
@@ -330,14 +323,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: color, size: 24),
+                decoration: BoxDecoration(color: badgeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, color: badgeColor, size: 24),
               ),
-              Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+              Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: badgeColor)),
             ],
           ),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87)),
+          Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: colors.onSurface)),
         ],
       ),
     );

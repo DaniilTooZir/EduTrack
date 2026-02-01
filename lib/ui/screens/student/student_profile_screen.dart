@@ -4,6 +4,7 @@ import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,23 +19,19 @@ class StudentProfileScreen extends StatefulWidget {
 
 class _StudentProfileScreenState extends State<StudentProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
   final _emailController = TextEditingController();
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isEditing = false;
   bool _isPasswordVisible = false;
-
   late final StudentService _studentService;
   late final InstitutionService _institutionService;
   final _avatarService = AvatarService();
-
   Student? _student;
   Institution? _institution;
 
@@ -103,33 +100,19 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-
     final updatedData = <String, dynamic>{};
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают'), backgroundColor: Colors.redAccent));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
       setState(() => _isSaving = false);
       return;
     }
-
-    if (_nameController.text.trim() != _student!.name) {
-      updatedData['name'] = _nameController.text.trim();
-    }
-    if (_surnameController.text.trim() != _student!.surname) {
-      updatedData['surname'] = _surnameController.text.trim();
-    }
-    if (_emailController.text.trim() != _student!.email) {
-      updatedData['email'] = _emailController.text.trim();
-    }
-    if (_loginController.text.trim() != _student!.login) {
-      updatedData['login'] = _loginController.text.trim();
-    }
-    if (password.isNotEmpty) {
-      updatedData['password'] = password;
-    }
+    if (_nameController.text.trim() != _student!.name) updatedData['name'] = _nameController.text.trim();
+    if (_surnameController.text.trim() != _student!.surname) updatedData['surname'] = _surnameController.text.trim();
+    if (_emailController.text.trim() != _student!.email) updatedData['email'] = _emailController.text.trim();
+    if (_loginController.text.trim() != _student!.login) updatedData['login'] = _loginController.text.trim();
+    if (password.isNotEmpty) updatedData['password'] = password;
 
     if (updatedData.isEmpty) {
       setState(() {
@@ -180,84 +163,76 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
         constraints: const BoxConstraints.expand(),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child:
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : LayoutBuilder(
-                    builder: (context, constraints) {
-                      return SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 600),
-                            child: Card(
-                              elevation: 8,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    _buildAvatar(),
-                                    const SizedBox(height: 16),
-                                    Center(
-                                      child: Text(
-                                        '${_student!.name} ${_student!.surname}',
-                                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.deepPurple,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
+                  : SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 600),
+                        child: Card(
+                          elevation: 8,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildAvatar(colors),
+                                const SizedBox(height: 16),
+                                Center(
+                                  child: Text(
+                                    '${_student!.name} ${_student!.surname}',
+                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colors.primary,
                                     ),
-                                    const SizedBox(height: 8),
-                                    Center(
-                                      child: Text(
-                                        _institution?.name ?? '',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.copyWith(color: Colors.deepPurple.shade300),
-                                      ),
-                                    ),
-                                    const Divider(height: 32),
-                                    _sectionTitle('Данные профиля'),
-                                    const SizedBox(height: 8),
-                                    _infoRow('Логин', _student!.login),
-                                    _infoRow('Email', _student!.email),
-                                    _infoRow('Учреждение', _institution?.name ?? '—'),
-                                    const SizedBox(height: 24),
-                                    AnimatedCrossFade(
-                                      firstChild: _editButton(),
-                                      secondChild: _editForm(),
-                                      crossFadeState: _isEditing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                                      duration: const Duration(milliseconds: 300),
-                                    ),
-                                  ],
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                Center(
+                                  child: Text(
+                                    _institution?.name ?? '',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+                                  ),
+                                ),
+                                const Divider(height: 32),
+                                _sectionTitle('Данные профиля', colors),
+                                const SizedBox(height: 8),
+                                _infoRow('Логин', _student!.login),
+                                _infoRow('Email', _student!.email),
+                                _infoRow('Учреждение', _institution?.name ?? '—'),
+                                const SizedBox(height: 24),
+                                AnimatedCrossFade(
+                                  firstChild: _editButton(),
+                                  secondChild: _editForm(),
+                                  crossFadeState: _isEditing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                                  duration: const Duration(milliseconds: 300),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
         ),
       ),
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(ColorScheme colors) {
     final initials = '${_student!.name[0]}${_student!.surname[0]}'.toUpperCase();
     final avatarUrl = _student!.avatarUrl;
     return Center(
@@ -265,13 +240,13 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         children: [
           CircleAvatar(
             radius: 60,
-            backgroundColor: Colors.deepPurple.shade200,
+            backgroundColor: colors.primaryContainer,
             backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
             child:
                 avatarUrl == null
                     ? Text(
                       initials,
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: colors.onPrimaryContainer),
                     )
                     : null,
           ),
@@ -279,7 +254,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             bottom: 0,
             right: 0,
             child: Material(
-              color: const Color(0xFF5E35B1),
+              color: colors.primary,
               shape: const CircleBorder(),
               elevation: 2,
               child: InkWell(
@@ -289,12 +264,12 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child:
                       _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
                           )
-                          : const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          : Icon(Icons.camera_alt, color: colors.onPrimary, size: 20),
                 ),
               ),
             ),
@@ -304,8 +279,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple));
+  Widget _sectionTitle(String title, ColorScheme colors) {
+    return Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary));
   }
 
   Widget _infoRow(String label, String value) {
@@ -340,13 +315,11 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             controller: _nameController,
             label: 'Имя',
             validator: (val) => Validators.validateName(val, 'Имя'),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
           ),
           _buildField(
             controller: _surnameController,
             label: 'Фамилия',
             validator: (val) => Validators.validateName(val, 'Фамилия'),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
           ),
           _buildField(
             controller: _emailController,
@@ -375,7 +348,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               ),
               validator: (val) {
                 if (val == null || val.isEmpty) return null;
-                if (val.length < 6) return 'Пароль должен быть не менее 6 символов';
+                if (val.length < 6) return 'Минимум 6 символов';
                 return null;
               },
             ),
@@ -406,10 +379,13 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   icon: const Icon(Icons.save),
                   label:
                       _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
                           )
                           : const Text('Сохранить'),
                   onPressed: _isSaving ? null : _saveChanges,
@@ -434,7 +410,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     required TextEditingController controller,
     required String label,
     TextInputType type = TextInputType.text,
-    bool obscure = false,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
   }) {
@@ -444,7 +419,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         controller: controller,
         decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         keyboardType: type,
-        obscureText: obscure,
         validator: validator,
         inputFormatters: inputFormatters,
         autovalidateMode: AutovalidateMode.onUserInteraction,

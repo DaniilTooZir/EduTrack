@@ -1,11 +1,13 @@
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class TeacherScheduleScreen extends StatefulWidget {
   const TeacherScheduleScreen({super.key});
+
   @override
   State<TeacherScheduleScreen> createState() => _TeacherScheduleScreenState();
 }
@@ -23,7 +25,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
   }
 
   Future<void> _loadSchedule() async {
-    final teacherId = context.read<UserProvider>().userId;
+    final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
     try {
       final list = await _scheduleService.getScheduleForTeacher(teacherId);
@@ -31,10 +33,10 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
         if (a.date == null && b.date != null) return -1;
         if (a.date != null && b.date == null) return 1;
         if (a.date != null && b.date != null) {
-          final int d = a.date!.compareTo(b.date!);
+          final d = a.date!.compareTo(b.date!);
           if (d != 0) return d;
         }
-        final int w = a.weekday.compareTo(b.weekday);
+        final w = a.weekday.compareTo(b.weekday);
         if (w != 0) return w;
         return a.startTime.compareTo(b.startTime);
       });
@@ -46,129 +48,107 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
         }
         grouped.putIfAbsent(header, () => []).add(s);
       }
-
-      setState(() {
-        _scheduleList = list;
-        _groupedSchedule = grouped;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _scheduleList = list;
+          _groupedSchedule = grouped;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  String _formatDate(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}';
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}';
+  }
 
   String _getWeekdayName(int weekday) {
     const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
     if (weekday >= 1 && weekday <= 7) return days[weekday - 1];
-    return '';
+    return 'День $weekday';
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFEDE7F6), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_scheduleList.isEmpty) {
+      return Center(
+        child: Text('Расписание отсутствует.', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children:
+                _groupedSchedule.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.key,
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+                      ),
+                      const SizedBox(height: 10),
+                      ...entry.value.map((s) => _buildScheduleCard(s, colors)),
+                      const SizedBox(height: 20),
+                    ],
+                  );
+                }).toList(),
           ),
-        ),
-        child: SafeArea(
-          child:
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _scheduleList.isEmpty
-                  ? _buildEmpty(theme)
-                  : _buildGroupedList(theme),
         ),
       ),
     );
   }
 
-  Widget _buildEmpty(ThemeData theme) {
-    return Center(
-      child: Text(
-        'Расписание не найдено.',
-        style: theme.textTheme.headlineSmall?.copyWith(color: const Color(0xFF5E35B1)),
-      ),
-    );
-  }
-
-  Widget _buildGroupedList(ThemeData theme) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxWidth = constraints.maxWidth > 600 ? 600.0 : constraints.maxWidth;
-        return Center(
-          child: Container(
-            width: maxWidth,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: ListView(
-              children:
-                  _groupedSchedule.entries.map((entry) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16, bottom: 8),
-                          child: Text(
-                            entry.key, // Заголовок с датой
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: const Color(0xFF512DA8),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        ...entry.value.map((e) => _buildLessonCard(e, theme)),
-                        const SizedBox(height: 12),
-                      ],
-                    );
-                  }).toList(),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLessonCard(Schedule entry, ThemeData theme) {
+  Widget _buildScheduleCard(Schedule s, ColorScheme colors) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: colors.surface.withOpacity(0.9),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Icon(Icons.access_time, size: 20, color: colors.primary),
+                const SizedBox(width: 8),
                 Text(
-                  entry.subjectName ?? 'Предмет',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF5E35B1),
-                  ),
-                ),
-                Text(
-                  '${entry.startTime.substring(0, 5)} - ${entry.endTime.substring(0, 5)}',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                  '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.group, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  'Группа: ${entry.groupName}',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[800]),
+                Icon(Icons.book, size: 20, color: colors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    s.subjectName ?? 'Предмет',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.group, size: 20, color: colors.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Группа: ${s.groupName}', style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
                 ),
               ],
             ),

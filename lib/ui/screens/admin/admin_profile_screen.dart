@@ -4,6 +4,7 @@ import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,16 +25,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isEditing = false;
   bool _isPasswordVisible = false;
-
   late final EducationHeadService _headService;
   late final InstitutionService _institutionService;
   final _avatarService = AvatarService();
-
   EducationHead? _admin;
   Institution? _institution;
 
@@ -99,7 +97,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     if (_admin == null) return;
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isSaving = true);
     final updatedData = <String, dynamic>{};
     final password = _passwordController.text.trim();
@@ -109,22 +106,11 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       setState(() => _isSaving = false);
       return;
     }
-
-    if (_nameController.text.trim() != _admin!.name) {
-      updatedData['name'] = _nameController.text.trim();
-    }
-    if (_surnameController.text.trim() != _admin!.surname) {
-      updatedData['surname'] = _surnameController.text.trim();
-    }
-    if (_phoneController.text.trim() != _admin!.phone) {
-      updatedData['phone'] = _phoneController.text.trim();
-    }
-    if (_loginController.text.trim() != _admin!.login) {
-      updatedData['login'] = _loginController.text.trim();
-    }
-    if (password.isNotEmpty) {
-      updatedData['password'] = password;
-    }
+    if (_nameController.text.trim() != _admin!.name) updatedData['name'] = _nameController.text.trim();
+    if (_surnameController.text.trim() != _admin!.surname) updatedData['surname'] = _surnameController.text.trim();
+    if (_phoneController.text.trim() != _admin!.phone) updatedData['phone'] = _phoneController.text.trim();
+    if (_loginController.text.trim() != _admin!.login) updatedData['login'] = _loginController.text.trim();
+    if (password.isNotEmpty) updatedData['password'] = password;
 
     if (updatedData.isEmpty) {
       setState(() {
@@ -175,6 +161,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body:
@@ -196,14 +184,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  _buildAvatar(),
+                                  _buildAvatar(colors),
                                   const SizedBox(height: 16),
                                   Center(
                                     child: Text(
                                       '${_admin!.name} ${_admin!.surname}',
                                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.deepPurple,
+                                        color: colors.primary,
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -214,11 +202,11 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                       _institution?.name ?? '',
                                       style: Theme.of(
                                         context,
-                                      ).textTheme.bodyMedium?.copyWith(color: Colors.deepPurple.shade300),
+                                      ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
                                     ),
                                   ),
                                   const Divider(height: 32),
-                                  _sectionTitle('Данные профиля'),
+                                  _sectionTitle('Данные профиля', colors),
                                   const SizedBox(height: 8),
                                   _infoRow('Телефон', _admin!.phone),
                                   _infoRow('Логин', _admin!.login),
@@ -243,7 +231,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(ColorScheme colors) {
     final initials = '${_admin!.name[0]}${_admin!.surname[0]}'.toUpperCase();
     final avatarUrl = _admin!.avatarUrl;
     return Center(
@@ -251,13 +239,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         children: [
           CircleAvatar(
             radius: 60,
-            backgroundColor: Colors.deepPurple.shade200,
+            backgroundColor: colors.primaryContainer,
             backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
             child:
                 avatarUrl == null
                     ? Text(
                       initials,
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: colors.onPrimaryContainer),
                     )
                     : null,
           ),
@@ -265,7 +253,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
             bottom: 0,
             right: 0,
             child: Material(
-              color: const Color(0xFF5E35B1),
+              color: colors.primary,
               shape: const CircleBorder(),
               elevation: 2,
               child: InkWell(
@@ -275,12 +263,12 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child:
                       _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
                           )
-                          : const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          : Icon(Icons.camera_alt, color: colors.onPrimary, size: 20),
                 ),
               ),
             ),
@@ -290,8 +278,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple));
+  Widget _sectionTitle(String title, ColorScheme colors) {
+    return Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary));
   }
 
   Widget _infoRow(String label, String value) {
@@ -391,10 +379,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   icon: const Icon(Icons.save),
                   label:
                       _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
                           )
                           : const Text('Сохранить'),
                   onPressed: _isSaving ? null : _saveChanges,
@@ -419,7 +410,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     required TextEditingController controller,
     required String label,
     TextInputType type = TextInputType.text,
-    bool obscure = false,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
   }) {
@@ -429,7 +419,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         controller: controller,
         decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         keyboardType: type,
-        obscureText: obscure,
         validator: validator,
         inputFormatters: inputFormatters,
         autovalidateMode: AutovalidateMode.onUserInteraction,

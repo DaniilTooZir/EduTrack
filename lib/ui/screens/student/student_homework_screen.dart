@@ -1,4 +1,5 @@
 import 'package:edu_track/data/services/homework_service.dart';
+import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -15,6 +16,7 @@ class StudentHomeworkScreen extends StatefulWidget {
 
 class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
   late final HomeworkService _homeworkService;
+  final _studentService = StudentService();
   bool _isLoading = true;
   List<Homework> _homeworks = [];
   Map<String, HomeworkStatus> _statuses = {};
@@ -29,24 +31,22 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
   Future<void> _loadHomework() async {
     final studentId = Provider.of<UserProvider>(context, listen: false).userId;
     if (studentId == null) return;
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
     try {
       final homeworks = await _homeworkService.getHomeworksByStudentGroup(studentId);
       final statuses = await _homeworkService.getHomeworkStatusesForStudent(studentId);
-      setState(() {
-        _homeworks = homeworks;
-        _statuses = {for (final s in statuses) s.homeworkId: s};
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
       if (mounted) {
+        setState(() {
+          _homeworks = homeworks;
+          _statuses = {for (final s in statuses) s.homeworkId: s};
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки домашних заданий: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     }
@@ -78,9 +78,9 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка обновления статуса: $e'), backgroundColor: Colors.redAccent));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка обновления: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        );
       }
     }
   }
@@ -95,22 +95,22 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка открытия файла: $e'), backgroundColor: Colors.redAccent));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка открытия: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = Theme.of(context).colorScheme;
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_homeworks.isEmpty) {
       return Center(
-        child: Text('Нет домашних заданий.', style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey[700])),
+        child: Text('Нет домашних заданий.', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16)),
       );
     }
     return Center(
@@ -124,12 +124,11 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
             final isDone = _statuses[hw.id]?.isCompleted ?? false;
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 8),
-              elevation: 5,
+              elevation: 3,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: Colors.white.withOpacity(0.85),
+              color: colors.surface.withOpacity(0.9),
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                splashColor: Colors.purple.withOpacity(0.3),
                 onTap: () => _toggleCompletion(hw),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
@@ -138,7 +137,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                     children: [
                       Icon(
                         isDone ? Icons.check_circle : Icons.radio_button_unchecked,
-                        color: isDone ? Colors.green : Colors.grey,
+                        color: isDone ? Colors.green : colors.onSurfaceVariant,
                         size: 32,
                       ),
                       const SizedBox(width: 16),
@@ -148,15 +147,16 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                           children: [
                             Text(
                               hw.title,
-                              style: theme.textTheme.titleLarge?.copyWith(
+                              style: TextStyle(
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 decoration: isDone ? TextDecoration.lineThrough : null,
-                                color: isDone ? Colors.grey : Colors.black87,
+                                color: isDone ? colors.onSurface.withOpacity(0.5) : colors.onSurface,
                               ),
                             ),
                             if (hw.description?.isNotEmpty == true) ...[
                               const SizedBox(height: 6),
-                              Text(hw.description!, style: theme.textTheme.bodyMedium),
+                              Text(hw.description!, style: TextStyle(color: colors.onSurfaceVariant)),
                             ],
                             const SizedBox(height: 12),
                             Wrap(
@@ -167,16 +167,24 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                                   _InfoChip(
                                     icon: Icons.calendar_today,
                                     label: hw.dueDate!.toLocal().toString().split(' ')[0],
+                                    color: colors.primaryContainer.withOpacity(0.5),
+                                    textColor: colors.onPrimaryContainer,
                                   ),
-                                if (hw.subject != null) _InfoChip(icon: Icons.book, label: hw.subject!.name),
+                                if (hw.subject != null)
+                                  _InfoChip(
+                                    icon: Icons.book,
+                                    label: hw.subject!.name,
+                                    color: colors.secondaryContainer.withOpacity(0.5),
+                                    textColor: colors.onSecondaryContainer,
+                                  ),
                                 if (hw.fileUrl != null)
                                   _InfoChip(
                                     icon: Icons.attach_file,
                                     label: hw.fileName ?? 'Файл',
                                     isAction: true,
                                     onTap: () => _openFile(hw.fileUrl!),
-                                    color: const Color(0xFFE3F2FD),
-                                    textColor: const Color(0xFF1565C0),
+                                    color: colors.tertiaryContainer.withOpacity(0.5),
+                                    textColor: colors.onTertiaryContainer,
                                   ),
                               ],
                             ),
@@ -200,38 +208,36 @@ class _InfoChip extends StatelessWidget {
   final String label;
   final bool isAction;
   final VoidCallback? onTap;
-  final Color? color;
-  final Color? textColor;
+  final Color color;
+  final Color textColor;
 
   const _InfoChip({
     required this.icon,
     required this.label,
     this.isAction = false,
     this.onTap,
-    this.color,
-    this.textColor,
+    required this.color,
+    required this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = color ?? Colors.purple.withOpacity(0.1);
-    final txtColor = textColor ?? Colors.purple[700];
     final Widget content = Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: color,
         borderRadius: BorderRadius.circular(20),
-        border: isAction ? Border.all(color: txtColor!.withOpacity(0.3)) : null,
+        border: isAction ? Border.all(color: textColor.withOpacity(0.3)) : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: txtColor),
+          Icon(icon, size: 16, color: textColor),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               label,
-              style: TextStyle(fontSize: 12, color: txtColor, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 12, color: textColor, fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis,
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -18,11 +19,6 @@ class ScheduleOperatorHomeScreen extends StatefulWidget {
 class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen> {
   int _selectedIndex = 0;
   final List<String> _titles = ['Главная', 'Расписание'];
-
-  final Color primaryColor = const Color(0xFF9575CD);
-  final Color drawerStart = const Color(0xFF7E57C2);
-  final Color drawerEnd = const Color(0xFF5E35B1);
-
   final ScheduleService _scheduleService = ScheduleService();
   late Future<List<Schedule>> _scheduleFuture;
   Key _refreshKey = UniqueKey();
@@ -62,32 +58,32 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
+
     Widget bodyContent;
     switch (_selectedIndex) {
       case 0:
-        bodyContent = _buildDashboard();
+        bodyContent = _buildDashboard(colors);
         break;
       case 1:
         bodyContent = const ScheduleScheduleOperatorScreen();
         break;
       default:
-        bodyContent = _buildPlaceholder(_titles[_selectedIndex]);
+        bodyContent = _buildPlaceholder(_titles[_selectedIndex], colors);
     }
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         elevation: 4,
-        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
           if (_selectedIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              tooltip: 'Обновить расписание',
-              onPressed: _refreshDashboard,
-            ),
+            IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить расписание', onPressed: _refreshDashboard),
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout),
             tooltip: 'Выйти',
             onPressed: () async {
               await SessionService.clearSession();
@@ -104,25 +100,25 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [drawerStart, drawerEnd],
+                  colors: [colors.secondary, colors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
-              child: const Align(
+              child: Align(
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню оператора расписания',
-                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: colors.onPrimary, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.dashboard, 'Главная', 0),
-            _buildDrawerItem(Icons.edit_calendar, 'Редактор расписания', 1),
+            _buildDrawerItem(Icons.dashboard, 'Главная', 0, colors),
+            _buildDrawerItem(Icons.edit_calendar, 'Редактор расписания', 1, colors),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Настройки'),
+              leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
+              title: Text('Настройки', style: TextStyle(color: colors.onSurface)),
               onTap: () {
                 Navigator.pop(context);
                 showSettingsSheet(context);
@@ -134,30 +130,26 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: bodyContent,
       ),
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, int index) {
+  Widget _buildDrawerItem(IconData icon, String title, int index, ColorScheme colors) {
     final bool selected = _selectedIndex == index;
     return ListTile(
-      leading: Icon(icon, color: selected ? const Color(0xFF5E35B1) : null),
+      leading: Icon(icon, color: selected ? colors.primary : colors.onSurfaceVariant),
       title: Text(
         title,
         style: TextStyle(
-          color: selected ? const Color(0xFF5E35B1) : null,
+          color: selected ? colors.primary : colors.onSurface,
           fontWeight: selected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
       selected: selected,
+      selectedTileColor: colors.primary.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
       onTap: () {
         _navigateToTab(index);
         Navigator.of(context).pop();
@@ -165,35 +157,30 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
-  }
-
+  String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   String _getWeekdayName(int weekday) {
     const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
     if (weekday >= 1 && weekday <= 7) return days[weekday - 1];
     return 'Неизвестно';
   }
 
-  Widget _buildDashboard() {
+  Widget _buildDashboard(ColorScheme colors) {
     return RefreshIndicator(
       onRefresh: () async {
         _refreshDashboard();
         await Future.delayed(const Duration(seconds: 1));
       },
-      color: primaryColor,
+      color: colors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWelcomeCard(),
+            _buildWelcomeCard(colors),
             const SizedBox(height: 24),
-            const Text(
-              'Действия',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
-            ),
+            Text('Действия', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary)),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -202,8 +189,8 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                 icon: const Icon(Icons.edit_calendar),
                 label: const Text('Перейти к редактированию расписания'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF5E35B1),
+                  backgroundColor: colors.surface,
+                  foregroundColor: colors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -211,12 +198,12 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Полное расписание',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
             ),
             const SizedBox(height: 4),
-            const Text('Группировка по дням и датам.', style: TextStyle(fontSize: 14, color: Colors.grey)),
+            Text('Группировка по дням и датам.', style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
             const SizedBox(height: 12),
             FutureBuilder<List<Schedule>>(
               key: _refreshKey,
@@ -228,14 +215,14 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                   );
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Ошибка: ${snapshot.error}', style: TextStyle(color: Colors.red[900])));
+                  return Center(child: Text('Ошибка: ${snapshot.error}', style: TextStyle(color: colors.error)));
                 }
                 final schedules = snapshot.data ?? [];
                 if (schedules.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: Text('Расписание пусто.', style: TextStyle(color: Colors.grey)),
+                      padding: const EdgeInsets.all(24.0),
+                      child: Text('Расписание пусто.', style: TextStyle(color: colors.onSurfaceVariant)),
                     ),
                   );
                 }
@@ -264,7 +251,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                 return Column(
                   children:
                       grouped.entries.map((entry) {
-                        return _buildDayScheduleCard(entry.key, entry.value);
+                        return _buildDayScheduleCard(entry.key, entry.value, colors);
                       }).toList(),
                 );
               },
@@ -275,38 +262,42 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     );
   }
 
-  Widget _buildWelcomeCard() {
+  Widget _buildWelcomeCard(ColorScheme colors) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7E57C2), Color(0xFF512DA8)],
+        gradient: LinearGradient(
+          colors: [colors.secondary, colors.primary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Панель управления', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
+          Text(
+            'Панель управления',
+            style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
           Text(
             'Добро пожаловать, Оператор. Здесь вы можете просматривать и корректировать учебное расписание.',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+            style: TextStyle(color: colors.onPrimary.withOpacity(0.8), fontSize: 14),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDayScheduleCard(String headerTitle, List<Schedule> dailySchedules) {
+  Widget _buildDayScheduleCard(String headerTitle, List<Schedule> dailySchedules, ColorScheme colors) {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: colors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
@@ -318,14 +309,11 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: const Color(0xFFEDE7F6), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.calendar_today, color: Color(0xFF5E35B1), size: 20),
+                    decoration: BoxDecoration(color: colors.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                    child: Icon(Icons.calendar_today, color: colors.onPrimaryContainer, size: 20),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    headerTitle,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
-                  ),
+                  Text(headerTitle, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary)),
                 ],
               ),
             ),
@@ -335,30 +323,46 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
               child: DataTable(
                 columnSpacing: 20,
                 headingRowHeight: 40,
-                columns: const [
-                  DataColumn(label: Text('Время', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Группа', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Предмет', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DataColumn(label: Text('Преподаватель', style: TextStyle(fontWeight: FontWeight.bold))),
+                columns: [
+                  DataColumn(
+                    label: Text('Время', style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface)),
+                  ),
+                  DataColumn(
+                    label: Text('Группа', style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface)),
+                  ),
+                  DataColumn(
+                    label: Text('Предмет', style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface)),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      'Преподаватель',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
+                    ),
+                  ),
                 ],
                 rows:
                     dailySchedules.map((schedule) {
                       final timeStr = '${schedule.startTime.substring(0, 5)} - ${schedule.endTime.substring(0, 5)}';
                       return DataRow(
                         cells: [
-                          DataCell(Text(timeStr, style: const TextStyle(fontWeight: FontWeight.w500))),
+                          DataCell(
+                            Text(timeStr, style: TextStyle(fontWeight: FontWeight.w500, color: colors.onSurface)),
+                          ),
                           DataCell(
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
+                                color: colors.secondaryContainer,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text(schedule.groupName ?? '—', style: TextStyle(color: Colors.blue.shade800)),
+                              child: Text(
+                                schedule.groupName ?? '—',
+                                style: TextStyle(color: colors.onSecondaryContainer),
+                              ),
                             ),
                           ),
-                          DataCell(Text(schedule.subjectName ?? '—')),
-                          DataCell(Text(schedule.teacherName, style: const TextStyle(fontSize: 14))),
+                          DataCell(Text(schedule.subjectName ?? '—', style: TextStyle(color: colors.onSurface))),
+                          DataCell(Text(schedule.teacherName, style: TextStyle(fontSize: 14, color: colors.onSurface))),
                         ],
                       );
                     }).toList(),
@@ -370,11 +374,11 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     );
   }
 
-  Widget _buildPlaceholder(String title) {
+  Widget _buildPlaceholder(String title, ColorScheme colors) {
     return Center(
       child: Text(
         '$title — экран в разработке',
-        style: const TextStyle(fontSize: 18, color: Color(0xFF5E35B1), fontWeight: FontWeight.w500),
+        style: TextStyle(fontSize: 18, color: colors.primary, fontWeight: FontWeight.w500),
       ),
     );
   }

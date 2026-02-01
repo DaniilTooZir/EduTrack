@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +18,6 @@ class StudentLessonScreen extends StatefulWidget {
 class _StudentLessonScreenState extends State<StudentLessonScreen> {
   final LessonService _lessonService = LessonService();
   final ScheduleService _scheduleService = ScheduleService();
-
   bool _loading = true;
   List<Lesson> _lessons = [];
   String? get studentId => Provider.of<UserProvider>(context, listen: false).userId;
@@ -53,7 +53,12 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
     }
   }
 
-  Widget _buildLessonCard(Lesson lesson) {
+  String _getMonthName(int month) {
+    const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    return months[month - 1];
+  }
+
+  Widget _buildLessonCard(Lesson lesson, ColorScheme colors) {
     return FutureBuilder<Schedule?>(
       future: _scheduleService.getScheduleById(lesson.scheduleId),
       builder: (context, snapshot) {
@@ -76,11 +81,9 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colors.surface.withOpacity(0.95),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(color: Colors.deepPurple.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Material(
             color: Colors.transparent,
@@ -94,20 +97,27 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEDE7F6),
+                        color: colors.primaryContainer,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFD1C4E9)),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             day,
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5E35B1)),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: colors.onPrimaryContainer,
+                            ),
                           ),
                           Text(
                             month,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF7E57C2)),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: colors.onPrimaryContainer,
+                            ),
                           ),
                         ],
                       ),
@@ -119,25 +129,21 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                         children: [
                           Text(
                             subjectName.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.deepPurple.shade300,
-                            ),
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colors.primary),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             lesson.topic ?? 'Без темы',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                              Icon(Icons.access_time, size: 14, color: colors.onSurfaceVariant),
                               const SizedBox(width: 4),
-                              Text(timeStr, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                              Text(timeStr, style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant)),
                             ],
                           ),
                         ],
@@ -145,10 +151,10 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.deepPurple.shade50),
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: colors.secondaryContainer),
                       child: IconButton(
                         icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                        color: const Color(0xFF5E35B1),
+                        color: colors.onSecondaryContainer,
                         tooltip: 'Открыть чат',
                         onPressed: () {
                           context.push('/student/lesson_comments', extra: lesson.id);
@@ -165,41 +171,37 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
     );
   }
 
-  String _getMonthName(int month) {
-    const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-    return months[month - 1];
-  }
-
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child:
-            _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _lessons.isEmpty
-                ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.class_outlined, size: 64, color: Colors.grey[400]),
-                      const SizedBox(height: 16),
-                      Text('Пока нет проведенных уроков', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-                    ],
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        child: SafeArea(
+          child:
+              _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _lessons.isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.class_outlined, size: 64, color: colors.onSurfaceVariant.withOpacity(0.5)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Пока нет проведенных уроков',
+                          style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  )
+                  : ListView.builder(
+                    padding: const EdgeInsets.only(top: 10, bottom: 20),
+                    itemCount: _lessons.length,
+                    itemBuilder: (context, index) => _buildLessonCard(_lessons[index], colors),
                   ),
-                )
-                : ListView.builder(
-                  padding: const EdgeInsets.only(top: 10, bottom: 20),
-                  itemCount: _lessons.length,
-                  itemBuilder: (context, index) => _buildLessonCard(_lessons[index]),
-                ),
+        ),
       ),
     );
   }

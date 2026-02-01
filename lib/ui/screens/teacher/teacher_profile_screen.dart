@@ -4,6 +4,7 @@ import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,7 +19,6 @@ class TeacherProfileScreen extends StatefulWidget {
 
 class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -80,9 +80,9 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         _loadTeacherData();
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+      );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -101,34 +101,23 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-
     final updatedData = <String, dynamic>{};
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
 
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают'), backgroundColor: Colors.redAccent));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: const Text('Пароли не совпадают'), backgroundColor: Theme.of(context).colorScheme.error),
+      );
       setState(() => _isSaving = false);
       return;
     }
 
-    if (_nameController.text.trim() != _teacher!.name) {
-      updatedData['name'] = _nameController.text.trim();
-    }
-    if (_surnameController.text.trim() != _teacher!.surname) {
-      updatedData['surname'] = _surnameController.text.trim();
-    }
-    if (_emailController.text.trim() != _teacher!.email) {
-      updatedData['email'] = _emailController.text.trim();
-    }
-    if (_loginController.text.trim() != _teacher!.login) {
-      updatedData['login'] = _loginController.text.trim();
-    }
-    if (password.isNotEmpty) {
-      updatedData['password'] = password;
-    }
+    if (_nameController.text.trim() != _teacher!.name) updatedData['name'] = _nameController.text.trim();
+    if (_surnameController.text.trim() != _teacher!.surname) updatedData['surname'] = _surnameController.text.trim();
+    if (_emailController.text.trim() != _teacher!.email) updatedData['email'] = _emailController.text.trim();
+    if (_loginController.text.trim() != _teacher!.login) updatedData['login'] = _loginController.text.trim();
+    if (password.isNotEmpty) updatedData['password'] = password;
 
     if (updatedData.isEmpty) {
       setState(() {
@@ -152,7 +141,9 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Theme.of(context).colorScheme.error));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -179,84 +170,78 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Container(
-        constraints: const BoxConstraints.expand(),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : SafeArea(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 500),
-                            child: Card(
-                              elevation: 8,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    _buildAvatar(),
-                                    const SizedBox(height: 16),
-                                    Center(
-                                      child: Text(
-                                        '${_teacher!.name} ${_teacher!.surname}',
-                                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.deepPurple,
-                                        ),
-                                        textAlign: TextAlign.center,
+      backgroundColor: Colors.transparent,
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 600),
+                          child: Card(
+                            elevation: 8,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            color: colors.surface,
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildAvatar(colors),
+                                  const SizedBox(height: 16),
+                                  Center(
+                                    child: Text(
+                                      '${_teacher!.name} ${_teacher!.surname}',
+                                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: colors.primary,
                                       ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                    const SizedBox(height: 8),
-                                    Center(
-                                      child: Text(
-                                        _institution?.name ?? '',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.copyWith(color: Colors.deepPurple.shade300),
-                                      ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Center(
+                                    child: Text(
+                                      _institution?.name ?? '',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
                                     ),
-                                    const Divider(height: 32),
-                                    _sectionTitle('Данные профиля'),
-                                    const SizedBox(height: 8),
-                                    _infoRow('Логин', _teacher!.login),
-                                    _infoRow('Email', _teacher!.email),
-                                    _infoRow('Учреждение', _institution?.name ?? '—'),
-                                    const SizedBox(height: 24),
-                                    AnimatedCrossFade(
-                                      firstChild: _editButton(),
-                                      secondChild: _editForm(),
-                                      crossFadeState: _isEditing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                                      duration: const Duration(milliseconds: 300),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                  const Divider(height: 32),
+                                  _sectionTitle('Данные профиля', colors),
+                                  const SizedBox(height: 8),
+                                  _infoRow('Логин', _teacher!.login),
+                                  _infoRow('Email', _teacher!.email),
+                                  _infoRow('Кафедра', _teacher!.department ?? '—'),
+                                  const SizedBox(height: 24),
+                                  AnimatedCrossFade(
+                                    firstChild: _editButton(),
+                                    secondChild: _editForm(colors),
+                                    crossFadeState: _isEditing ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                                    duration: const Duration(milliseconds: 300),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
-      ),
+              ),
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildAvatar(ColorScheme colors) {
     final initials = '${_teacher!.name[0]}${_teacher!.surname[0]}'.toUpperCase();
     final avatarUrl = _teacher!.avatarUrl;
     return Center(
@@ -264,13 +249,13 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         children: [
           CircleAvatar(
             radius: 60,
-            backgroundColor: Colors.deepPurple.shade200,
+            backgroundColor: colors.primaryContainer,
             backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
             child:
                 avatarUrl == null
                     ? Text(
                       initials,
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: colors.onPrimaryContainer),
                     )
                     : null,
           ),
@@ -278,7 +263,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
             bottom: 0,
             right: 0,
             child: Material(
-              color: const Color(0xFF5E35B1),
+              color: colors.primary,
               shape: const CircleBorder(),
               elevation: 2,
               child: InkWell(
@@ -288,12 +273,12 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child:
                       _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
                           )
-                          : const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          : Icon(Icons.camera_alt, color: colors.onPrimary, size: 20),
                 ),
               ),
             ),
@@ -303,8 +288,8 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     );
   }
 
-  Widget _sectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple));
+  Widget _sectionTitle(String title, ColorScheme colors) {
+    return Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary));
   }
 
   Widget _infoRow(String label, String value) {
@@ -330,7 +315,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     );
   }
 
-  Widget _editForm() {
+  Widget _editForm(ColorScheme colors) {
     return Form(
       key: _formKey,
       child: Column(
@@ -339,13 +324,11 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
             controller: _nameController,
             label: 'Имя',
             validator: (val) => Validators.validateName(val, 'Имя'),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
           ),
           _buildField(
             controller: _surnameController,
             label: 'Фамилия',
             validator: (val) => Validators.validateName(val, 'Фамилия'),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
           ),
           _buildField(
             controller: _emailController,
@@ -405,13 +388,14 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   icon: const Icon(Icons.save),
                   label:
                       _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                           )
                           : const Text('Сохранить'),
                   onPressed: _isSaving ? null : _saveChanges,
+                  style: ElevatedButton.styleFrom(backgroundColor: colors.primary, foregroundColor: colors.onPrimary),
                 ),
               ),
               const SizedBox(width: 16),
@@ -433,7 +417,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     required TextEditingController controller,
     required String label,
     TextInputType type = TextInputType.text,
-    bool obscure = false,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
   }) {
@@ -443,7 +426,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         controller: controller,
         decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         keyboardType: type,
-        obscureText: obscure,
         validator: validator,
         inputFormatters: inputFormatters,
         autovalidateMode: AutovalidateMode.onUserInteraction,

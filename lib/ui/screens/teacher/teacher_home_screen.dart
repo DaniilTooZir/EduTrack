@@ -7,6 +7,7 @@ import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -21,13 +22,7 @@ class TeacherHomeScreen extends StatefulWidget {
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _selectedIndex = 0;
-
   final List<String> _titles = ['Главная', 'Домашние задания', 'Мои занятия', 'Расписание', 'Профиль', 'Проверка ДЗ'];
-
-  final Color primaryColor = const Color(0xFF9575CD);
-  final Color drawerStart = const Color(0xFF7E57C2);
-  final Color drawerEnd = const Color(0xFF5E35B1);
-
   Key _refreshKey = UniqueKey();
 
   void _refreshDashboard() {
@@ -45,11 +40,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
 
     Widget bodyContent;
     switch (_selectedIndex) {
       case 0:
-        bodyContent = _buildDashboard();
+        bodyContent = _buildDashboard(colors);
         break;
       case 1:
         bodyContent = const TeacherHomeworkScreen();
@@ -69,16 +66,18 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       default:
         bodyContent = const SizedBox.shrink();
     }
-
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
         elevation: 0,
-        title: Text(_titles[_selectedIndex], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
+          if (_selectedIndex == 0)
+            IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _refreshDashboard),
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout),
             tooltip: 'Выйти',
             onPressed: () async {
               await SessionService.clearSession();
@@ -95,29 +94,29 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             DrawerHeader(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [drawerStart, drawerEnd],
+                  colors: [colors.secondary, colors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
-              child: const Align(
+              child: Align(
                 alignment: Alignment.bottomLeft,
                 child: Text(
                   'Меню преподавателя',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0),
-            _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1),
-            _buildDrawerItem(Icons.checklist_rtl_rounded, 'Проверка ДЗ', 5),
-            _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2),
-            _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3),
-            _buildDrawerItem(Icons.person_rounded, 'Профиль', 4),
+            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0, colors),
+            _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1, colors),
+            _buildDrawerItem(Icons.checklist_rtl_rounded, 'Проверка ДЗ', 5, colors),
+            _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2, colors),
+            _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
+            _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Настройки'),
+              leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
+              title: Text('Настройки', style: TextStyle(color: colors.onSurface)),
               onTap: () {
                 Navigator.pop(context);
                 showSettingsSheet(context);
@@ -129,32 +128,25 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: bodyContent,
       ),
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, int index) {
+  Widget _buildDrawerItem(IconData icon, String title, int index, ColorScheme colors) {
     final bool selected = _selectedIndex == index;
     return ListTile(
-      leading: Icon(icon, color: selected ? const Color(0xFF5E35B1) : Colors.grey[700]),
+      leading: Icon(icon, color: selected ? colors.primary : colors.onSurfaceVariant),
       title: Text(
         title,
         style: TextStyle(
-          color: selected ? const Color(0xFF5E35B1) : Colors.black87,
-          fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+          color: selected ? colors.primary : colors.onSurface,
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
       selected: selected,
-      selectedTileColor: const Color(0xFF5E35B1).withOpacity(0.1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+      selectedTileColor: colors.primaryContainer.withOpacity(0.3),
       onTap: () {
         _navigateToTab(index);
         Navigator.of(context).pop();
@@ -162,43 +154,41 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     );
   }
 
-  Widget _buildDashboard() {
+  Widget _buildDashboard(ColorScheme colors) {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     return RefreshIndicator(
       onRefresh: () async {
         _refreshDashboard();
         await Future.delayed(const Duration(seconds: 1));
       },
-      color: primaryColor,
+      color: colors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWelcomeCard(),
+            _buildWelcomeCard(colors),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Быстрые действия',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 100,
+              height: 110,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  _buildQuickActionCard(Icons.add_task, 'Выдать ДЗ', () => _navigateToTab(1)),
-                  _buildQuickActionCard(Icons.play_lesson, 'Начать урок', () => _navigateToTab(2)),
-                  _buildQuickActionCard(Icons.calendar_today, 'Расписание', () => _navigateToTab(3)),
+                  _buildQuickActionCard(Icons.add_task, 'Выдать ДЗ', () => _navigateToTab(1), colors),
+                  _buildQuickActionCard(Icons.checklist, 'Проверить ДЗ', () => _navigateToTab(5), colors),
+                  _buildQuickActionCard(Icons.play_lesson, 'Начать урок', () => _navigateToTab(2), colors),
+                  _buildQuickActionCard(Icons.calendar_today, 'Расписание', () => _navigateToTab(3), colors),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Ваши предметы',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
-            ),
+            Text('Ваши предметы', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary)),
             const SizedBox(height: 12),
             FutureBuilder<List<Subject>>(
               key: _refreshKey,
@@ -212,10 +202,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 if (snapshot.hasError) {
                   return Center(
                     child: Card(
-                      color: Colors.red[50],
+                      color: colors.errorContainer,
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: Text('Ошибка загрузки: ${snapshot.error}', style: TextStyle(color: Colors.red[900])),
+                        child: Text(
+                          'Ошибка загрузки: ${snapshot.error}',
+                          style: TextStyle(color: colors.onErrorContainer),
+                        ),
                       ),
                     ),
                   );
@@ -225,7 +218,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(20.0),
-                      child: Text('У вас пока нет назначенных предметов.', style: TextStyle(color: Colors.grey)),
+                      child: Text(
+                        'У вас пока нет назначенных предметов (в расписании).',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
                   );
                 }
@@ -239,17 +235,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       margin: const EdgeInsets.only(bottom: 12),
                       elevation: 3,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      color: colors.surface,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
                         onTap: () {
+                          // Переход к урокам
                           _navigateToTab(2);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Фильтр по "${subject.name}" пока не реализован, открыт общий список.'),
-                              duration: const Duration(seconds: 1),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -260,7 +251,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                 width: 50,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Colors.deepPurple.shade300, Colors.deepPurple.shade700],
+                                    colors: [colors.secondary, colors.primary],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
@@ -269,8 +260,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                 child: Center(
                                   child: Text(
                                     subject.name.isNotEmpty ? subject.name[0].toUpperCase() : '?',
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: colors.onPrimary,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -284,21 +275,21 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                   children: [
                                     Text(
                                       subject.name,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
+                                        color: colors.onSurface,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       'Нажмите, чтобы перейти к урокам',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                      style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
                                     ),
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                              Icon(Icons.arrow_forward_ios, size: 16, color: colors.onSurfaceVariant),
                             ],
                           ),
                         ),
@@ -314,55 +305,58 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     );
   }
 
-  Widget _buildWelcomeCard() {
+  Widget _buildWelcomeCard(ColorScheme colors) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7E57C2), Color(0xFF512DA8)],
+        gradient: LinearGradient(
+          colors: [colors.secondary, colors.primary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.deepPurple.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('С возвращением!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
+          Text('С возвращением!', style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
           Text(
             'Готовы начать учебный день? Проверьте расписание или создайте новые задания.',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+            style: TextStyle(color: colors.onPrimary.withOpacity(0.9), fontSize: 14),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickActionCard(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildQuickActionCard(IconData icon, String label, VoidCallback onTap, ColorScheme colors) {
     return Container(
-      width: 100,
+      width: 110,
       margin: const EdgeInsets.only(right: 12),
       child: Material(
-        color: Colors.white,
+        color: colors.surface,
         elevation: 2,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: const Color(0xFF5E35B1), size: 32),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: colors.primary, size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.onSurface),
+                ),
+              ],
+            ),
           ),
         ),
       ),

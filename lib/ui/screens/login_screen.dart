@@ -1,5 +1,6 @@
 import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -83,32 +83,31 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final maxWidth = (size.width * 0.85).clamp(300.0, 450.0);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Stack(
             children: [
               Align(
-                alignment: Alignment.topRight,
+                alignment: Alignment.topLeft,
                 child: IconButton(
-                  onPressed: () => showSettingsSheet(context),
-                  icon: const Icon(Icons.settings, color: Color(0xFF5E35B1)),
+                  icon: Icon(Icons.arrow_back, color: colors.primary),
+                  onPressed: () => context.go('/'),
                 ),
               ),
               Align(
-                alignment: Alignment.topLeft,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Color(0xFF5E35B1)),
-                  onPressed: () => context.go('/'),
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: IconButton(
+                    onPressed: () => showSettingsSheet(context),
+                    icon: Icon(Icons.settings, color: colors.primary),
+                  ),
                 ),
               ),
               Center(
@@ -126,14 +125,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.lock_outline, size: 48, color: Color(0xFF5E35B1)),
+                              Icon(Icons.lock_outline, size: 48, color: colors.primary),
                               const SizedBox(height: 16),
                               Text(
                                 'Вход в систему',
                                 style: TextStyle(
                                   fontSize: size.width.clamp(20.0, 28.0),
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF453190),
+                                  color: colors.primary,
                                 ),
                               ),
                               const SizedBox(height: 24),
@@ -184,18 +183,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: ElevatedButton(
                                   onPressed: _isLoading ? null : _login,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF5E35B1),
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: colors.primary,
+                                    foregroundColor: colors.onPrimary,
                                     padding: const EdgeInsets.symmetric(vertical: 14),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     textStyle: const TextStyle(fontSize: 16),
                                   ),
                                   child:
                                       _isLoading
-                                          ? const SizedBox(
+                                          ? SizedBox(
                                             width: 20,
                                             height: 20,
-                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                            child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                           )
                                           : const Text('Войти'),
                                 ),
@@ -204,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(height: 16),
                                 Text(
                                   _errorMessage!,
-                                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: colors.error, fontWeight: FontWeight.bold),
                                   textAlign: TextAlign.center,
                                 ),
                               ],

@@ -7,6 +7,7 @@ import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,22 +23,18 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   late final SubjectService _subjectService;
   late final GroupService _groupService;
   late final TeacherService _teacherService;
-
   late Future<List<Schedule>> _scheduleFuture;
   String? _institutionId;
-
   final _formKey = GlobalKey<FormState>();
 
   DateTime? _selectedDate;
   String? _selectedSubjectId;
   String? _selectedGroupId;
   String? _selectedTeacherId;
-
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
 
   bool _isAdding = false;
-
   List<Subject> _subjects = [];
   List<Group> _groups = [];
   List<Teacher> _teachers = [];
@@ -59,7 +56,6 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     _subjectService = SubjectService();
     _groupService = GroupService();
     _teacherService = TeacherService();
-
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _institutionId = userProvider.institutionId;
     _selectedDate = DateTime.now();
@@ -133,9 +129,9 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     }
     if (_timeToMinutes(_endTime!) <= _timeToMinutes(_startTime!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Время окончания должно быть позже времени начала'),
-          backgroundColor: Colors.redAccent,
+        SnackBar(
+          content: const Text('Время окончания должно быть позже времени начала'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -196,9 +192,9 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка при добавлении: $e'), backgroundColor: Colors.redAccent));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при добавлении: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+      );
     } finally {
       if (mounted) setState(() => _isAdding = false);
     }
@@ -215,7 +211,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
               TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Удалить', style: TextStyle(color: Colors.red)),
+                child: Text('Удалить', style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ),
             ],
           ),
@@ -229,14 +225,14 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         _loadSchedule();
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка удаления: $e'), backgroundColor: Colors.redAccent));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка удаления: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        );
       }
     }
   }
 
-  Widget _buildDatePicker() => InkWell(
+  Widget _buildDatePicker(ColorScheme colors) => InkWell(
     onTap: () async {
       final picked = await showDatePicker(
         context: context,
@@ -247,55 +243,51 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       if (picked != null) setState(() => _selectedDate = picked);
     },
     child: InputDecorator(
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Дата занятия',
-        border: OutlineInputBorder(),
-        suffixIcon: Icon(Icons.calendar_month, color: Color(0xFF5E35B1)),
+        border: const OutlineInputBorder(),
+        suffixIcon: Icon(Icons.calendar_month, color: colors.primary),
       ),
       child: Text(
         _selectedDate != null
             ? '${_formatDate(_selectedDate!)} (${_getWeekdayName(_selectedDate!.weekday)})'
             : 'Выберите дату',
-        style: TextStyle(color: _selectedDate == null ? Colors.grey : Colors.black, fontSize: 16),
+        style: TextStyle(color: _selectedDate == null ? colors.onSurfaceVariant : colors.onSurface, fontSize: 16),
       ),
     ),
   );
 
-  Widget _buildTimePicker(String label, TimeOfDay? time, Function(TimeOfDay) onTimePicked) => InkWell(
-    onTap: () async {
-      final picked = await showTimePicker(
-        context: context,
-        initialTime: time ?? const TimeOfDay(hour: 8, minute: 0),
-        helpText: label.toUpperCase(),
+  Widget _buildTimePicker(String label, TimeOfDay? time, Function(TimeOfDay) onTimePicked, ColorScheme colors) =>
+      InkWell(
+        onTap: () async {
+          final picked = await showTimePicker(
+            context: context,
+            initialTime: time ?? const TimeOfDay(hour: 8, minute: 0),
+            helpText: label.toUpperCase(),
+          );
+          if (picked != null) onTimePicked(picked);
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+            suffixIcon: Icon(Icons.access_time, color: colors.primary),
+          ),
+          child: Text(
+            time != null ? time.format(context) : '--:--',
+            style: TextStyle(color: time == null ? colors.onSurfaceVariant : colors.onSurface),
+          ),
+        ),
       );
-      if (picked != null) onTimePicked(picked);
-    },
-    child: InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        suffixIcon: const Icon(Icons.access_time),
-      ),
-      child: Text(
-        time != null ? time.format(context) : '--:--',
-        style: TextStyle(color: time == null ? Colors.grey : Colors.black),
-      ),
-    ),
-  );
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Scaffold(
       body: Container(
-        constraints: const BoxConstraints.expand(),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -311,20 +303,27 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Добавление урока',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF5E35B1)),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: colors.primary),
                           ),
                           const SizedBox(height: 16),
-                          _buildDatePicker(),
+                          _buildDatePicker(colors),
                           const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
-                                child: _buildTimePicker('Начало', _startTime, (t) => setState(() => _startTime = t)),
+                                child: _buildTimePicker(
+                                  'Начало',
+                                  _startTime,
+                                  (t) => setState(() => _startTime = t),
+                                  colors,
+                                ),
                               ),
                               const SizedBox(width: 12),
-                              Expanded(child: _buildTimePicker('Конец', _endTime, (t) => setState(() => _endTime = t))),
+                              Expanded(
+                                child: _buildTimePicker('Конец', _endTime, (t) => setState(() => _endTime = t), colors),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -405,16 +404,16 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                backgroundColor: const Color(0xFF5E35B1),
-                                foregroundColor: Colors.white,
+                                backgroundColor: colors.primary,
+                                foregroundColor: colors.onPrimary,
                               ),
                               onPressed: _isAdding ? null : _addScheduleEntry,
                               icon:
                                   _isAdding
-                                      ? const SizedBox(
+                                      ? SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                       )
                                       : const Icon(Icons.add),
                               label: const Text('Добавить в расписание'),
@@ -426,11 +425,11 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Расписание занятий',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -442,13 +441,13 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError) {
-                        return Center(
-                          child: Text('Ошибка: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
-                        );
+                        return Center(child: Text('Ошибка: ${snapshot.error}', style: TextStyle(color: colors.error)));
                       }
                       final schedules = snapshot.data ?? [];
                       if (schedules.isEmpty) {
-                        return const Center(child: Text('Расписание пустое', style: TextStyle(color: Colors.grey)));
+                        return Center(
+                          child: Text('Расписание пустое', style: TextStyle(color: colors.onSurfaceVariant)),
+                        );
                       }
                       schedules.sort((a, b) {
                         if (a.date != null && b.date != null) {
@@ -457,7 +456,6 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                         }
                         if (a.date == null) return 1;
                         if (b.date == null) return -1;
-
                         return a.startTime.compareTo(b.startTime);
                       });
                       final Map<String, List<Schedule>> grouped = {};
@@ -479,7 +477,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                           return Card(
                             margin: const EdgeInsets.only(bottom: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            color: Colors.white.withOpacity(0.9),
+                            color: colors.surface.withOpacity(0.9),
                             child: Padding(
                               padding: const EdgeInsets.all(12),
                               child: Column(
@@ -487,13 +485,13 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                 children: [
                                   Row(
                                     children: [
-                                      const Icon(Icons.calendar_today, size: 18, color: Color(0xFF5E35B1)),
+                                      Icon(Icons.calendar_today, size: 18, color: colors.primary),
                                       const SizedBox(width: 8),
                                       Text(
                                         header,
                                         style: theme.textTheme.titleMedium?.copyWith(
                                           fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF5E35B1),
+                                          color: colors.primary,
                                         ),
                                       ),
                                     ],
@@ -538,7 +536,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                                 ),
                                                 DataCell(
                                                   IconButton(
-                                                    icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                                                    icon: Icon(Icons.delete, color: colors.error, size: 20),
                                                     onPressed: () => _deleteScheduleEntry(s.id),
                                                     tooltip: 'Удалить',
                                                   ),

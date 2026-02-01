@@ -11,7 +11,6 @@ import 'package:edu_track/ui/screens/student/student_lesson_comment_screen.dart'
 import 'package:edu_track/ui/screens/teacher/teacher_grade_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_home_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart';
-import 'package:edu_track/ui/screens/teacher/teacher_lesson_attendance_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_comment_screen.dart';
 import 'package:edu_track/ui/screens/welcome_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -33,7 +32,6 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/schedule-operator-home', builder: (context, state) => const ScheduleOperatorHomeScreen()),
     GoRoute(path: '/teacher/lesson_comments', builder: (context, state) => const LessonCommentsScreen()),
     GoRoute(path: '/teacher/grades', builder: (context, state) => const TeacherGradeScreen()),
-    GoRoute(path: '/teacher/attendance', builder: (context, state) => const LessonAttendanceScreen()),
     GoRoute(path: '/teacher/homework-status', builder: (context, state) => const TeacherHomeworkStatusScreen()),
     GoRoute(path: '/student/lesson_comments', builder: (context, state) => const StudentLessonCommentsScreen()),
   ],

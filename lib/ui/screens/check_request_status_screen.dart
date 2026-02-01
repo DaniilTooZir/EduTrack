@@ -1,8 +1,10 @@
+import 'package:edu_track/data/services/institution_request_status_service.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:edu_track/data/services/institution_request_status_service.dart';
 import 'package:go_router/go_router.dart';
-import 'package:edu_track/utils/validators.dart';
+import 'package:provider/provider.dart';
 
 class CheckRequestStatusScreen extends StatefulWidget {
   const CheckRequestStatusScreen({super.key});
@@ -14,7 +16,6 @@ class CheckRequestStatusScreen extends StatefulWidget {
 class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
   final TextEditingController _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
   String? _statusMessage;
   String? _login;
   String? _password;
@@ -77,7 +78,6 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
         content: Text('$label скопирован в буфер обмена'),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF5E35B1),
       ),
     );
   }
@@ -92,22 +92,13 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final maxWidth = (size.width * 0.85).clamp(320.0, 600.0);
-    final textStyle = const TextStyle(fontSize: 16);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Проверка статуса заявки'),
-        backgroundColor: const Color(0xFFBC9BF3),
-        elevation: 4,
-      ),
+      appBar: AppBar(title: const Text('Проверка статуса заявки'), elevation: 4),
       body: Container(
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -124,9 +115,9 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text(
+                          Text(
                             'Введите email руководителя для проверки статуса',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5E35B1)),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
@@ -137,7 +128,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                             decoration: InputDecoration(
                               labelText: 'Email руководителя',
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF5E35B1)),
+                              prefixIcon: Icon(Icons.email_outlined, color: colors.primary),
                               suffixIcon: IconButton(icon: const Icon(Icons.clear), onPressed: _emailController.clear),
                             ),
                             validator: Validators.validateEmail,
@@ -147,19 +138,17 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                           ElevatedButton.icon(
                             icon:
                                 _isLoading
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                       height: 20,
                                       width: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                     )
-                                    : const Icon(Icons.search, color: Colors.white70),
-                            label: const Text(
-                              'Проверить статус',
-                              style: TextStyle(fontSize: 16, color: Colors.white70),
-                            ),
+                                    : const Icon(Icons.search),
+                            label: const Text('Проверить статус', style: TextStyle(fontSize: 16)),
                             onPressed: _isLoading ? null : _checkStatus,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF5E35B1),
+                              backgroundColor: colors.primary,
+                              foregroundColor: colors.onPrimary,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
@@ -168,7 +157,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                           if (_statusMessage != null)
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
-                              child: _buildStatusResult(textStyle),
+                              child: _buildStatusResult(colors),
                             ),
                         ],
                       ),
@@ -183,7 +172,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
     );
   }
 
-  Widget _buildStatusResult(TextStyle textStyle) {
+  Widget _buildStatusResult(ColorScheme colors) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       key: ValueKey(_statusMessage),
@@ -191,18 +180,18 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.deepPurple.shade50,
+            color: colors.primaryContainer,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.deepPurple.shade100),
+            border: Border.all(color: colors.primary.withOpacity(0.2)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.info_outline, color: Color(0xFF4A148C)),
+              Icon(Icons.info_outline, color: colors.onPrimaryContainer),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   _statusMessage!,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF4A148C)),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.onPrimaryContainer),
                 ),
               ),
             ],
@@ -210,9 +199,9 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
         ),
         if (_login != null && _password != null) ...[
           const SizedBox(height: 20),
-          _buildCopyRow('Логин', _login!, Icons.person),
+          _buildCopyRow('Логин', _login!, Icons.person, colors),
           const SizedBox(height: 8),
-          _buildCopyRow('Пароль', _password!, Icons.lock),
+          _buildCopyRow('Пароль', _password!, Icons.lock, colors),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -221,11 +210,12 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                 context.push('/login');
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7E57C2),
+                backgroundColor: colors.secondary,
+                foregroundColor: colors.onSecondary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Перейти к авторизации', style: TextStyle(fontSize: 16, color: Colors.white70)),
+              child: const Text('Перейти к авторизации', style: TextStyle(fontSize: 16)),
             ),
           ),
         ],
@@ -233,7 +223,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
     );
   }
 
-  Widget _buildCopyRow(String label, String value, IconData icon) {
+  Widget _buildCopyRow(String label, String value, IconData icon, ColorScheme colors) {
     return Row(
       children: [
         Expanded(
@@ -242,7 +232,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
             readOnly: true,
             decoration: InputDecoration(
               labelText: label,
-              prefixIcon: Icon(icon, color: const Color(0xFF5E35B1)),
+              prefixIcon: Icon(icon, color: colors.primary),
               border: const OutlineInputBorder(),
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
@@ -250,7 +240,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
         ),
         const SizedBox(width: 8),
         IconButton(
-          icon: const Icon(Icons.copy, color: Color(0xFF5E35B1)),
+          icon: Icon(Icons.copy, color: colors.primary),
           tooltip: 'Копировать $label',
           onPressed: () => _copyToClipboard(value, label),
         ),

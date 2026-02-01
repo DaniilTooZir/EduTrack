@@ -1,5 +1,6 @@
 import 'package:edu_track/data/services/users_fetch_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,7 +16,6 @@ class _UserListScreenState extends State<UserListScreen> {
   List<Map<String, dynamic>> _allStudents = [];
   List<Map<String, dynamic>> _allOperators = [];
   List<Map<String, dynamic>> _filteredUsers = [];
-
   bool _isLoading = true;
   String? _error;
   String _searchQuery = '';
@@ -33,7 +33,6 @@ class _UserListScreenState extends State<UserListScreen> {
       setState(() => _error = 'Не удалось получить ID учреждения');
       return;
     }
-
     final service = UsersFetchService();
     try {
       final teachers = await service.fetchTeachers(institutionId);
@@ -65,6 +64,7 @@ class _UserListScreenState extends State<UserListScreen> {
     if (_selectedRole == 'student' || _selectedRole == 'all') {
       combined += _allStudents.map((s) => {...s, 'role': 'student'}).toList();
     }
+
     if (_searchQuery.isNotEmpty) {
       combined =
           combined.where((user) {
@@ -75,53 +75,51 @@ class _UserListScreenState extends State<UserListScreen> {
                 (user['login']?.toLowerCase().contains(query) ?? false);
           }).toList();
     }
-    setState(() {
-      _filteredUsers = combined;
-    });
+    setState(() => _filteredUsers = combined);
   }
 
   Future<void> _deleteUser(String id, String role) async {
     final service = UsersFetchService();
     try {
       await service.deleteUserById(id, role);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пользователь удалён')));
       await _loadUsers();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при удалении: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) return Center(child: Text(_error!));
+    if (_error != null) return Center(child: Text(_error!, style: TextStyle(color: colors.error)));
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                _buildFilters(),
+                _buildFilters(colors),
                 const SizedBox(height: 16),
                 Expanded(
                   child:
                       _filteredUsers.isEmpty
-                          ? const Center(child: Text('Пользователи не найдены'))
+                          ? Center(
+                            child: Text('Пользователи не найдены', style: TextStyle(color: colors.onSurfaceVariant)),
+                          )
                           : ListView.separated(
                             itemCount: _filteredUsers.length,
                             separatorBuilder: (_, __) => const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final user = _filteredUsers[index];
-                              return _buildUserCard(user);
+                              return _buildUserCard(user, colors);
                             },
                           ),
                 ),
@@ -133,7 +131,7 @@ class _UserListScreenState extends State<UserListScreen> {
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFilters(ColorScheme colors) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -154,17 +152,19 @@ class _UserListScreenState extends State<UserListScreen> {
               },
             ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _filterChip('Все', 'all'),
-                const SizedBox(width: 10),
-                _filterChip('Преподаватели', 'teacher'),
-                const SizedBox(width: 10),
-                _filterChip('Операторы', 'schedule_operator'),
-                const SizedBox(width: 10),
-                _filterChip('Студенты', 'student'),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _filterChip('Все', 'all', colors),
+                  const SizedBox(width: 10),
+                  _filterChip('Преподаватели', 'teacher', colors),
+                  const SizedBox(width: 10),
+                  _filterChip('Операторы', 'schedule_operator', colors),
+                  const SizedBox(width: 10),
+                  _filterChip('Студенты', 'student', colors),
+                ],
+              ),
             ),
           ],
         ),
@@ -172,39 +172,29 @@ class _UserListScreenState extends State<UserListScreen> {
     );
   }
 
-  Widget _filterChip(String label, String value) {
+  Widget _filterChip(String label, String value, ColorScheme colors) {
     final selected = _selectedRole == value;
     return ChoiceChip(
       label: Text(label),
       selected: selected,
-      selectedColor: const Color(0xFF9575CD),
-      backgroundColor: Colors.grey.shade200,
+      selectedColor: colors.primary,
+      backgroundColor: colors.surfaceContainerHighest,
       labelStyle: TextStyle(
-        color: selected ? Colors.white : Colors.black87,
+        color: selected ? colors.onPrimary : colors.onSurface,
         fontWeight: selected ? FontWeight.bold : FontWeight.normal,
       ),
       onSelected: (_) {
-        setState(() {
-          _selectedRole = value;
-        });
+        setState(() => _selectedRole = value);
         _applyFilters();
       },
     );
   }
 
-  Widget _buildUserCard(Map<String, dynamic> user) {
+  Widget _buildUserCard(Map<String, dynamic> user, ColorScheme colors) {
     final fullName = '${user['surname']} ${user['name']}';
     final role = user['role'] as String;
     final isTeacher = role == 'teacher';
     final isOperator = role == 'schedule_operator';
-    String subtitle;
-    if (isTeacher) {
-      subtitle = '${user['email']} • ${user['login']}';
-    } else if (isOperator) {
-      subtitle = '${user['email']} • ${user['login']} (Оператор)';
-    } else {
-      subtitle = '${user['email']} • ${user['login']} • Группа ${user['group_name']}';
-    }
     Color avatarColor;
     IconData icon;
     if (isTeacher) {
@@ -217,14 +207,21 @@ class _UserListScreenState extends State<UserListScreen> {
       avatarColor = const Color(0xFF673AB7);
       icon = Icons.person;
     }
-
+    String subtitle;
+    if (isTeacher) {
+      subtitle = '${user['email']} • ${user['login']}';
+    } else if (isOperator) {
+      subtitle = '${user['email']} • ${user['login']} (Оператор)';
+    } else {
+      subtitle = '${user['email']} • ${user['login']} • Группа ${user['group_name']}';
+    }
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
         leading: CircleAvatar(backgroundColor: avatarColor, child: Icon(icon, color: Colors.white)),
-        title: Text(fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
+        title: Text(fullName, style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface)),
+        subtitle: Text(subtitle, style: TextStyle(color: colors.onSurfaceVariant)),
         trailing: IconButton(
           icon: const Icon(Icons.delete, color: Colors.redAccent),
           tooltip: 'Удалить пользователя',

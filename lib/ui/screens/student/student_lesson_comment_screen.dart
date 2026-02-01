@@ -83,10 +83,11 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
     }
   }
 
-  Widget _buildCommentBubble(LessonComment comment) {
+  Widget _buildCommentBubble(LessonComment comment, ColorScheme colors) {
     final isMe = comment.senderStudentId == studentId;
     final align = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final bubbleColor = isMe ? const Color(0xFFD1C4E9) : Colors.grey.shade200;
+    final bubbleColor = isMe ? colors.primaryContainer : colors.surfaceContainerHighest;
+    final textColor = isMe ? colors.onPrimaryContainer : colors.onSurface;
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -111,12 +112,15 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
                 padding: const EdgeInsets.only(bottom: 2),
                 child: Text(
                   'Преподаватель',
-                  style: TextStyle(fontSize: 10, color: Colors.deepPurple[700], fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 10, color: colors.primary, fontWeight: FontWeight.bold),
                 ),
               ),
-            Text(comment.message ?? '', style: const TextStyle(color: Colors.black87, fontSize: 15)),
+            Text(comment.message ?? '', style: TextStyle(color: textColor, fontSize: 15)),
             const SizedBox(height: 4),
-            Text(_formatTimestamp(comment.timestamp), style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+            Text(
+              _formatTimestamp(comment.timestamp),
+              style: TextStyle(fontSize: 10, color: textColor.withOpacity(0.6)),
+            ),
           ],
         ),
       ),
@@ -131,6 +135,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Комментарии к занятию'),
@@ -143,7 +148,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _comments.isEmpty
-                    ? const Center(child: Text('Нет комментариев', style: TextStyle(color: Colors.grey)))
+                    ? Center(child: Text('Нет комментариев', style: TextStyle(color: colors.onSurfaceVariant)))
                     : RefreshIndicator(
                       onRefresh: _loadComments,
                       child: ListView.builder(
@@ -152,15 +157,15 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
                         itemCount: _comments.length,
                         itemBuilder: (context, index) {
                           final comment = _comments[index];
-                          return _buildCommentBubble(comment);
+                          return _buildCommentBubble(comment, colors);
                         },
                       ),
                     ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: colors.outlineVariant),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(color: Colors.grey.shade50),
+            decoration: BoxDecoration(color: colors.surface),
             child: SafeArea(
               child: Row(
                 children: [
@@ -170,15 +175,17 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
                       textCapitalization: TextCapitalization.sentences,
                       minLines: 1,
                       maxLines: 4,
+                      style: TextStyle(color: colors.onSurface),
                       decoration: InputDecoration(
                         hintText: 'Введите сообщение...',
+                        hintStyle: TextStyle(color: colors.onSurfaceVariant),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: Colors.grey.shade200,
+                        fillColor: colors.surfaceContainerHighest,
                       ),
                       onSubmitted: (_) => _sendComment(),
                     ),
@@ -191,14 +198,15 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
                       return IconButton.filled(
                         icon:
                             _isSending
-                                ? const SizedBox(
+                                ? SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                 )
                                 : const Icon(Icons.send),
                         style: IconButton.styleFrom(
-                          backgroundColor: isTextEmpty || _isSending ? Colors.grey : const Color(0xFF5E35B1),
+                          backgroundColor: isTextEmpty || _isSending ? colors.surfaceContainerHighest : colors.primary,
+                          foregroundColor: isTextEmpty || _isSending ? colors.onSurfaceVariant : colors.onPrimary,
                         ),
                         onPressed: isTextEmpty || _isSending ? null : _sendComment,
                       );

@@ -28,7 +28,6 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
   List<Homework> _allHomeworks = [];
   List<Subject> _subjects = [];
   List<Group> _groups = [];
-
   String? _selectedSubjectId;
   String? _selectedGroupId;
   String _searchQuery = '';
@@ -38,12 +37,6 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
   void initState() {
     super.initState();
     _loadData();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -66,9 +59,6 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка загрузки данных: $e'), backgroundColor: Colors.redAccent));
       }
     }
   }
@@ -95,162 +85,110 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildFilters(),
-              Expanded(
-                child:
-                    _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : _filteredHomeworks.isEmpty
-                        ? Center(
-                          child: Text('Задания не найдены', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
-                        )
-                        : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredHomeworks.length,
-                          itemBuilder: (context, index) {
-                            final hw = _filteredHomeworks[index];
-                            return _buildHomeworkCard(hw);
-                          },
-                        ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilters() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
-      ),
-      child: Column(
-        children: [
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Поиск задания...',
-              prefixIcon: const Icon(Icons.search, color: Color(0xFF5E35B1)),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              fillColor: Colors.grey[100],
-              filled: true,
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildFilters(colors),
+            Expanded(
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _filteredHomeworks.isEmpty
+                      ? Center(child: Text('Задания не найдены', style: TextStyle(color: colors.onSurfaceVariant)))
+                      : ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredHomeworks.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final hw = _filteredHomeworks[index];
+                          return Card(
+                            elevation: 2,
+                            color: colors.surface,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: ListTile(
+                              title: Text(
+                                hw.title,
+                                style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
+                              ),
+                              subtitle: Text(
+                                '${hw.group?.name} • ${hw.subject?.name}',
+                                style: TextStyle(color: colors.onSurfaceVariant),
+                              ),
+                              trailing: Icon(Icons.chevron_right, color: colors.primary),
+                              onTap: () => _openHomeworkDetails(hw),
+                            ),
+                          );
+                        },
+                      ),
             ),
-            onChanged: (val) => setState(() => _searchQuery = val),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedSubjectId,
-                  decoration: const InputDecoration(
-                    labelText: 'Предмет',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  items: [
-                    const DropdownMenuItem(child: Text('Все')),
-                    ..._subjects.map(
-                      (s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis)),
-                    ),
-                  ],
-                  onChanged: (val) => setState(() => _selectedSubjectId = val),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedGroupId,
-                  decoration: const InputDecoration(
-                    labelText: 'Группа',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  items: [
-                    const DropdownMenuItem(child: Text('Все')),
-                    ..._groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
-                  ],
-                  onChanged: (val) => setState(() => _selectedGroupId = val),
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHomeworkCard(Homework hw) {
+  Widget _buildFilters(ColorScheme colors) {
     return Card(
+      margin: const EdgeInsets.all(16),
       elevation: 4,
-      margin: const EdgeInsets.only(bottom: 12),
+      color: colors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => _openHomeworkDetails(hw),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: const Color(0xFFEDE7F6), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.assignment, color: Color(0xFF5E35B1)),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(hw.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${hw.subject?.name ?? "Предмет"} • ${hw.group?.name ?? "Группа"}',
-                          style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: Colors.grey),
-                ],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Поиск задания...',
+                prefixIcon: Icon(Icons.search, color: colors.primary),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                isDense: true,
               ),
-              const SizedBox(height: 12),
-              if (hw.dueDate != null)
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              onChanged: (val) => setState(() => _searchQuery = val),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedSubjectId,
+                    decoration: const InputDecoration(
+                      labelText: 'Предмет',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      border: OutlineInputBorder(),
                     ),
-                  ],
+                    items: [
+                      const DropdownMenuItem(child: Text('Все')),
+                      ..._subjects.map(
+                        (s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis)),
+                      ),
+                    ],
+                    onChanged: (val) => setState(() => _selectedSubjectId = val),
+                  ),
                 ),
-            ],
-          ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedGroupId,
+                    decoration: const InputDecoration(
+                      labelText: 'Группа',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(child: Text('Все')),
+                      ..._groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
+                    ],
+                    onChanged: (val) => setState(() => _selectedGroupId = val),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -262,6 +200,7 @@ class _HomeworkDetailSheet extends StatefulWidget {
   final StudentService studentService;
   final HomeworkService homeworkService;
   const _HomeworkDetailSheet({required this.homework, required this.studentService, required this.homeworkService});
+
   @override
   State<_HomeworkDetailSheet> createState() => _HomeworkDetailSheetState();
 }
@@ -289,9 +228,7 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -323,15 +260,16 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       builder: (_, controller) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -340,7 +278,10 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                   margin: const EdgeInsets.symmetric(vertical: 12),
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                    color: colors.onSurfaceVariant.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
               Padding(
@@ -350,21 +291,16 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                   children: [
                     Text(
                       widget.homework.title,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A148C)),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _StatChip(
-                          label: 'Всего: ${_students.length}',
-                          color: Colors.blue.shade50,
-                          textColor: Colors.blue.shade800,
-                        ),
-                        const SizedBox(width: 8),
-                        _StatChip(
-                          label: 'Сдали: ${_statusMap.values.where((s) => s.isCompleted).length}',
-                          color: Colors.green.shade50,
-                          textColor: Colors.green.shade800,
+                        Text('Всего: ${_students.length}', style: TextStyle(color: colors.onSurfaceVariant)),
+                        const SizedBox(width: 16),
+                        Text(
+                          'Сдали: ${_statusMap.values.where((s) => s.isCompleted).length}',
+                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -377,7 +313,9 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                     _isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : _students.isEmpty
-                        ? const Center(child: Text('В группе нет студентов'))
+                        ? Center(
+                          child: Text('В группе нет студентов', style: TextStyle(color: colors.onSurfaceVariant)),
+                        )
                         : ListView.builder(
                           controller: controller,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -387,16 +325,19 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                             final status = _statusMap[student.id];
                             final isCompleted = status?.isCompleted ?? false;
                             return CheckboxListTile(
-                              title: Text('${student.surname} ${student.name}'),
+                              title: Text(
+                                '${student.surname} ${student.name}',
+                                style: TextStyle(color: colors.onSurface),
+                              ),
                               secondary: CircleAvatar(
-                                backgroundColor: isCompleted ? Colors.green[100] : Colors.grey[200],
+                                backgroundColor: isCompleted ? Colors.green[100] : colors.surfaceContainerHighest,
                                 child: Icon(
                                   isCompleted ? Icons.check : Icons.person,
-                                  color: isCompleted ? Colors.green[800] : Colors.grey[600],
+                                  color: isCompleted ? Colors.green[800] : colors.onSurfaceVariant,
                                 ),
                               ),
                               value: isCompleted,
-                              activeColor: const Color(0xFF5E35B1),
+                              activeColor: colors.primary,
                               onChanged: (val) => _toggleStatus(student.id, isCompleted),
                             );
                           },
@@ -406,22 +347,6 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
           ),
         );
       },
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color textColor;
-  const _StatChip({required this.label, required this.color, required this.textColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }
 }

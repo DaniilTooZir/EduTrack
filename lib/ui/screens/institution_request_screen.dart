@@ -1,7 +1,9 @@
+import 'package:edu_track/data/services/institution_request_service.dart';
+import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:edu_track/data/services/institution_request_service.dart';
-import 'package:edu_track/utils/validators.dart';
+import 'package:provider/provider.dart';
 
 class InstitutionRequestScreen extends StatefulWidget {
   const InstitutionRequestScreen({super.key});
@@ -12,7 +14,6 @@ class InstitutionRequestScreen extends StatefulWidget {
 
 class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _headNameController = TextEditingController();
@@ -26,9 +27,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
   void _submitRequest() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isSubmitting = true);
-
     try {
       await InstitutionRequestService().submitInstitutionRequest(
         name: _nameController.text.trim(),
@@ -39,22 +38,17 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
         phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
         comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
       );
-
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Заявка успешно отправлена!')));
-
       Navigator.of(context).pop();
     } catch (e, stackTrace) {
       debugPrint('[InstitutionRequestScreen] Ошибка: $e');
       debugPrint('[InstitutionRequestScreen] StackTrace: $stackTrace');
-
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Произошла ошибка при отправке заявки. Попробуйте позже.'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -78,21 +72,13 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final maxWidth = (size.width * 0.85).clamp(320.0, 600.0);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Регистрация организации'),
-        backgroundColor: const Color(0xFFBC9BF3),
-        elevation: 4,
-      ),
+      appBar: AppBar(title: const Text('Регистрация организации'), elevation: 4),
       body: Container(
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -109,9 +95,10 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text(
+                          Text(
                             'Заполните информацию об организации',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF5E35B1)),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 20),
                           _buildTextField(
@@ -123,6 +110,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s"\-.,№\(\)«»]')),
                             ],
+                            colors: colors,
                           ),
                           _buildTextField(
                             controller: _addressController,
@@ -134,6 +122,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s,\-\.\/\(\)]')),
                             ],
+                            colors: colors,
                           ),
                           _buildTextField(
                             controller: _headNameController,
@@ -141,6 +130,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             icon: Icons.person,
                             validator: (val) => Validators.validateName(val, 'Имя'),
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
+                            colors: colors,
                           ),
                           _buildTextField(
                             controller: _headSurnameController,
@@ -148,6 +138,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             icon: Icons.person_outline,
                             validator: (val) => Validators.validateName(val, 'Фамилия'),
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
+                            colors: colors,
                           ),
                           _buildTextField(
                             controller: _emailController,
@@ -155,6 +146,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             icon: Icons.email,
                             inputType: TextInputType.emailAddress,
                             validator: Validators.validateEmail,
+                            colors: colors,
                           ),
                           const SizedBox(height: 12),
                           _buildTextField(
@@ -164,6 +156,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             inputType: TextInputType.phone,
                             validator: Validators.validatePhone,
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\s\(\)]'))],
+                            colors: colors,
                           ),
                           _buildTextField(
                             controller: _commentController,
@@ -172,6 +165,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             maxLines: 3,
                             maxLength: 300,
                             validator: (val) => Validators.validateLength(val, max: 300),
+                            colors: colors,
                           ),
                           const SizedBox(height: 24),
                           SizedBox(
@@ -180,16 +174,16 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                               onPressed: _isSubmitting ? null : _submitRequest,
                               icon:
                                   _isSubmitting
-                                      ? const SizedBox(
+                                      ? SizedBox(
                                         width: 20,
                                         height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                       )
                                       : const Icon(Icons.send),
                               label: const Text('Отправить заявку'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF5E35B1),
-                                foregroundColor: Colors.white,
+                                backgroundColor: colors.primary,
+                                foregroundColor: colors.onPrimary,
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 textStyle: const TextStyle(fontSize: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -212,6 +206,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
+    required ColorScheme colors,
     IconData? icon,
     int maxLines = 1,
     int? maxLength,
@@ -231,19 +226,11 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
         autovalidateMode: AutovalidateMode.onUserInteraction,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: icon != null ? Icon(icon, color: const Color(0xFF5E35B1)) : null,
+          prefixIcon: icon != null ? Icon(icon, color: colors.primary) : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.grey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF5E35B1), width: 2),
-          ),
           filled: true,
-          fillColor: Colors.grey.shade50,
-          counterText: "",
+          fillColor: colors.surfaceContainerHighest.withOpacity(0.3),
+          counterText: '',
         ),
       ),
     );
