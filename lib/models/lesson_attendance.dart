@@ -1,6 +1,6 @@
 class LessonAttendance {
-  final int? id;
-  final int lessonId;
+  final String? id;
+  final String lessonId;
   final String studentId;
   final String? status;
 
@@ -8,8 +8,8 @@ class LessonAttendance {
 
   factory LessonAttendance.fromMap(Map<String, dynamic> map) {
     return LessonAttendance(
-      id: map['id'] as int,
-      lessonId: map['lesson_id'] as int,
+      id: map['id']?.toString(),
+      lessonId: map['lesson_id']?.toString() ?? '',
       studentId: map['student_id'] as String,
       status: map['status'] as String?,
     );

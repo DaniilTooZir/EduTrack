@@ -1,5 +1,5 @@
 class Lesson {
-  final int? id;
+  final String? id;
   final String scheduleId;
   final String? topic;
   final String attendanceStatus;
@@ -8,7 +8,7 @@ class Lesson {
 
   factory Lesson.fromMap(Map<String, dynamic> map) {
     return Lesson(
-      id: map['id'] as int?,
+      id: map['id']?.toString(),
       scheduleId: map['schedule_id'] as String,
       topic: map['topic'] as String?,
       attendanceStatus: map['attendance_status'] ?? 'pending',

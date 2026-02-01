@@ -18,7 +18,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
   List<LessonComment> _comments = [];
   bool _isLoading = true;
   bool _isSending = false;
-  late final int lessonId;
+  late final String lessonId;
   String? studentId;
 
   @override
@@ -30,7 +30,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
         context.pop();
         return;
       }
-      lessonId = state.extra as int;
+      lessonId = state.extra as String;
       final provider = Provider.of<UserProvider>(context, listen: false);
       studentId = provider.userId;
       _loadComments();

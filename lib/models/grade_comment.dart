@@ -1,6 +1,6 @@
 class GradeComment {
-  final int id;
-  final int gradeId;
+  final String id;
+  final String gradeId;
   final String? senderTeacherId;
   final String? senderStudentId;
   final String? message;
@@ -17,8 +17,8 @@ class GradeComment {
 
   factory GradeComment.fromMap(Map<String, dynamic> map) {
     return GradeComment(
-      id: map['id'] as int,
-      gradeId: map['grade_id'] as int,
+      id: map['id']?.toString() ?? '',
+      gradeId: map['grade_id']?.toString() ?? '',
       senderTeacherId: map['sender_teacher_id']?.toString(),
       senderStudentId: map['sender_students_id']?.toString(),
       message: map['message'] as String?,

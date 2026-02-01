@@ -40,7 +40,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
         final lessons = await _lessonService.getLessonsByScheduleId(schedule.id);
         allLessons.addAll(lessons);
       }
-      allLessons.sort((a, b) => (b.id ?? 0).compareTo(a.id ?? 0));
+      //allLessons.sort((a, b) => (b.id ?? '').compareTo(a.id ?? '')); пока не будет сортироваться, т.к. id теперь uuid
       if (mounted) {
         setState(() {
           _lessons = allLessons;

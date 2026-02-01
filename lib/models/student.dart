@@ -39,7 +39,7 @@ class Student {
       login: map['login'] ?? '',
       password: map['password'] ?? '',
       groupId: map['group_id']?.toString(),
-      isHeadman: map['isHeadman'] ?? false,
+      isHeadman: map['isheadman'] ?? false,
       createdAt:
           map['created_at'] != null
               ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
@@ -58,7 +58,7 @@ class Student {
       'login': login,
       'password': password,
       'group_id': groupId,
-      'isHeadman': isHeadman,
+      'isheadman': isHeadman,
       'created_at': createdAt.toIso8601String(),
       'avatar_url': avatarUrl,
     };

@@ -28,7 +28,7 @@ class LessonService {
     }
   }
 
-  Future<Lesson?> getLessonById(int id) async {
+  Future<Lesson?> getLessonById(String id) async {
     try {
       final response = await _client.from('lessons').select().eq('id', id).maybeSingle();
       if (response == null) return null;

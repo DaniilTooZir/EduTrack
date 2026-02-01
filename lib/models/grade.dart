@@ -1,6 +1,6 @@
 class Grade {
-  final int? id;
-  final int lessonId;
+  final String? id;
+  final String lessonId;
   final String studentId;
   final int value;
 
@@ -8,8 +8,8 @@ class Grade {
 
   factory Grade.fromMap(Map<String, dynamic> map) {
     return Grade(
-      id: map['id'] as int,
-      lessonId: map['lessons_id'] as int,
+      id: map['id']?.toString(),
+      lessonId: map['lessons_id']?.toString() ?? '',
       studentId: map['student_id'] as String,
       value: map['value'] as int,
     );

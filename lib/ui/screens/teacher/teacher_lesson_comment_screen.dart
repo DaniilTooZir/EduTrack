@@ -18,7 +18,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
   List<LessonComment> _comments = [];
   bool _isLoading = true;
   bool _isSending = false;
-  late final int lessonId;
+  late final String lessonId;
   String? userId;
   String? userRole;
 
@@ -31,7 +31,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
         context.pop();
         return;
       }
-      lessonId = state.extra as int;
+      lessonId = state.extra as String;
       final provider = Provider.of<UserProvider>(context, listen: false);
       userId = provider.userId;
       userRole = provider.role;

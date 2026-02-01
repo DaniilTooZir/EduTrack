@@ -1,5 +1,5 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:edu_track/models/grade.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class GradeService {
   final _supabase = Supabase.instance.client;
@@ -40,7 +40,7 @@ class GradeService {
     }
   }
 
-  Future<List<Grade>> getGradesByLesson(int lessonId) async {
+  Future<List<Grade>> getGradesByLesson(String lessonId) async {
     try {
       final response = await _supabase.from('grade').select().eq('lessons_id', lessonId);
       return (response as List).map((map) => Grade.fromMap(map)).toList();

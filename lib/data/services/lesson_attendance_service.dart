@@ -1,6 +1,6 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/models/lesson_attendance.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AttendanceService {
   final SupabaseClient _client;
@@ -28,12 +28,12 @@ class AttendanceService {
     }
   }
 
-  Future<List<LessonAttendance>> getAttendanceByLesson(int lessonId) async {
+  Future<List<LessonAttendance>> getAttendanceByLesson(String lessonId) async {
     try {
-      final response = await _client.from('lesson_attendance').select().eq('lesson_id', lessonId);
+      final response = await _client.from('lesson_attendances').select().eq('lesson_id', lessonId);
       return (response as List).map((map) => LessonAttendance.fromMap(map)).toList();
     } catch (e) {
-      print("Ошибка при получении посещаемости: $e");
+      print('Ошибка при получении посещаемости: $e');
       return [];
     }
   }

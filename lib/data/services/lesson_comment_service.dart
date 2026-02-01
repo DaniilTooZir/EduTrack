@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LessonCommentService {
   final _client = Supabase.instance.client;
-  Future<List<LessonComment>> getCommentsByLessonId(int lessonId) async {
+  Future<List<LessonComment>> getCommentsByLessonId(String lessonId) async {
     try {
       final response = await _client
           .from('lesson_comment')
