@@ -1,5 +1,7 @@
 import 'package:edu_track/data/services/group_service.dart';
+import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/group.dart';
+import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -17,16 +19,19 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _service = GroupService();
+  final _teacherService = TeacherService();
   List<Group> _groups = [];
+  List<Teacher> _teachers = [];
   bool _isLoading = true;
   bool _isAdding = false;
+  String? _selectedCuratorId;
   final _groupNameRegex = RegExp(r'^[a-zA-Zа-яА-ЯёЁ0-9-]+$');
   final _groupNameAllowList = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9-]');
 
   @override
   void initState() {
     super.initState();
-    _loadGroups();
+    _loadData();
   }
 
   @override
@@ -35,14 +40,16 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
     super.dispose();
   }
 
-  Future<void> _loadGroups() async {
+  Future<void> _loadData() async {
     final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
     try {
       final groups = await _service.getGroups(institutionId);
+      final teachers = await _teacherService.getTeachers(institutionId);
       if (mounted) {
         setState(() {
           _groups = groups;
+          _teachers = teachers;
           _isLoading = false;
         });
       }
@@ -54,6 +61,12 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
     }
   }
 
+  String _getTeacherName(String? id) {
+    if (id == null) return 'Нет куратора';
+    final teacher = _teachers.where((t) => t.id == id).firstOrNull;
+    return teacher != null ? '${teacher.surname} ${teacher.name}' : 'Неизвестно';
+  }
+
   Future<void> _addGroup() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
@@ -61,14 +74,19 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
     try {
       final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
       if (institutionId == null) throw Exception('ID учреждения не найден');
-      final newGroup = Group(name: _nameController.text.trim(), institutionId: institutionId);
+      final newGroup = Group(
+        name: _nameController.text.trim(),
+        institutionId: institutionId,
+        curatorId: _selectedCuratorId,
+      );
       await _service.addGroup(newGroup);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Группа добавлена'), backgroundColor: Colors.green));
       _nameController.clear();
-      await _loadGroups();
+      setState(() => _selectedCuratorId = null);
+      await _loadData();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -82,57 +100,80 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
   Future<void> _editGroup(Group group) async {
     final editController = TextEditingController(text: group.name);
     final editFormKey = GlobalKey<FormState>();
+    String? editCuratorId = group.curatorId;
     await showDialog(
       context: context,
       builder:
-          (ctx) => AlertDialog(
-            title: const Text('Изменить название'),
-            content: Form(
-              key: editFormKey,
-              child: TextFormField(
-                controller: editController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Новое название',
-                  border: OutlineInputBorder(),
-                  hintText: 'Например: 11-Б',
+          (ctx) => StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return AlertDialog(
+                title: const Text('Редактировать группу'),
+                content: Form(
+                  key: editFormKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: editController,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Название',
+                          border: OutlineInputBorder(),
+                          hintText: 'Например: ИСП-12',
+                        ),
+                        maxLength: 10,
+                        inputFormatters: [FilteringTextInputFormatter.allow(_groupNameAllowList)],
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) return 'Введите название';
+                          if (!_groupNameRegex.hasMatch(val)) return 'Только буквы, цифры и "-"';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: editCuratorId,
+                        decoration: const InputDecoration(labelText: 'Куратор', border: OutlineInputBorder()),
+                        items: [
+                          const DropdownMenuItem(child: Text('Без куратора')),
+                          ..._teachers.map(
+                            (t) => DropdownMenuItem(
+                              value: t.id,
+                              child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                        ],
+                        onChanged: (val) => setStateDialog(() => editCuratorId = val),
+                      ),
+                    ],
+                  ),
                 ),
-                maxLength: 10,
-                inputFormatters: [FilteringTextInputFormatter.allow(_groupNameAllowList)],
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Введите название';
-                  if (!_groupNameRegex.hasMatch(val)) return 'Только буквы, цифры и "-"';
-                  return null;
-                },
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
-              ElevatedButton(
-                onPressed: () async {
-                  if (!editFormKey.currentState!.validate()) return;
-                  if (editController.text.trim() == group.name) {
-                    Navigator.pop(ctx);
-                    return;
-                  }
-                  try {
-                    Navigator.pop(ctx);
-                    setState(() => _isLoading = true);
-                    await _service.updateGroup(group.id!, editController.text.trim());
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Группа обновлена')));
-                    await _loadGroups();
-                  } catch (e) {
-                    if (!mounted) return;
-                    setState(() => _isLoading = false);
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
-                  }
-                },
-                child: const Text('Сохранить'),
-              ),
-            ],
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Отмена')),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (!editFormKey.currentState!.validate()) return;
+                      try {
+                        Navigator.pop(ctx);
+                        setState(() => _isLoading = true);
+
+                        await _service.updateGroup(group.id!, editController.text.trim(), editCuratorId);
+
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Группа обновлена')));
+                        await _loadData();
+                      } catch (e) {
+                        if (!mounted) return;
+                        setState(() => _isLoading = false);
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
+                      }
+                    },
+                    child: const Text('Сохранить'),
+                  ),
+                ],
+              );
+            },
           ),
     );
   }
@@ -159,7 +200,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
         await _service.deleteGroup(group.id!);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Группа удалена')));
-        await _loadGroups();
+        await _loadData();
       } catch (e) {
         if (!mounted) return;
         setState(() => _isLoading = false);
@@ -189,47 +230,70 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Form(
                       key: _formKey,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _nameController,
-                              decoration: InputDecoration(
-                                labelText: 'Название группы',
-                                hintText: 'Например: 10-А',
-                                prefixIcon: Icon(Icons.group_work, color: colors.primary),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                isDense: true,
-                                counterText: '',
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _nameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Название группы',
+                                    hintText: 'Например: ИСП-11',
+                                    prefixIcon: Icon(Icons.group_work, color: colors.primary),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    isDense: true,
+                                    counterText: '',
+                                  ),
+                                  maxLength: 10,
+                                  inputFormatters: [FilteringTextInputFormatter.allow(_groupNameAllowList)],
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Введите название';
+                                    if (!_groupNameRegex.hasMatch(val)) return 'Только буквы, цифры и "-"';
+                                    return null;
+                                  },
+                                ),
                               ),
-                              maxLength: 10,
-                              inputFormatters: [FilteringTextInputFormatter.allow(_groupNameAllowList)],
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'Введите название';
-                                if (!_groupNameRegex.hasMatch(val)) return 'Только буквы, цифры и "-"';
-                                return null;
-                              },
-                            ),
+                              const SizedBox(width: 16),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: colors.primary,
+                                  foregroundColor: colors.onPrimary,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  minimumSize: const Size(0, 50),
+                                ),
+                                onPressed: _isAdding ? null : _addGroup,
+                                child:
+                                    _isAdding
+                                        ? SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
+                                        )
+                                        : const Icon(Icons.add),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colors.primary,
-                              foregroundColor: colors.onPrimary,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              minimumSize: const Size(0, 50),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: _selectedCuratorId,
+                            decoration: const InputDecoration(
+                              labelText: 'Назначить куратора',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             ),
-                            onPressed: _isAdding ? null : _addGroup,
-                            child:
-                                _isAdding
-                                    ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
-                                    )
-                                    : const Icon(Icons.add),
+                            items: [
+                              const DropdownMenuItem(child: Text('Без куратора')),
+                              ..._teachers.map(
+                                (t) => DropdownMenuItem(
+                                  value: t.id,
+                                  child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
+                                ),
+                              ),
+                            ],
+                            onChanged: (val) => setState(() => _selectedCuratorId = val),
                           ),
                         ],
                       ),
@@ -267,6 +331,10 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                                   title: Text(
                                     group.name,
                                     style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
+                                  ),
+                                  subtitle: Text(
+                                    'Куратор: ${_getTeacherName(group.curatorId)}',
+                                    style: TextStyle(color: colors.onSurfaceVariant),
                                   ),
                                   trailing: PopupMenuButton<String>(
                                     onSelected: (value) {

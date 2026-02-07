@@ -2,15 +2,17 @@ class Group {
   final String? id;
   final String name;
   final String institutionId;
+  final String? curatorId;
   final DateTime? createdAt;
 
-  Group({this.id, required this.name, required this.institutionId, this.createdAt});
+  Group({this.id, required this.name, required this.institutionId, this.curatorId, this.createdAt});
 
   factory Group.fromMap(Map<String, dynamic> map) {
     return Group(
       id: map['id']?.toString(),
       name: map['name'] ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
+      curatorId: map['curator_id']?.toString(),
       createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'].toString()) : null,
     );
   }
@@ -20,6 +22,7 @@ class Group {
       if (id != null) 'id': id,
       'name': name,
       'institution_id': institutionId,
+      'curator_id': curatorId,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
   }

@@ -51,4 +51,13 @@ class StudentService {
       throw Exception('Неизвестная ошибка при обновлении: $e');
     }
   }
+
+  Future<void> setHeadman(String groupId, String newHeadmanId) async {
+    try {
+      await _client.from('students').update({'isheadman': false}).eq('group_id', groupId);
+      await _client.from('students').update({'isheadman': true}).eq('id', newHeadmanId);
+    } catch (e) {
+      throw Exception('Не удалось назначить старосту: $e');
+    }
+  }
 }

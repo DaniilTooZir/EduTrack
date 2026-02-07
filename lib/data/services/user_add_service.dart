@@ -7,7 +7,7 @@ class UserAddService {
   Future<void> addStudent({required Map<String, dynamic> userData, required String groupId}) async {
     final dataToInsert = Map<String, dynamic>.from(userData);
     dataToInsert.remove('institution_id');
-    final fullData = {...dataToInsert, 'group_id': groupId, 'isHeadman': false};
+    final fullData = {...dataToInsert, 'group_id': groupId, 'isheadman': false};
     await _insertUser('students', fullData, 'студента');
   }
 

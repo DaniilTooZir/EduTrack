@@ -7,7 +7,7 @@ class GroupService {
     try {
       final response = await _client
           .from('groups')
-          .select()
+          .select('*, teacher:teachers(*)')
           .eq('institution_id', institutionId)
           .order('name', ascending: true);
       final List<dynamic> data = response as List<dynamic>;
@@ -33,9 +33,9 @@ class GroupService {
     }
   }
 
-  Future<void> updateGroup(String id, String newName) async {
+  Future<void> updateGroup(String id, String newName, String? curatorId) async {
     try {
-      await _client.from('groups').update({'name': newName}).eq('id', id);
+      await _client.from('groups').update({'name': newName, 'curator_id': curatorId}).eq('id', id);
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
         throw Exception('Группа с таким названием уже существует');
@@ -43,6 +43,18 @@ class GroupService {
       throw Exception('Ошибка при обновлении: ${e.message}');
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<Group?> getGroupByCurator(String teacherId) async {
+    try {
+      final response = await _client.from('groups').select().eq('curator_id', teacherId).maybeSingle();
+
+      if (response == null) return null;
+      return Group.fromMap(response);
+    } catch (e) {
+      print('Ошибка при поиске группы куратора: $e');
+      return null;
     }
   }
 

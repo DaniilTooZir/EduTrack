@@ -5,6 +5,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_my_group_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -22,7 +23,15 @@ class TeacherHomeScreen extends StatefulWidget {
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _selectedIndex = 0;
-  final List<String> _titles = ['Главная', 'Домашние задания', 'Мои занятия', 'Расписание', 'Профиль', 'Проверка ДЗ'];
+  final List<String> _titles = [
+    'Главная',
+    'Домашние задания',
+    'Мои занятия',
+    'Расписание',
+    'Профиль',
+    'Проверка ДЗ',
+    'Моя группа',
+  ];
   Key _refreshKey = UniqueKey();
 
   void _refreshDashboard() {
@@ -62,6 +71,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         break;
       case 5:
         bodyContent = const TeacherHomeworkStatusScreen();
+        break;
+      case 6:
+        bodyContent = const TeacherMyGroupScreen();
         break;
       default:
         bodyContent = const SizedBox.shrink();
@@ -110,6 +122,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0, colors),
             _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1, colors),
             _buildDrawerItem(Icons.checklist_rtl_rounded, 'Проверка ДЗ', 5, colors),
+            _buildDrawerItem(Icons.supervised_user_circle_rounded, 'Моя группа', 6, colors),
             _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2, colors),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
@@ -182,6 +195,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 children: [
                   _buildQuickActionCard(Icons.add_task, 'Выдать ДЗ', () => _navigateToTab(1), colors),
                   _buildQuickActionCard(Icons.checklist, 'Проверить ДЗ', () => _navigateToTab(5), colors),
+                  _buildQuickActionCard(Icons.group, 'Моя группа', () => _navigateToTab(6), colors),
                   _buildQuickActionCard(Icons.play_lesson, 'Начать урок', () => _navigateToTab(2), colors),
                   _buildQuickActionCard(Icons.calendar_today, 'Расписание', () => _navigateToTab(3), colors),
                 ],
