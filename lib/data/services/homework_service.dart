@@ -120,6 +120,37 @@ class HomeworkService {
     }
   }
 
+  Future<void> evaluateHomework({
+    required String homeworkId,
+    required String studentId,
+    required bool isCompleted,
+  }) async {
+    try {
+      final existing =
+          await _client
+              .from('homework_status')
+              .select('id')
+              .eq('homework_id', homeworkId)
+              .eq('student_id', studentId)
+              .maybeSingle();
+      if (existing != null) {
+        await _client
+            .from('homework_status')
+            .update({'is_completed': isCompleted, 'updated_at': DateTime.now().toIso8601String()})
+            .eq('id', existing['id']);
+      } else {
+        await _client.from('homework_status').insert({
+          'homework_id': homeworkId,
+          'student_id': studentId,
+          'is_completed': isCompleted,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+    } catch (e) {
+      throw Exception('Ошибка при оценке задания: $e');
+    }
+  }
+
   Future<List<Homework>> getHomeworksForStudent(String studentId) async {
     try {
       final response = await _client
@@ -143,10 +174,12 @@ class HomeworkService {
     }
   }
 
-  Future<void> setHomeworkCompletion({
+  Future<void> submitHomework({
     required String homeworkId,
     required String studentId,
-    required bool isCompleted,
+    String? comment,
+    String? fileUrl,
+    String? fileName,
   }) async {
     try {
       final existing =
@@ -156,20 +189,40 @@ class HomeworkService {
               .eq('homework_id', homeworkId)
               .eq('student_id', studentId)
               .maybeSingle();
+      final data = {
+        'homework_id': homeworkId,
+        'student_id': studentId,
+        'is_completed': true,
+        'updated_at': DateTime.now().toIso8601String(),
+        'student_comment': comment,
+        'file_url': fileUrl,
+        'file_name': fileName,
+      };
       if (existing != null) {
-        await _client
-            .from('homework_status')
-            .update({'is_completed': isCompleted, 'updated_at': DateTime.now().toIso8601String()})
-            .eq('id', existing['id']);
+        await _client.from('homework_status').update(data).eq('id', existing['id']);
       } else {
-        await _client.from('homework_status').insert({
-          'homework_id': homeworkId,
-          'student_id': studentId,
-          'is_completed': isCompleted,
-        });
+        await _client.from('homework_status').insert(data);
       }
     } catch (e) {
-      throw Exception('Ошибка при обновлении статуса: $e');
+      throw Exception('Ошибка при отправке домашнего задания: $e');
+    }
+  }
+
+  Future<void> cancelSubmission({required String homeworkId, required String studentId}) async {
+    try {
+      await _client
+          .from('homework_status')
+          .update({
+            'is_completed': false,
+            'updated_at': DateTime.now().toIso8601String(),
+            'student_comment': null,
+            'file_url': null,
+            'file_name': null,
+          })
+          .eq('homework_id', homeworkId)
+          .eq('student_id', studentId);
+    } catch (e) {
+      throw Exception('Ошибка отмены сдачи: $e');
     }
   }
 

@@ -5,6 +5,8 @@ class LessonComment {
   final String? senderStudentId;
   final String? message;
   final DateTime timestamp;
+  final String? fileUrl;
+  final String? fileName;
 
   LessonComment({
     this.id,
@@ -13,6 +15,8 @@ class LessonComment {
     this.senderStudentId,
     this.message,
     required this.timestamp,
+    this.fileUrl,
+    this.fileName,
   });
 
   factory LessonComment.fromMap(Map<String, dynamic> map) {
@@ -24,6 +28,8 @@ class LessonComment {
       message: map['message'] as String?,
       timestamp:
           map['timestamp'] != null ? DateTime.tryParse(map['timestamp'].toString()) ?? DateTime.now() : DateTime.now(),
+      fileUrl: map['file_url'],
+      fileName: map['file_name'],
     );
   }
 
@@ -34,6 +40,8 @@ class LessonComment {
       'sender_student_id': senderStudentId,
       'message': message,
       'timestamp': timestamp.toIso8601String(),
+      'file_url': fileUrl,
+      'file_name': fileName,
     };
   }
 }

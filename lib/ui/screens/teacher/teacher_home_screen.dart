@@ -58,7 +58,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         bodyContent = _buildDashboard(colors);
         break;
       case 1:
-        bodyContent = const TeacherHomeworkScreen();
+        bodyContent = TeacherHomeworkScreen(onTabRequest: (index) => _navigateToTab(index));
         break;
       case 2:
         bodyContent = const TeacherLessonScreen();

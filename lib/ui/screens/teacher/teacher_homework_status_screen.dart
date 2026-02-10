@@ -10,6 +10,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TeacherHomeworkStatusScreen extends StatefulWidget {
   const TeacherHomeworkStatusScreen({super.key});
@@ -39,26 +40,35 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final teacherId = userProvider.userId!;
       final institutionId = userProvider.institutionId!;
-      final subjects = await _subjectService.getSubjectsByTeacherId(teacherId);
-      final groups = await _groupService.getGroups(institutionId);
-      final homeworks = await _homeworkService.getHomeworkByTeacherId(teacherId);
+      final results = await Future.wait([
+        _subjectService.getSubjectsByTeacherId(teacherId),
+        _groupService.getGroups(institutionId),
+        _homeworkService.getHomeworkByTeacherId(teacherId),
+      ]);
       if (mounted) {
         setState(() {
-          _subjects = subjects;
-          _groups = groups;
-          _allHomeworks = homeworks;
+          _subjects = results[0] as List<Subject>;
+          _groups = results[1] as List<Group>;
+          _allHomeworks = results[2] as List<Homework>;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка загрузки данных: $e')));
       }
     }
   }
@@ -145,7 +155,9 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
               decoration: InputDecoration(
                 hintText: 'Поиск задания...',
                 prefixIcon: Icon(Icons.search, color: colors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                filled: true,
+                fillColor: colors.surfaceContainerHighest.withOpacity(0.3),
                 isDense: true,
               ),
               onChanged: (val) => setState(() => _searchQuery = val),
@@ -234,7 +246,7 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
 
   Future<void> _toggleStatus(String studentId, bool currentStatus) async {
     try {
-      await widget.homeworkService.setHomeworkCompletion(
+      await widget.homeworkService.evaluateHomework(
         homeworkId: widget.homework.id,
         studentId: studentId,
         isCompleted: !currentStatus,
@@ -248,6 +260,9 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
             studentId: existing.studentId,
             isCompleted: !currentStatus,
             updatedAt: DateTime.now(),
+            studentComment: existing.studentComment,
+            fileUrl: existing.fileUrl,
+            fileName: existing.fileName,
           );
         } else {
           _loadDetails();
@@ -258,9 +273,31 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
     }
   }
 
+  void _showEvaluationDialog(Student student, HomeworkStatus? status) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => _EvaluationDialog(
+            student: student,
+            status: status,
+            homework: widget.homework,
+            onUpdate: (isCompleted) async {
+              await widget.homeworkService.evaluateHomework(
+                homeworkId: widget.homework.id,
+                studentId: student.id,
+                isCompleted: isCompleted,
+              );
+              _loadDetails();
+            },
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final submittedCount =
+        _statusMap.values.where((s) => s.isCompleted || (s.fileUrl != null || s.studentComment != null)).length;
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -296,11 +333,11 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Text('Всего: ${_students.length}', style: TextStyle(color: colors.onSurfaceVariant)),
+                        Text('Всего студентов: ${_students.length}', style: TextStyle(color: colors.onSurfaceVariant)),
                         const SizedBox(width: 16),
                         Text(
-                          'Сдали: ${_statusMap.values.where((s) => s.isCompleted).length}',
-                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                          'Сдано: $submittedCount',
+                          style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -324,21 +361,43 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                             final student = _students[index];
                             final status = _statusMap[student.id];
                             final isCompleted = status?.isCompleted ?? false;
-                            return CheckboxListTile(
-                              title: Text(
-                                '${student.surname} ${student.name}',
-                                style: TextStyle(color: colors.onSurface),
-                              ),
-                              secondary: CircleAvatar(
-                                backgroundColor: isCompleted ? Colors.green[100] : colors.surfaceContainerHighest,
-                                child: Icon(
-                                  isCompleted ? Icons.check : Icons.person,
-                                  color: isCompleted ? Colors.green[800] : colors.onSurfaceVariant,
+                            final hasFile = status?.fileUrl != null;
+                            final hasComment = status?.studentComment != null;
+                            return Card(
+                              elevation: 0,
+                              color: colors.surfaceContainerHighest.withOpacity(0.3),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                onTap: () => _showEvaluationDialog(student, status),
+                                title: Text(
+                                  '${student.surname} ${student.name}',
+                                  style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
+                                ),
+                                subtitle: Row(
+                                  children: [
+                                    if (hasFile) ...[
+                                      Icon(Icons.attach_file, size: 14, color: colors.primary),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    if (hasComment) ...[
+                                      Icon(Icons.comment, size: 14, color: colors.primary),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Text(
+                                      hasFile || hasComment ? 'Есть ответ' : 'Нет ответа',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: hasFile || hasComment ? colors.primary : colors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Icon(
+                                  isCompleted ? Icons.check_circle : Icons.circle_outlined,
+                                  color: isCompleted ? Colors.green : colors.onSurfaceVariant,
                                 ),
                               ),
-                              value: isCompleted,
-                              activeColor: colors.primary,
-                              onChanged: (val) => _toggleStatus(student.id, isCompleted),
                             );
                           },
                         ),
@@ -347,6 +406,95 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
           ),
         );
       },
+    );
+  }
+}
+
+class _EvaluationDialog extends StatelessWidget {
+  final Student student;
+  final HomeworkStatus? status;
+  final Homework homework;
+  final Function(bool) onUpdate;
+
+  const _EvaluationDialog({
+    required this.student,
+    required this.status,
+    required this.homework,
+    required this.onUpdate,
+  });
+
+  Future<void> _openFile(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось открыть файл')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final isCompleted = status?.isCompleted ?? false;
+    final hasAnswer = status?.studentComment != null || status?.fileUrl != null;
+    return AlertDialog(
+      title: Text('${student.surname} ${student.name}'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!hasAnswer)
+              Text(
+                'Студент ничего не прикрепил.',
+                style: TextStyle(color: colors.onSurfaceVariant, fontStyle: FontStyle.italic),
+              )
+            else ...[
+              if (status?.studentComment != null) ...[
+                Text('Комментарий:', style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(status!.studentComment!),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (status?.fileUrl != null)
+                OutlinedButton.icon(
+                  onPressed: () => _openFile(context, status!.fileUrl!),
+                  icon: const Icon(Icons.file_download),
+                  label: Text(status?.fileName ?? 'Скачать файл'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.primary,
+                    side: BorderSide(color: colors.primary),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Закрыть')),
+        ElevatedButton.icon(
+          onPressed: () {
+            onUpdate(!isCompleted);
+            Navigator.pop(context);
+          },
+          icon: Icon(isCompleted ? Icons.close : Icons.check),
+          label: Text(isCompleted ? 'Отменить сдачу' : 'Принять работу'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isCompleted ? colors.error : Colors.green,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 }

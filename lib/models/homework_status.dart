@@ -5,6 +5,9 @@ class HomeworkStatus {
   final String studentId;
   final bool isCompleted;
   final DateTime updatedAt;
+  final String? studentComment;
+  final String? fileUrl;
+  final String? fileName;
 
   HomeworkStatus({
     required this.id,
@@ -12,6 +15,9 @@ class HomeworkStatus {
     required this.studentId,
     required this.isCompleted,
     required this.updatedAt,
+    this.studentComment,
+    this.fileUrl,
+    this.fileName,
   });
 
   factory HomeworkStatus.fromMap(Map<String, dynamic> map) {
@@ -24,6 +30,9 @@ class HomeworkStatus {
           map['updated_at'] != null
               ? DateTime.tryParse(map['updated_at'].toString()) ?? DateTime.now()
               : DateTime.now(),
+      studentComment: map['student_comment'],
+      fileUrl: map['file_url'],
+      fileName: map['file_name'],
     );
   }
 
@@ -34,6 +43,9 @@ class HomeworkStatus {
       'student_id': studentId,
       'is_completed': isCompleted,
       'updated_at': updatedAt.toIso8601String(),
+      'student_comment': studentComment,
+      'file_url': fileUrl,
+      'file_name': fileName,
     };
   }
 }
