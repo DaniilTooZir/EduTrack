@@ -1,9 +1,12 @@
+import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LessonCommentsScreen extends StatefulWidget {
   const LessonCommentsScreen({super.key});
@@ -14,10 +17,14 @@ class LessonCommentsScreen extends StatefulWidget {
 
 class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
   final _service = LessonCommentService();
+  final _fileService = FileService();
   final TextEditingController _messageController = TextEditingController();
+
   List<LessonComment> _comments = [];
   bool _isLoading = true;
   bool _isSending = false;
+  PlatformFile? _selectedFile;
+
   late final String lessonId;
   String? userId;
   String? userRole;
@@ -47,7 +54,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
 
   Future<void> _loadComments() async {
     try {
-      final data = await _service.getCommentsByLessonId(lessonId);
+      final data = await _service.getCommentsByLessonId(lessonId.toString());
       if (!mounted) return;
       setState(() {
         _comments = data;
@@ -60,29 +67,57 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     }
   }
 
+  Future<void> _pickFile() async {
+    final file = await _fileService.pickFile();
+    if (file != null) {
+      setState(() => _selectedFile = file);
+    }
+  }
+
   Future<void> _sendComment() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _selectedFile == null) return;
     setState(() => _isSending = true);
     try {
+      String? fileUrl;
+      String? fileName;
+      if (_selectedFile != null) {
+        fileUrl = await _fileService.uploadFile(file: _selectedFile!, folderName: 'lesson_chat_files');
+        fileName = _selectedFile!.name;
+        if (fileUrl == null) throw Exception('Не удалось загрузить файл');
+      }
       final comment = LessonComment(
-        lessonId: lessonId,
+        lessonId: lessonId.toString(),
         senderTeacherId: userRole == 'teacher' ? userId : null,
         senderStudentId: userRole == 'student' ? userId : null,
-        message: text,
+        message: text.isEmpty ? null : text,
+        fileUrl: fileUrl,
+        fileName: fileName,
         timestamp: DateTime.now(),
       );
       await _service.addComment(comment);
       if (!mounted) return;
       _messageController.clear();
+      setState(() => _selectedFile = null);
       await _loadComments();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Не удалось отправить'), backgroundColor: Colors.redAccent));
+      ).showSnackBar(SnackBar(content: Text('Не удалось отправить: $e'), backgroundColor: Colors.redAccent));
     } finally {
       if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _openFile(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось открыть файл')));
+      }
     }
   }
 
@@ -112,19 +147,58 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
           crossAxisAlignment: align,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (comment.senderStudentId != null) // Если пишет студент, препод хочет видеть кто это
+            if (comment.senderStudentId != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: 2),
+                padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  'Студент', // Можно допилить чтобы подтягивало имя, но пока так
+                  'Студент',
                   style: TextStyle(fontSize: 10, color: colors.primary, fontWeight: FontWeight.bold),
                 ),
               ),
-            Text(comment.message ?? '', style: TextStyle(color: textColor, fontSize: 15)),
+            if (comment.message != null && comment.message!.isNotEmpty)
+              Text(comment.message!, style: TextStyle(color: textColor, fontSize: 15)),
+            if (comment.fileUrl != null) ...[
+              if (comment.message != null) const SizedBox(height: 8),
+              InkWell(
+                onTap: () => _openFile(comment.fileUrl!),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.description, size: 20, color: textColor),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          comment.fileName ?? 'Файл',
+                          style: TextStyle(color: textColor, fontSize: 13, decoration: TextDecoration.underline),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 4),
+            Text(
+              _formatTimestamp(comment.timestamp),
+              style: TextStyle(fontSize: 10, color: textColor.withOpacity(0.6)),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final localTime = timestamp.toLocal();
+    final time = TimeOfDay.fromDateTime(localTime);
+    return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
   }
 
   @override
@@ -155,38 +229,83 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
           ),
           Divider(height: 1, color: colors.outlineVariant),
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(color: colors.surface),
             child: SafeArea(
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: InputDecoration(
-                        hintText: 'Сообщение...',
-                        filled: true,
-                        fillColor: colors.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  if (_selectedFile != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: colors.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      onSubmitted: (_) => _sendComment(),
+                      child: Row(
+                        children: [
+                          Icon(Icons.attach_file, size: 20, color: colors.onSecondaryContainer),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _selectedFile!.name,
+                              style: TextStyle(color: colors.onSecondaryContainer),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                            icon: Icon(Icons.close, size: 20, color: colors.onSecondaryContainer),
+                            onPressed: () => setState(() => _selectedFile = null),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _isSending ? null : _sendComment,
-                    icon:
-                        _isSending
-                            ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
-                            )
-                            : const Icon(Icons.send),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.attach_file, color: colors.onSurfaceVariant),
+                        onPressed: _isSending ? null : _pickFile,
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          textCapitalization: TextCapitalization.sentences,
+                          minLines: 1,
+                          maxLines: 4,
+                          style: TextStyle(color: colors.onSurface),
+                          decoration: InputDecoration(
+                            hintText: 'Сообщение...',
+                            hintStyle: TextStyle(color: colors.onSurfaceVariant),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: colors.surfaceContainerHighest,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        icon:
+                            _isSending
+                                ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
+                                )
+                                : const Icon(Icons.send),
+                        style: IconButton.styleFrom(backgroundColor: colors.primary, foregroundColor: colors.onPrimary),
+                        onPressed:
+                            (_messageController.text.trim().isEmpty && _selectedFile == null) || _isSending
+                                ? null
+                                : _sendComment,
+                      ),
+                    ],
                   ),
                 ],
               ),
