@@ -69,7 +69,7 @@ class SettingsSheet extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             leading: Icon(Icons.info_outline, color: theme.colorScheme.outline),
             title: const Text('Версия приложения'),
-            trailing: const Text('0.0.0-beta'),
+            trailing: const Text('0.0.4-alpha'),
           ),
           const SizedBox(height: 16),
         ],
