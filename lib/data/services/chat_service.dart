@@ -3,6 +3,14 @@ import 'package:edu_track/models/chat.dart';
 import 'package:edu_track/models/message.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class ChatPreview {
+  final Chat chat;
+  final String title;
+  final String? avatarUrl;
+  final String? lastMessage;
+  ChatPreview({required this.chat, required this.title, this.avatarUrl, this.lastMessage});
+}
+
 class ChatService {
   final SupabaseClient _client;
   ChatService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
@@ -142,5 +150,77 @@ class ChatService {
     } catch (e) {
       return {'name': 'Собеседник', 'avatar': null};
     }
+  }
+
+  Future<String> getOrCreateGroupChat(String groupId, String groupName) async {
+    try {
+      final existingChat = await _client.from('chats').select('id').eq('group_id', groupId).maybeSingle();
+      if (existingChat != null) {
+        return existingChat['id'] as String;
+      }
+      final newChatResponse =
+          await _client
+              .from('chats')
+              .insert({
+                'type': 'group',
+                'name': groupName,
+                'group_id': groupId,
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .select('id')
+              .single();
+      final chatId = newChatResponse['id'] as String;
+      await _syncGroupMembers(chatId, groupId);
+      return chatId;
+    } catch (e) {
+      throw Exception('Ошибка при создании группового чата: $e');
+    }
+  }
+
+  Future<void> _syncGroupMembers(String chatId, String groupId) async {
+    final students = await _client.from('students').select('id').eq('group_id', groupId);
+    final group = await _client.from('groups').select('curator_id').eq('id', groupId).single();
+    final List<Map<String, dynamic>> membersToAdd = [];
+    for (var s in students) {
+      membersToAdd.add({'chat_id': chatId, 'user_id': s['id'], 'user_role': 'student'});
+    }
+    if (group['curator_id'] != null) {
+      membersToAdd.add({'chat_id': chatId, 'user_id': group['curator_id'], 'user_role': 'teacher'});
+    }
+    if (membersToAdd.isNotEmpty) {
+      await _client.from('chat_members').insert(membersToAdd);
+    }
+  }
+
+  Future<List<ChatPreview>> getEnrichedUserChats(String userId) async {
+    try {
+      final response = await _client.from('chat_members').select('chat:chats(*)').eq('user_id', userId);
+      final List<dynamic> data = response as List<dynamic>;
+      final chats = data.map((e) => Chat.fromMap(e['chat'] as Map<String, dynamic>)).toList();
+      chats.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      final List<ChatPreview> previews = [];
+      for (var chat in chats) {
+        if (chat.type == 'group') {
+          previews.add(ChatPreview(chat: chat, title: chat.name ?? 'Группа', avatarUrl: null));
+        } else {
+          final interlocutor = await getChatInterlocutor(chat.id, userId);
+          previews.add(
+            ChatPreview(chat: chat, title: interlocutor['name'] ?? 'Неизвестный', avatarUrl: interlocutor['avatar']),
+          );
+        }
+      }
+      return previews;
+    } catch (e) {
+      throw Exception('Ошибка загрузки списка чатов: $e');
+    }
+  }
+
+  Stream<List<Message>> getMessagesStream(String chatId) {
+    return _client
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .eq('chat_id', chatId)
+        .order('created_at', ascending: false)
+        .map((maps) => maps.map((map) => Message.fromMap(map)).toList());
   }
 }

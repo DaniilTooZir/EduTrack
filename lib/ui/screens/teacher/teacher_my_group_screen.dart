@@ -1,8 +1,10 @@
+import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -86,6 +88,13 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Кураторство')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _myGroup == null ? null : _openGroupChat,
+        label: const Text('Чат группы'),
+        icon: const Icon(Icons.forum),
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
+      ),
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
@@ -168,17 +177,27 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                                   student.email,
                                   style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
                                 ),
-                                trailing: Tooltip(
-                                  message: 'Назначить старостой',
-                                  child: Switch(
-                                    value: student.isHeadman,
-                                    activeColor: Colors.amber,
-                                    onChanged: (value) {
-                                      if (value) {
-                                        _setHeadman(student);
-                                      }
-                                    },
-                                  ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.message_outlined, color: colors.primary),
+                                      tooltip: 'Написать сообщение',
+                                      onPressed: () => _openDirectChat(student),
+                                    ),
+                                    Tooltip(
+                                      message: 'Назначить старостой',
+                                      child: Switch(
+                                        value: student.isHeadman,
+                                        activeColor: Colors.amber,
+                                        onChanged: (value) {
+                                          if (value) {
+                                            _setHeadman(student);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
@@ -190,5 +209,41 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openGroupChat() async {
+    if (_myGroup == null) return;
+
+    try {
+      final chatId = await ChatService().getOrCreateGroupChat(_myGroup!.id!, _myGroup!.name);
+
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: 'Группа ${_myGroup!.name}')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+    }
+  }
+
+  Future<void> _openDirectChat(Student student) async {
+    final myId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (myId == null) return;
+    try {
+      final chatId = await ChatService().getOrCreateDirectChat(
+        myId: myId,
+        myRole: 'teacher',
+        otherId: student.id,
+        otherRole: 'student',
+      );
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: '${student.surname} ${student.name}')),
+        );
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+    }
   }
 }

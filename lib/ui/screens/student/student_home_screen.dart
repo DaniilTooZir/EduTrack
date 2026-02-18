@@ -1,6 +1,9 @@
+import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/chat_screen.dart';
+import 'package:edu_track/ui/screens/chat_list_screen.dart';
 import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
 import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
@@ -173,6 +176,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1, colors),
             _buildDrawerItem(Icons.menu_book_rounded, 'Уроки', 2, colors),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
+            ListTile(
+              leading: Icon(Icons.message_rounded, color: colors.onSurfaceVariant),
+              title: Text('Сообщения', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.normal)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatListScreen()));
+              },
+            ),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
             const Divider(),
             ListTile(
@@ -274,6 +285,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   _buildQuickActionCard(Icons.assignment, 'Мои задания', () => _onItemTapped(1), colors),
                   _buildQuickActionCard(Icons.calendar_month, 'Расписание', () => _onItemTapped(3), colors),
                   _buildQuickActionCard(Icons.menu_book, 'Уроки', () => _onItemTapped(2), colors),
+                  _buildQuickActionCard(Icons.forum, 'Чат группы', () => _openGroupChat(context), colors),
                 ],
               ),
             ),
@@ -395,5 +407,24 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openGroupChat(BuildContext context) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final groupData = await _homeworkService.getGroupByStudentId(userProvider.userId!);
+    if (groupData != null) {
+      final groupId = groupData['id'];
+      final groupName = groupData['name'];
+      try {
+        final chatId = await ChatService().getOrCreateGroupChat(groupId, groupName);
+        if (mounted) {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: 'Группа $groupName')));
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+      }
+    }
   }
 }

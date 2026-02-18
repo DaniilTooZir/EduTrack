@@ -1,14 +1,17 @@
 import 'package:edu_track/data/services/avatar_service.dart';
+import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   const StudentProfileScreen({super.key});
@@ -43,6 +46,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     _loadStudentData();
   }
 
+  Map<String, dynamic>? _curatorInfo;
+
   Future<void> _loadStudentData() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final userId = userProvider.userId;
@@ -52,10 +57,21 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       final student = await _studentService.getStudentById(userId);
       if (student != null && institutionId != null) {
         final inst = await _institutionService.getInstitutionById(institutionId);
+        Map<String, dynamic>? curator;
+        if (student.groupId != null) {
+          final groupResponse =
+              await Supabase.instance.client
+                  .from('groups')
+                  .select('teacher:teachers(id, name, surname)')
+                  .eq('id', student.groupId!)
+                  .single();
+          curator = groupResponse['teacher'] as Map<String, dynamic>?;
+        }
         if (mounted) {
           setState(() {
             _student = student;
             _institution = inst;
+            _curatorInfo = curator;
             _fillControllers();
             _isLoading = false;
           });
@@ -207,6 +223,45 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                                     ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
                                   ),
                                 ),
+                                const SizedBox(height: 24),
+                                if (_curatorInfo != null)
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: colors.primaryContainer.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: colors.primary.withOpacity(0.3)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          backgroundColor: colors.primary,
+                                          child: Icon(Icons.school, color: colors.onPrimary),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Ваш куратор',
+                                                style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                                              ),
+                                              Text(
+                                                '${_curatorInfo!['surname']} ${_curatorInfo!['name']}',
+                                                style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.message, color: colors.primary),
+                                          tooltip: 'Написать',
+                                          onPressed: _openCuratorChat,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 const Divider(height: 32),
                                 _sectionTitle('Данные профиля', colors),
                                 const SizedBox(height: 8),
@@ -230,6 +285,27 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openCuratorChat() async {
+    if (_curatorInfo == null || _student == null) return;
+    try {
+      final chatId = await ChatService().getOrCreateDirectChat(
+        myId: _student!.id,
+        myRole: 'student',
+        otherId: _curatorInfo!['id'],
+        otherRole: 'teacher',
+      );
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(chatId: chatId, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+    }
   }
 
   Widget _buildAvatar(ColorScheme colors) {

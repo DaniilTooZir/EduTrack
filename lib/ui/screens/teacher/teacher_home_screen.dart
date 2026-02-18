@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/chat_list_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_screen.dart';
@@ -123,6 +124,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1, colors),
             _buildDrawerItem(Icons.checklist_rtl_rounded, 'Проверка ДЗ', 5, colors),
             _buildDrawerItem(Icons.supervised_user_circle_rounded, 'Моя группа', 6, colors),
+            ListTile(
+              leading: Icon(Icons.message_rounded, color: colors.onSurfaceVariant),
+              title: Text('Сообщения', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.normal)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatListScreen()));
+              },
+            ),
             _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2, colors),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
