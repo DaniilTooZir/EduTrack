@@ -7,6 +7,7 @@ import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:edu_track/data/local/app_database.dart';
 
 class StudentLessonScreen extends StatefulWidget {
   const StudentLessonScreen({super.key});
@@ -25,22 +26,25 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLessons();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadLessons();
+    });
   }
 
   Future<void> _loadLessons() async {
-    if (studentId == null) {
-      setState(() => _loading = false);
-      return;
-    }
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final studentId = userProvider.userId;
+    final groupId = userProvider.groupId;
+    final db = Provider.of<AppDatabase>(context, listen: false);
+    if (studentId == null) return;
     try {
-      final schedules = await _scheduleService.getScheduleForStudent(studentId!);
+      final schedules = await _scheduleService.getScheduleForStudent(studentId, groupId, db);
       final List<Lesson> allLessons = [];
       for (final schedule in schedules) {
         final lessons = await _lessonService.getLessonsByScheduleId(schedule.id);
         allLessons.addAll(lessons);
       }
-      //allLessons.sort((a, b) => (b.id ?? '').compareTo(a.id ?? '')); пока не будет сортироваться, т.к. id теперь uuid
+      allLessons.sort((a, b) => (b.id ?? '').compareTo(a.id ?? ''));
       if (mounted) {
         setState(() {
           _lessons = allLessons;

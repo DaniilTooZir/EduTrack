@@ -4,8 +4,9 @@ class AuthResult {
   final String role;
   final String userId;
   final String institutionId;
+  final String? groupId;
 
-  AuthResult({required this.role, required this.userId, required this.institutionId});
+  AuthResult({required this.role, required this.userId, required this.institutionId, this.groupId});
 }
 
 class AuthService {
@@ -35,7 +36,11 @@ class AuthService {
       Map<String, dynamic>? data;
       if (role == 'student') {
         final response =
-            await client.from(table).select('id, password, groups(institution_id)').eq('login', login).maybeSingle();
+            await client
+                .from(table)
+                .select('id, password, group_id, groups(institution_id)')
+                .eq('login', login)
+                .maybeSingle();
         data = response;
       } else {
         final response =
@@ -44,6 +49,7 @@ class AuthService {
       }
       if (data != null && data['password'] == password) {
         String institutionId;
+        String? groupId;
         if (role == 'student') {
           final groupData = data['groups'] as Map<String, dynamic>?;
           if (groupData != null && groupData['institution_id'] != null) {
@@ -51,10 +57,11 @@ class AuthService {
           } else {
             throw Exception('Студент не привязан к группе или учреждению');
           }
+          groupId = data['group_id']?.toString();
         } else {
           institutionId = data['institution_id'].toString();
         }
-        return AuthResult(role: role, userId: data['id'].toString(), institutionId: institutionId);
+        return AuthResult(role: role, userId: data['id'].toString(), institutionId: institutionId, groupId: groupId);
       }
     } catch (e) {
       print('Инфо: Пользователь не найден в $table ($e)');

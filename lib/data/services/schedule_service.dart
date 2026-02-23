@@ -1,4 +1,5 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -72,14 +73,22 @@ class ScheduleService {
     }
   }
 
-  Future<List<Schedule>> getScheduleForStudent(String studentId) async {
-    final student = await _client.from('students').select('group_id').eq('id', studentId).single();
-    final groupId = student['group_id'] as String;
-    final response = await _client
-        .from('schedule')
-        .select('*, subject:subjects(*), teacher:teachers(*)') // Добавил teacher, чтобы студент видел кто ведет
-        .eq('group_id', groupId);
-    return (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+  Future<List<Schedule>> getScheduleForStudent(String studentId, String? groupId, AppDatabase db) async {
+    if (groupId == null) {
+      throw Exception('ID группы не найден локально');
+    }
+    try {
+      final response = await _client
+          .from('schedule')
+          .select('*, subject:subjects(*), teacher:teachers(*), group:groups(*)')
+          .eq('group_id', groupId);
+      final networkSchedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+      await db.saveSchedules(networkSchedules);
+      return networkSchedules;
+    } catch (e) {
+      print('Нет сети (или ошибка), грузим из локальной БД: $e');
+      return await db.getSchedulesForGroup(groupId);
+    }
   }
 
   Future<List<Schedule>> getScheduleForTeacher(String teacherId) async {

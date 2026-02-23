@@ -2,11 +2,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SessionService {
   // Сохраняет данные сессии пользователя в SharedPreferences
-  static Future<void> saveSession(String userId, String role, String institutionId) async {
+  static Future<void> saveSession(String userId, String role, String institutionId, String? groupId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('userId', userId);
     await prefs.setString('role', role);
     await prefs.setString('institutionId', institutionId);
+    if (groupId != null) {
+      await prefs.setString('groupId', groupId);
+    }
   }
 
   // Получает ID пользователя из сессии
@@ -25,6 +28,11 @@ class SessionService {
   static Future<String?> getInstitutionId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('institutionId');
+  }
+
+  static Future<String?> getGroupId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('groupId');
   }
 
   // Очищает данные сессии

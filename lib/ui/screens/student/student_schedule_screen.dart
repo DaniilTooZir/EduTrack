@@ -1,3 +1,4 @@
+import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -21,14 +22,23 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
   @override
   void initState() {
     super.initState();
+    //_loadSchedule();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _loadSchedule();
   }
 
   Future<void> _loadSchedule() async {
-    final studentId = Provider.of<UserProvider>(context, listen: false).userId;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final studentId = userProvider.userId;
+    final groupId = userProvider.groupId;
+    final db = Provider.of<AppDatabase>(context, listen: false);
     if (studentId == null) return;
     try {
-      final list = await _scheduleService.getScheduleForStudent(studentId);
+      final list = await _scheduleService.getScheduleForStudent(studentId, groupId, db);
       list.sort((a, b) {
         if (a.date == null && b.date != null) return -1;
         if (a.date != null && b.date == null) return 1;

@@ -6,6 +6,7 @@ import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:edu_track/data/local/app_database.dart';
 
 // Точка входа
 void main() async {
@@ -15,14 +16,20 @@ void main() async {
   final savedUserId = await SessionService.getUserId();
   final savedRole = await SessionService.getRole();
   final institutionId = await SessionService.getInstitutionId();
+  final savedGroupId = await SessionService.getGroupId();
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
+
+  final appDatabase = AppDatabase();
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()..loadSession(savedUserId, savedRole, institutionId)),
+        ChangeNotifierProvider(
+          create: (_) => UserProvider()..loadSession(savedUserId, savedRole, institutionId, savedGroupId),
+        ),
         ChangeNotifierProvider.value(value: themeProvider),
+        Provider<AppDatabase>.value(value: appDatabase),
       ],
       child: const MyApp(),
     ),
