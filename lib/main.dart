@@ -1,5 +1,4 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
-import 'package:edu_track/data/services/moderation_timer.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/route.dart';
@@ -13,7 +12,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
   await SupabaseConnection.initializeSupabase();
-  ModerationTimer.start();
   final savedUserId = await SessionService.getUserId();
   final savedRole = await SessionService.getRole();
   final institutionId = await SessionService.getInstitutionId();

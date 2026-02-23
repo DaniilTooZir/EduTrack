@@ -45,12 +45,10 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
       debugPrint('[InstitutionRequestScreen] Ошибка: $e');
       debugPrint('[InstitutionRequestScreen] StackTrace: $stackTrace');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Произошла ошибка при отправке заявки. Попробуйте позже.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      final errorMessage = e.toString().replaceAll('Exception: ', '');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: Theme.of(context).colorScheme.error));
     } finally {
       setState(() => _isSubmitting = false);
     }

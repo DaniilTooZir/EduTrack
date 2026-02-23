@@ -14,7 +14,27 @@ class InstitutionRequestService {
     String? phone,
     String? comment,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
     try {
+      final existingAdmin = await _client.from('education_heads').select('id').eq('email', cleanEmail).maybeSingle();
+      if (existingAdmin != null) {
+        throw Exception('Пользователь с таким email уже зарегистрирован как руководитель.');
+      }
+      final existingRequest =
+          await _client
+              .from('institution_requests')
+              .select('status')
+              .eq('email', cleanEmail)
+              .neq('status', 'rejected')
+              .maybeSingle();
+      if (existingRequest != null) {
+        final status = existingRequest['status'];
+        if (status == 'approved') {
+          throw Exception('Заявка с таким email уже одобрена. Проверьте статус.');
+        } else {
+          throw Exception('Заявка с таким email уже находится на рассмотрении.');
+        }
+      }
       final dataToInsert = {
         'name': name.trim(),
         'address': address.trim(),
