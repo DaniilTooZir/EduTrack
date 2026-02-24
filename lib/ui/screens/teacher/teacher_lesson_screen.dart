@@ -1,3 +1,4 @@
+import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
@@ -35,20 +36,25 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
     if (teacherId == null || institutionId == null) return;
     setState(() => _isLoading = true);
+    final db = Provider.of<AppDatabase>(context, listen: false);
     try {
       _groups = await _groupService.getGroups(institutionId!);
       _subjects = await _subjectService.getSubjectsByTeacherId(teacherId!);
-      final schedules = await _scheduleService.getScheduleForTeacher(teacherId!);
+      final schedules = await _scheduleService.getScheduleForTeacher(teacherId!, db);
       final List<Lesson> allLessons = [];
       for (final schedule in schedules) {
-        final lessons = await _lessonService.getLessonsByScheduleId(schedule.id);
-        allLessons.addAll(lessons);
+        try {
+          final lessons = await _lessonService.getLessonsByScheduleId(schedule.id);
+          allLessons.addAll(lessons);
+        } catch (_) {}
       }
       //allLessons.sort((a, b) => (b.id ?? '').compareTo(a.id ?? '')); пока не будет сортироваться, т.к. id теперь uuid
       if (mounted) {
@@ -137,6 +143,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     Schedule? selectedSchedule;
     List<Schedule> availableSchedules = [];
     bool isDialogLoading = false;
+    final db = Provider.of<AppDatabase>(context, listen: false);
     await showDialog(
       context: context,
       builder: (context) {
@@ -146,7 +153,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
               if (selectedGroup == null || selectedSubject == null) return;
               setStateDialog(() => isDialogLoading = true);
               try {
-                final teacherSchedules = await _scheduleService.getScheduleForTeacher(teacherId!);
+                final teacherSchedules = await _scheduleService.getScheduleForTeacher(teacherId!, db);
                 final filtered =
                     teacherSchedules
                         .where((s) => s.groupId == selectedGroup!.id && s.subjectId == selectedSubject!.id)

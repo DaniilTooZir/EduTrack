@@ -11,7 +11,6 @@ import 'package:path_provider/path_provider.dart';
 
 part 'app_database.g.dart';
 
-
 class LocalSchedules extends Table {
   TextColumn get id => text()();
   TextColumn get institutionId => text()();
@@ -66,44 +65,45 @@ class AppDatabase extends _$AppDatabase {
     await delete(localGroups).go();
     await delete(localTeachers).go();
   }
+
   Future<void> saveSchedules(List<Schedule> schedules) async {
     await transaction(() async {
       for (var s in schedules) {
         if (s.subject != null) {
-          await into(localSubjects).insertOnConflictUpdate(LocalSubjectsCompanion.insert(
-            id: s.subject!.id,
-            name: s.subject!.name,
-            institutionId: s.subject!.institutionId,
-          ));
+          await into(localSubjects).insertOnConflictUpdate(
+            LocalSubjectsCompanion.insert(
+              id: s.subject!.id,
+              name: s.subject!.name,
+              institutionId: s.subject!.institutionId,
+            ),
+          );
         }
 
         if (s.group != null && s.group!.id != null) {
-          await into(localGroups).insertOnConflictUpdate(LocalGroupsCompanion.insert(
-            id: s.group!.id!,
-            name: s.group!.name,
-            institutionId: s.group!.institutionId,
-          ));
+          await into(localGroups).insertOnConflictUpdate(
+            LocalGroupsCompanion.insert(id: s.group!.id!, name: s.group!.name, institutionId: s.group!.institutionId),
+          );
         }
 
         if (s.teacher != null) {
-          await into(localTeachers).insertOnConflictUpdate(LocalTeachersCompanion.insert(
-            id: s.teacher!.id,
-            name: s.teacher!.name,
-            surname: s.teacher!.surname,
-          ));
+          await into(localTeachers).insertOnConflictUpdate(
+            LocalTeachersCompanion.insert(id: s.teacher!.id, name: s.teacher!.name, surname: s.teacher!.surname),
+          );
         }
 
-        await into(localSchedules).insertOnConflictUpdate(LocalSchedulesCompanion.insert(
-          id: s.id,
-          institutionId: s.institutionId,
-          subjectId: s.subjectId,
-          groupId: s.groupId,
-          teacherId: s.teacherId,
-          weekday: s.weekday,
-          startTime: s.startTime,
-          endTime: s.endTime,
-          date: Value(s.date),
-        ));
+        await into(localSchedules).insertOnConflictUpdate(
+          LocalSchedulesCompanion.insert(
+            id: s.id,
+            institutionId: s.institutionId,
+            subjectId: s.subjectId,
+            groupId: s.groupId,
+            teacherId: s.teacherId,
+            weekday: s.weekday,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            date: Value(s.date),
+          ),
+        );
       }
     });
   }
@@ -115,17 +115,13 @@ class AppDatabase extends _$AppDatabase {
       leftOuterJoin(localTeachers, localTeachers.id.equalsExp(localSchedules.teacherId)),
     ]);
     query.where(localSchedules.groupId.equals(groupId));
-    query.orderBy([
-      OrderingTerm(expression: localSchedules.date),
-      OrderingTerm(expression: localSchedules.startTime),
-    ]);
+    query.orderBy([OrderingTerm(expression: localSchedules.date), OrderingTerm(expression: localSchedules.startTime)]);
     final rows = await query.get();
     return rows.map((row) {
       final scheduleRow = row.readTable(localSchedules);
       final subjectRow = row.readTableOrNull(localSubjects);
       final groupRow = row.readTableOrNull(localGroups);
       final teacherRow = row.readTableOrNull(localTeachers);
-
       return Schedule(
         id: scheduleRow.id,
         institutionId: scheduleRow.institutionId,
@@ -136,29 +132,73 @@ class AppDatabase extends _$AppDatabase {
         startTime: scheduleRow.startTime,
         endTime: scheduleRow.endTime,
         date: scheduleRow.date,
-        subject: subjectRow != null
-            ? Subject(
-          id: subjectRow.id,
-          name: subjectRow.name,
-          institutionId: subjectRow.institutionId,
-          createdAt: DateTime.now(),
-        )
-            : null,
-        group: groupRow != null
-            ? Group(
-          id: groupRow.id,
-          name: groupRow.name,
-          institutionId: groupRow.institutionId,
-        )
-            : null,
-        teacher: teacherRow != null
-            ? Teacher(
-            id: teacherRow.id,
-            name: teacherRow.name,
-            surname: teacherRow.surname,
-            email: '', login: '', password: '', institutionId: '', createdAt: DateTime.now()
-        )
-            : null,
+        subject:
+            subjectRow != null
+                ? Subject(
+                  id: subjectRow.id,
+                  name: subjectRow.name,
+                  institutionId: subjectRow.institutionId,
+                  createdAt: DateTime.now(),
+                )
+                : null,
+        group:
+            groupRow != null
+                ? Group(id: groupRow.id, name: groupRow.name, institutionId: groupRow.institutionId)
+                : null,
+        teacher:
+            teacherRow != null
+                ? Teacher(
+                  id: teacherRow.id,
+                  name: teacherRow.name,
+                  surname: teacherRow.surname,
+                  email: '',
+                  login: '',
+                  password: '',
+                  institutionId: '',
+                  createdAt: DateTime.now(),
+                )
+                : null,
+      );
+    }).toList();
+  }
+
+  Future<List<Schedule>> getSchedulesForTeacher(String teacherId) async {
+    final query = select(localSchedules).join([
+      leftOuterJoin(localSubjects, localSubjects.id.equalsExp(localSchedules.subjectId)),
+      leftOuterJoin(localGroups, localGroups.id.equalsExp(localSchedules.groupId)),
+      // leftOuterJoin(localTeachers...)
+    ]);
+    query.where(localSchedules.teacherId.equals(teacherId));
+    query.orderBy([OrderingTerm(expression: localSchedules.date), OrderingTerm(expression: localSchedules.startTime)]);
+    final rows = await query.get();
+    return rows.map((row) {
+      final scheduleRow = row.readTable(localSchedules);
+      final subjectRow = row.readTableOrNull(localSubjects);
+      final groupRow = row.readTableOrNull(localGroups);
+      return Schedule(
+        id: scheduleRow.id,
+        institutionId: scheduleRow.institutionId,
+        subjectId: scheduleRow.subjectId,
+        groupId: scheduleRow.groupId,
+        teacherId: scheduleRow.teacherId,
+        weekday: scheduleRow.weekday,
+        startTime: scheduleRow.startTime,
+        endTime: scheduleRow.endTime,
+        date: scheduleRow.date,
+        subject:
+            subjectRow != null
+                ? Subject(
+                  id: subjectRow.id,
+                  name: subjectRow.name,
+                  institutionId: subjectRow.institutionId,
+                  createdAt: DateTime.now(),
+                )
+                : null,
+        group:
+            groupRow != null
+                ? Group(id: groupRow.id, name: groupRow.name, institutionId: groupRow.institutionId)
+                : null,
+        teacher: null,
       );
     }).toList();
   }

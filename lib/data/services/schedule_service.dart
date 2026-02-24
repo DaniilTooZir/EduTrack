@@ -91,14 +91,14 @@ class ScheduleService {
     }
   }
 
-  Future<List<Schedule>> getScheduleForTeacher(String teacherId) async {
+  Future<List<Schedule>> getScheduleForTeacher(String teacherId, AppDatabase db) async {
     try {
       final response = await _client
           .from('schedule')
           .select('*, subject:subjects(*), group:groups(*)')
           .eq('teacher_id', teacherId);
-      final schedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
-      schedules.sort((a, b) {
+      final networkSchedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+      networkSchedules.sort((a, b) {
         if (a.date != null && b.date != null) {
           return a.date!.compareTo(b.date!);
         }
@@ -108,10 +108,11 @@ class ScheduleService {
         if (weekdayCompare != 0) return weekdayCompare;
         return a.startTime.compareTo(b.startTime);
       });
-      return schedules;
+      await db.saveSchedules(networkSchedules);
+      return networkSchedules;
     } catch (e) {
-      print('Error fetching teacher schedule: $e');
-      return [];
+      print('Ошибка сети (учитель), грузим из локальной БД: $e');
+      return await db.getSchedulesForTeacher(teacherId);
     }
   }
 
