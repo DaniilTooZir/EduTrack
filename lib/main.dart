@@ -1,4 +1,6 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/notification_service.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/route.dart';
@@ -6,13 +8,13 @@ import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/data/local/app_database.dart';
 
 // Точка входа
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
   await SupabaseConnection.initializeSupabase();
+  await NotificationService().init();
   final savedUserId = await SessionService.getUserId();
   final savedRole = await SessionService.getRole();
   final institutionId = await SessionService.getInstitutionId();

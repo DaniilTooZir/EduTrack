@@ -1,11 +1,13 @@
-import 'package:flutter/foundation.dart';
+import 'package:edu_track/data/services/realtime_listener.dart';
 import 'package:edu_track/data/services/session_service.dart';
+import 'package:flutter/foundation.dart';
 
 class UserProvider with ChangeNotifier {
   String? _userId;
   String? _role;
   String? _institutionId;
   String? _groupId;
+  final _realtimeListener = RealtimeListener();
 
   String? get userId => _userId;
   String? get role => _role;
@@ -19,11 +21,15 @@ class UserProvider with ChangeNotifier {
     _institutionId = institutionId;
     _groupId = groupId;
     SessionService.saveSession(userId, role, institutionId, groupId);
+    if (role == 'student' && groupId != null) {
+      _realtimeListener.startListening(userId, groupId);
+    }
     notifyListeners();
   }
 
   // Очищает данные пользователя и уведомляет слушателей
   void clearUser() {
+    _realtimeListener.stopListening();
     _userId = null;
     _role = null;
     _groupId = null;
@@ -38,6 +44,9 @@ class UserProvider with ChangeNotifier {
       _role = role;
       _institutionId = institutionId;
       _groupId = groupId;
+      if (role == 'student' && groupId != null) {
+        _realtimeListener.startListening(userId, groupId);
+      }
       notifyListeners();
     }
   }
