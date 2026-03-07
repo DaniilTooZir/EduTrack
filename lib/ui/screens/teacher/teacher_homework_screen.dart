@@ -298,10 +298,13 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           ),
                           TextButton(
                             onPressed: () async {
+                              final DateTime minDate = DateTime.now().subtract(const Duration(days: 30));
+                              final DateTime safeFirstDate =
+                                  (editDueDate != null && editDueDate!.isBefore(minDate)) ? editDueDate! : minDate;
                               final picked = await showDatePicker(
                                 context: context,
                                 initialDate: editDueDate ?? DateTime.now(),
-                                firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                firstDate: safeFirstDate,
                                 lastDate: DateTime.now().add(const Duration(days: 365)),
                               );
                               if (picked != null) setStateDialog(() => editDueDate = picked);
