@@ -21,7 +21,7 @@ class GradeComment {
       gradeId: map['grade_id']?.toString() ?? '',
       senderTeacherId: map['sender_teacher_id']?.toString(),
       senderStudentId: map['sender_students_id']?.toString(),
-      message: map['message'] as String?,
+      message: map['message']?.toString(),
       timestamp:
           map['timestamp'] != null ? DateTime.tryParse(map['timestamp'].toString()) ?? DateTime.now() : DateTime.now(),
     );

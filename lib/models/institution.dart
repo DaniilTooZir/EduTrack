@@ -10,8 +10,8 @@ class Institution {
   factory Institution.fromMap(Map<String, dynamic> map) {
     return Institution(
       id: map['id']?.toString() ?? '',
-      name: map['name'] ?? '',
-      address: map['address'] ?? '',
+      name: map['name']?.toString() ?? '',
+      address: map['address']?.toString() ?? '',
       createdAt:
           map['created_at'] != null
               ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()

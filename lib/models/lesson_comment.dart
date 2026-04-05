@@ -25,11 +25,11 @@ class LessonComment {
       lessonId: map['lesson_id']?.toString() ?? '',
       senderTeacherId: map['sender_teacher_id']?.toString(),
       senderStudentId: map['sender_student_id']?.toString(),
-      message: map['message'] as String?,
+      message: map['message']?.toString(),
       timestamp:
           map['timestamp'] != null ? DateTime.tryParse(map['timestamp'].toString()) ?? DateTime.now() : DateTime.now(),
-      fileUrl: map['file_url'],
-      fileName: map['file_name'],
+      fileUrl: map['file_url']?.toString(),
+      fileName: map['file_name']?.toString(),
     );
   }
 

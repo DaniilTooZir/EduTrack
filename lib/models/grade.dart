@@ -10,8 +10,8 @@ class Grade {
     return Grade(
       id: map['id']?.toString(),
       lessonId: map['lessons_id']?.toString() ?? '',
-      studentId: map['student_id'] as String,
-      value: map['value'] as int,
+      studentId: map['student_id']?.toString() ?? '',
+      value: int.tryParse(map['value'].toString()) ?? 0,
     );
   }
 

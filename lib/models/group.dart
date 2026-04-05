@@ -10,7 +10,7 @@ class Group {
   factory Group.fromMap(Map<String, dynamic> map) {
     return Group(
       id: map['id']?.toString(),
-      name: map['name'] ?? '',
+      name: map['name']?.toString() ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
       curatorId: map['curator_id']?.toString(),
       createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'].toString()) : null,

@@ -10,7 +10,7 @@ class Subject {
   factory Subject.fromMap(Map<String, dynamic> map) {
     return Subject(
       id: map['id']?.toString() ?? '',
-      name: map['name'] ?? '',
+      name: map['name']?.toString() ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
       createdAt:
           map['created_at'] != null

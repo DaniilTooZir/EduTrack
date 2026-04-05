@@ -9,9 +9,9 @@ class Lesson {
   factory Lesson.fromMap(Map<String, dynamic> map) {
     return Lesson(
       id: map['id']?.toString(),
-      scheduleId: map['schedule_id'] as String,
-      topic: map['topic'] as String?,
-      attendanceStatus: map['attendance_status'] ?? 'pending',
+      scheduleId: map['schedule_id']?.toString() ?? '',
+      topic: map['topic']?.toString(),
+      attendanceStatus: map['attendance_status']?.toString() ?? 'pending',
     );
   }
 

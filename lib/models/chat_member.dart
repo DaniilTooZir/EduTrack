@@ -18,7 +18,7 @@ class ChatMember {
       id: map['id']?.toString() ?? '',
       chatId: map['chat_id']?.toString() ?? '',
       userId: map['user_id']?.toString() ?? '',
-      userRole: map['user_role'] ?? 'student',
+      userRole: map['user_role']?.toString() ?? 'student',
       joinedAt:
           map['joined_at'] != null ? DateTime.tryParse(map['joined_at'].toString()) ?? DateTime.now() : DateTime.now(),
     );

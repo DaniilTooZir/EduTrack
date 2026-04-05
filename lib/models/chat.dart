@@ -18,8 +18,8 @@ class Chat {
   factory Chat.fromMap(Map<String, dynamic> map) {
     return Chat(
       id: map['id']?.toString() ?? '',
-      type: map['type'] ?? 'direct',
-      name: map['name'],
+      type: map['type']?.toString() ?? 'direct',
+      name: map['name']?.toString(),
       groupId: map['group_id']?.toString(),
       createdAt:
           map['created_at'] != null

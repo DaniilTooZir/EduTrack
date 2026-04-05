@@ -39,13 +39,13 @@ class Student {
       login: map['login'] ?? '',
       password: map['password'] ?? '',
       groupId: map['group_id']?.toString(),
-      isHeadman: map['isheadman'] ?? false,
+      isHeadman: map['isheadman'] == true,
       createdAt:
           map['created_at'] != null
               ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
               : DateTime.now(),
       group: groupMap != null ? Group.fromMap(groupMap) : null,
-      avatarUrl: map['avatar_url'],
+      avatarUrl: map['avatar_url']?.toString(),
     );
   }
 

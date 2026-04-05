@@ -23,11 +23,11 @@ class ScheduleOperator {
     return ScheduleOperator(
       id: map['id']?.toString() ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
-      name: map['name'] ?? '',
-      surname: map['surname'] as String?,
-      email: map['email'] as String?,
-      login: map['login'] ?? '',
-      password: map['password'] ?? '',
+      name: map['name']?.toString() ?? '',
+      surname: map['surname']?.toString(),
+      email: map['email']?.toString(),
+      login: map['login']?.toString() ?? '',
+      password: map['password']?.toString() ?? '',
       createdAt:
           map['created_at'] != null
               ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()

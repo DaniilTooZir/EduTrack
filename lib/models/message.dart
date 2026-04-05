@@ -26,11 +26,11 @@ class Message {
       id: map['id']?.toString() ?? '',
       chatId: map['chat_id']?.toString() ?? '',
       senderId: map['sender_id']?.toString() ?? '',
-      senderRole: map['sender_role'] ?? '',
-      content: map['content'],
-      fileUrl: map['file_url'],
-      fileName: map['file_name'],
-      isRead: map['is_read'] ?? false,
+      senderRole: map['sender_role']?.toString() ?? '',
+      content: map['content']?.toString(),
+      fileUrl: map['file_url']?.toString(),
+      fileName: map['file_name']?.toString(),
+      isRead: map['is_read'] == true,
       createdAt:
           map['created_at'] != null
               ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()

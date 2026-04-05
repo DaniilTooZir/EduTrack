@@ -10,8 +10,8 @@ class LessonAttendance {
     return LessonAttendance(
       id: map['id']?.toString(),
       lessonId: map['lesson_id']?.toString() ?? '',
-      studentId: map['student_id'] as String,
-      status: map['status'] as String?,
+      studentId: map['student_id']?.toString() ?? '',
+      status: map['status']?.toString(),
     );
   }
 

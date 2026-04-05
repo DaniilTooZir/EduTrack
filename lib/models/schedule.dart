@@ -43,9 +43,6 @@ class Schedule {
   }
 
   factory Schedule.fromMap(Map<String, dynamic> map) {
-    final subjectMap = map['subject'] as Map<String, dynamic>?;
-    final groupMap = map['group'] as Map<String, dynamic>?;
-    final teacherMap = map['teacher'] as Map<String, dynamic>?;
     return Schedule(
       id: map['id']?.toString() ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
@@ -53,12 +50,12 @@ class Schedule {
       groupId: map['group_id']?.toString() ?? '',
       teacherId: map['teacher_id']?.toString() ?? '',
       date: map['date'] != null ? DateTime.tryParse(map['date'].toString()) : null,
-      weekday: map['weekday'] is int ? map['weekday'] : int.tryParse(map['weekday'].toString()) ?? 1,
+      weekday: int.tryParse(map['weekday'].toString()) ?? 1,
       startTime: map['start_time']?.toString() ?? '',
       endTime: map['end_time']?.toString() ?? '',
-      subject: subjectMap != null ? Subject.fromMap(subjectMap) : null,
-      group: groupMap != null ? Group.fromMap(groupMap) : null,
-      teacher: teacherMap != null ? Teacher.fromMap(teacherMap) : null,
+      subject: map['subject'] != null ? Subject.fromMap(map['subject'] as Map<String, dynamic>) : null,
+      group: map['group'] != null ? Group.fromMap(map['group'] as Map<String, dynamic>) : null,
+      teacher: map['teacher'] != null ? Teacher.fromMap(map['teacher'] as Map<String, dynamic>) : null,
     );
   }
 

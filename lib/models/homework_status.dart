@@ -25,14 +25,14 @@ class HomeworkStatus {
       id: map['id']?.toString() ?? '',
       homeworkId: map['homework_id']?.toString() ?? '',
       studentId: map['student_id']?.toString() ?? '',
-      isCompleted: map['is_completed'] ?? false,
+      isCompleted: map['is_completed'] == true,
       updatedAt:
           map['updated_at'] != null
               ? DateTime.tryParse(map['updated_at'].toString()) ?? DateTime.now()
               : DateTime.now(),
-      studentComment: map['student_comment'],
-      fileUrl: map['file_url'],
-      fileName: map['file_name'],
+      studentComment: map['student_comment']?.toString(),
+      fileUrl: map['file_url']?.toString(),
+      fileName: map['file_name']?.toString(),
     );
   }
 

@@ -37,14 +37,14 @@ class Homework {
       subjectId: map['subject_id']?.toString() ?? '',
       groupId: map['group_id']?.toString() ?? '',
       lessonId: map['lesson_id']?.toString(),
-      title: map['title'] ?? '',
-      description: map['description'],
+      title: map['title']?.toString() ?? '',
+      description: map['description']?.toString(),
       dueDate: map['due_date'] != null ? DateTime.tryParse(map['due_date'].toString()) : null,
       createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'].toString()) : null,
       subject: map['subject'] != null ? Subject.fromMap(map['subject'] as Map<String, dynamic>) : null,
       group: map['group'] != null ? Group.fromMap(map['group'] as Map<String, dynamic>) : null,
-      fileUrl: map['file_url'],
-      fileName: map['file_name'],
+      fileUrl: map['file_url']?.toString(),
+      fileName: map['file_name']?.toString(),
     );
   }
 
