@@ -6,12 +6,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseConnection {
   // Инициализация Supabase с использованием переменных окружения
   static Future<void> initializeSupabase() async {
-    await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL']!,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-      httpClient: CleanHttpClient(),
-      headers: {'X-Supabase-Client-Platform-Version': 'Windows 10 Pro 10.0'},
-    );
+    try {
+      final url = dotenv.env['SUPABASE_URL'];
+      final anonKey = dotenv.env['SUPABASE_ANON_KEY'];
+      // Проверка на наличие ключей
+      if (url == null || anonKey == null) {
+        throw Exception("Ключи Supabase не найдены в .env файле!");
+      }
+      await Supabase.initialize(
+        url: url,
+        anonKey: anonKey,
+        httpClient: CleanHttpClient(),
+        headers: {'X-Supabase-Client-Platform-Version': 'Windows 10 Pro 10.0'},
+      );
+      print('--- Supabase успешно инициализирован ---');
+    } catch (e) {
+      print('Ошибка инициализации Supabase: $e');
+      rethrow;
+    }
   }
 
   // Геттер для получения текущего экземпляра клиента Supabase

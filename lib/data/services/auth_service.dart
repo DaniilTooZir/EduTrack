@@ -5,8 +5,22 @@ class AuthResult {
   final String userId;
   final String institutionId;
   final String? groupId;
-
-  AuthResult({required this.role, required this.userId, required this.institutionId, this.groupId});
+  final String? name;
+  final String? email;
+  final String? avatarUrl;
+  final String? institutionName;
+  final String? groupName;
+  AuthResult({
+    required this.role,
+    required this.userId,
+    required this.institutionId,
+    this.groupId,
+    this.name,
+    this.email,
+    this.avatarUrl,
+    this.institutionName,
+    this.groupName,
+  });
 }
 
 class AuthService {
@@ -38,33 +52,41 @@ class AuthService {
         final response =
             await client
                 .from(table)
-                .select('id, password, group_id, groups(institution_id)')
+                .select('*, groups(name, institution_id, institutions(name))')
                 .eq('login', login)
                 .maybeSingle();
         data = response;
       } else {
-        final response =
-            await client.from(table).select('id, password, institution_id').eq('login', login).maybeSingle();
+        final response = await client.from(table).select('*, institutions(name)').eq('login', login).maybeSingle();
         data = response;
       }
       if (data != null && data['password'] == password) {
-        String institutionId;
-        String? groupId;
+        String instId;
+        String? instName;
+        String? gName;
         if (role == 'student') {
           final groupData = data['groups'] as Map<String, dynamic>?;
-          if (groupData != null && groupData['institution_id'] != null) {
-            institutionId = groupData['institution_id'].toString();
-          } else {
-            throw Exception('Студент не привязан к группе или учреждению');
-          }
-          groupId = data['group_id']?.toString();
+          instId = groupData?['institution_id']?.toString() ?? '';
+          instName = groupData?['institutions']?['name'];
+          gName = groupData?['name'];
         } else {
-          institutionId = data['institution_id'].toString();
+          instId = data['institution_id'].toString();
+          instName = data['institutions']?['name'];
         }
-        return AuthResult(role: role, userId: data['id'].toString(), institutionId: institutionId, groupId: groupId);
+        return AuthResult(
+          role: role,
+          userId: data['id'].toString(),
+          institutionId: instId,
+          groupId: data['group_id']?.toString(),
+          name: '${data['surname'] ?? ''} ${data['name'] ?? ''}'.trim(),
+          email: data['email'],
+          avatarUrl: data['avatar_url'],
+          institutionName: instName,
+          groupName: gName,
+        );
       }
     } catch (e) {
-      print('Инфо: Пользователь не найден в $table ($e)');
+      print('Ошибка авторизации: $e');
     }
     return null;
   }

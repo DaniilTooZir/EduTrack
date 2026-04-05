@@ -15,22 +15,18 @@ void main() async {
   await dotenv.load();
   await SupabaseConnection.initializeSupabase();
   await NotificationService().init();
-  final savedUserId = await SessionService.getUserId();
-  final savedRole = await SessionService.getRole();
-  final institutionId = await SessionService.getInstitutionId();
-  final savedGroupId = await SessionService.getGroupId();
-  final themeProvider = ThemeProvider();
-  await themeProvider.loadTheme();
 
+  final userProvider = UserProvider();
+  final themeProvider = ThemeProvider();
   final appDatabase = AppDatabase();
+
+  await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => UserProvider()..loadSession(savedUserId, savedRole, institutionId, savedGroupId),
-        ),
-        ChangeNotifierProvider.value(value: themeProvider),
+        ChangeNotifierProvider<UserProvider>.value(value: userProvider),
+        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
         Provider<AppDatabase>.value(value: appDatabase),
       ],
       child: const MyApp(),
