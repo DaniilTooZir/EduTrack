@@ -76,6 +76,8 @@ class UserProvider with ChangeNotifier {
         await _fetchFullProfile();
         _setupRealtime();
       }
+      _isInitialized = true;
+      notifyListeners();
     } catch (e) {
       debugPrint('Ошибка инициализации: $e');
     } finally {
@@ -126,7 +128,7 @@ class UserProvider with ChangeNotifier {
 
   void _setupRealtime() {
     _realtimeListener.stopListening();
-    if (_role == 'student' && _groupId != null && _userId != null) {
+    if (_userId != null && _role == 'student' && _groupId != null) {
       _realtimeListener.startListening(_userId!, _groupId!);
     }
   }

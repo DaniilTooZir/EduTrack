@@ -10,13 +10,21 @@ class RealtimeListener {
 
   // Запуск прослушивания
   void startListening(String studentId, String groupId) {
+    stopListening();
     _listenToGrades(studentId);
     _listenToHomework(groupId);
   }
 
   void stopListening() {
-    if (_gradesChannel != null) _client.removeChannel(_gradesChannel!);
-    if (_homeworkChannel != null) _client.removeChannel(_homeworkChannel!);
+    if (_gradesChannel != null) {
+      _client.removeChannel(_gradesChannel!);
+      _gradesChannel = null;
+    }
+    if (_homeworkChannel != null) {
+      _client.removeChannel(_homeworkChannel!);
+      _homeworkChannel = null;
+    }
+    print('--- Realtime подписки остановлены ---');
   }
 
   void _listenToGrades(String studentId) {
