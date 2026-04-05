@@ -12,26 +12,56 @@ import 'package:provider/provider.dart';
 // Точка входа
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load();
-  await SupabaseConnection.initializeSupabase();
-  await NotificationService().init();
+  try {
+    await dotenv.load();
+    await SupabaseConnection.initializeSupabase();
+    await NotificationService().init();
 
-  final userProvider = UserProvider();
-  final themeProvider = ThemeProvider();
-  final appDatabase = AppDatabase();
+    final userProvider = UserProvider();
+    final themeProvider = ThemeProvider();
+    final appDatabase = AppDatabase();
 
-  await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
-
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider<UserProvider>.value(value: userProvider),
-        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
-        Provider<AppDatabase>.value(value: appDatabase),
-      ],
-      child: const MyApp(),
-    ),
-  );
+    await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<UserProvider>.value(value: userProvider),
+          ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+          Provider<AppDatabase>.value(value: appDatabase),
+        ],
+        child: const MyApp(),
+      ),
+    );
+  } catch (e) {
+    runApp(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 80),
+                  const SizedBox(height: 20),
+                  const Text('Ошибка запуска приложения', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Text(
+                    e.toString().replaceAll('Exception:', ''),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(onPressed: () {}, child: const Text('Попробовать снова')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
