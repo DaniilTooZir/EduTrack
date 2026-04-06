@@ -67,8 +67,8 @@ class AuthService {
         if (role == 'student') {
           final groupData = data['groups'] as Map<String, dynamic>?;
           instId = groupData?['institution_id']?.toString() ?? '';
-          instName = groupData?['institutions']?['name'];
-          gName = groupData?['name'];
+          instName = groupData?['institutions']?['name']?.toString();
+          gName = groupData?['name']?.toString();
         } else {
           instId = data['institution_id'].toString();
           instName = data['institutions']?['name'];

@@ -7,6 +7,7 @@ import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 // Точка входа
@@ -22,6 +23,8 @@ void main() async {
     final appDatabase = AppDatabase();
 
     await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
+
+    final router = AppNavigation.createRouter(userProvider);
     runApp(
       MultiProvider(
         providers: [
@@ -29,7 +32,7 @@ void main() async {
           ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
           Provider<AppDatabase>.value(value: appDatabase),
         ],
-        child: const MyApp(),
+        child: MyApp(router: router),
       ),
     );
   } catch (e) {
@@ -65,7 +68,8 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final GoRouter router;
+  const MyApp({super.key, required this.router});
 
   @override
   Widget build(BuildContext context) {

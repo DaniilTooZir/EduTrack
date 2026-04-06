@@ -106,19 +106,23 @@ class UserProvider with ChangeNotifier {
         break;
     }
     try {
-      final data =
-          await client
-              .from(table)
-              .select('*, institutions(name)${_role == 'student' ? ', groups(name)' : ''}')
-              .eq('id', _userId!)
-              .maybeSingle();
+      String selectString;
+      if (_role == 'student') {
+        selectString = '*, groups(name, institutions(name))';
+      } else {
+        selectString = '*, institutions(name)';
+      }
+      final data = await client.from(table).select(selectString).eq('id', _userId!).maybeSingle();
       if (data != null) {
         _userName = '${data['surname'] ?? ''} ${data['name'] ?? ''}'.trim();
-        _userEmail = data['email'];
-        _avatarUrl = data['avatar_url'];
-        _institutionName = data['institutions']?['name'];
+        _userEmail = data['email']?.toString();
+        _avatarUrl = data['avatar_url']?.toString();
         if (_role == 'student') {
-          _groupName = data['groups']?['name'];
+          final groupData = data['groups'] as Map<String, dynamic>?;
+          _groupName = groupData?['name']?.toString();
+          _institutionName = groupData?['institutions']?['name']?.toString();
+        } else {
+          _institutionName = data['institutions']?['name']?.toString();
         }
       }
     } catch (e) {
