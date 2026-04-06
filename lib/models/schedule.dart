@@ -61,7 +61,7 @@ class Schedule {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'institution_id': institutionId,
       'subject_id': subjectId,
       'group_id': groupId,
@@ -71,5 +71,35 @@ class Schedule {
       'start_time': startTime,
       'end_time': endTime,
     };
+  }
+
+  Schedule copyWith({
+    String? id,
+    String? institutionId,
+    String? subjectId,
+    String? groupId,
+    String? teacherId,
+    DateTime? date,
+    int? weekday,
+    String? startTime,
+    String? endTime,
+    Subject? subject,
+    Group? group,
+    Teacher? teacher,
+  }) {
+    return Schedule(
+      id: id ?? this.id,
+      institutionId: institutionId ?? this.institutionId,
+      subjectId: subjectId ?? this.subjectId,
+      groupId: groupId ?? this.groupId,
+      teacherId: teacherId ?? this.teacherId,
+      date: date ?? this.date,
+      weekday: weekday ?? this.weekday,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      subject: subject ?? this.subject,
+      group: group ?? this.group,
+      teacher: teacher ?? this.teacher,
+    );
   }
 }

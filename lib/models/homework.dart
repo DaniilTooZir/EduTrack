@@ -50,7 +50,7 @@ class Homework {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'subject_id': subjectId,
       'group_id': groupId,
       if (lessonId != null) 'lesson_id': lessonId,
@@ -61,5 +61,35 @@ class Homework {
       'file_url': fileUrl,
       'file_name': fileName,
     };
+  }
+
+  Homework copyWith({
+    String? id,
+    String? subjectId,
+    String? groupId,
+    String? lessonId,
+    String? title,
+    String? description,
+    DateTime? dueDate,
+    DateTime? createdAt,
+    Subject? subject,
+    Group? group,
+    String? fileUrl,
+    String? fileName,
+  }) {
+    return Homework(
+      id: id ?? this.id,
+      subjectId: subjectId ?? this.subjectId,
+      groupId: groupId ?? this.groupId,
+      lessonId: lessonId ?? this.lessonId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      dueDate: dueDate ?? this.dueDate,
+      createdAt: createdAt ?? this.createdAt,
+      subject: subject ?? this.subject,
+      group: group ?? this.group,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+    );
   }
 }

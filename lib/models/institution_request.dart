@@ -44,7 +44,7 @@ class InstitutionRequest {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'name': name,
       'address': address,
       'head_name': headName,
@@ -55,5 +55,31 @@ class InstitutionRequest {
       'status': status,
       'created_at': createdAt.toIso8601String(),
     };
+  }
+
+  InstitutionRequest copyWith({
+    String? id,
+    String? name,
+    String? address,
+    String? headName,
+    String? headSurname,
+    String? email,
+    String? phone,
+    String? comment,
+    String? status,
+    DateTime? createdAt,
+  }) {
+    return InstitutionRequest(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      address: address ?? this.address,
+      headName: headName ?? this.headName,
+      headSurname: headSurname ?? this.headSurname,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      comment: comment ?? this.comment,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

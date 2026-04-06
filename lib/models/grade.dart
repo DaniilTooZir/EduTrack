@@ -16,6 +16,20 @@ class Grade {
   }
 
   Map<String, dynamic> toMap() {
-    return {'lessons_id': lessonId, 'student_id': studentId, 'value': value};
+    return {
+      if (id != null && id!.isNotEmpty) 'id': id,
+      'lessons_id': lessonId,
+      'student_id': studentId,
+      'value': value,
+    };
+  }
+
+  Grade copyWith({String? id, String? lessonId, String? studentId, int? value}) {
+    return Grade(
+      id: id ?? this.id,
+      lessonId: lessonId ?? this.lessonId,
+      studentId: studentId ?? this.studentId,
+      value: value ?? this.value,
+    );
   }
 }

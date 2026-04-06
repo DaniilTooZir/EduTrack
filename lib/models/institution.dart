@@ -20,6 +20,15 @@ class Institution {
   }
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'name': name, 'address': address, 'created_at': createdAt.toIso8601String()};
+    return {if (id.isNotEmpty) 'id': id, 'name': name, 'address': address, 'created_at': createdAt.toIso8601String()};
+  }
+
+  Institution copyWith({String? id, String? name, String? address, DateTime? createdAt}) {
+    return Institution(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      address: address ?? this.address,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

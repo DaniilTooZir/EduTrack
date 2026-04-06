@@ -40,7 +40,7 @@ class Message {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'chat_id': chatId,
       'sender_id': senderId,
       'sender_role': senderRole,
@@ -50,5 +50,29 @@ class Message {
       'is_read': isRead,
       'created_at': createdAt.toIso8601String(),
     };
+  }
+
+  Message copyWith({
+    String? id,
+    String? chatId,
+    String? senderId,
+    String? senderRole,
+    String? content,
+    String? fileUrl,
+    String? fileName,
+    bool? isRead,
+    DateTime? createdAt,
+  }) {
+    return Message(
+      id: id ?? this.id,
+      chatId: chatId ?? this.chatId,
+      senderId: senderId ?? this.senderId,
+      senderRole: senderRole ?? this.senderRole,
+      content: content ?? this.content,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

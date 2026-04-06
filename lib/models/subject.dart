@@ -20,6 +20,20 @@ class Subject {
   }
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'name': name, 'institution_id': institutionId, 'created_at': createdAt.toIso8601String()};
+    return {
+      if (id.isNotEmpty) 'id': id,
+      'name': name,
+      'institution_id': institutionId,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  Subject copyWith({String? id, String? name, String? institutionId, DateTime? createdAt}) {
+    return Subject(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      institutionId: institutionId ?? this.institutionId,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

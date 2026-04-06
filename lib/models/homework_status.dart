@@ -38,7 +38,7 @@ class HomeworkStatus {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'homework_id': homeworkId,
       'student_id': studentId,
       'is_completed': isCompleted,
@@ -47,5 +47,27 @@ class HomeworkStatus {
       'file_url': fileUrl,
       'file_name': fileName,
     };
+  }
+
+  HomeworkStatus copyWith({
+    String? id,
+    String? homeworkId,
+    String? studentId,
+    bool? isCompleted,
+    DateTime? updatedAt,
+    String? studentComment,
+    String? fileUrl,
+    String? fileName,
+  }) {
+    return HomeworkStatus(
+      id: id ?? this.id,
+      homeworkId: homeworkId ?? this.homeworkId,
+      studentId: studentId ?? this.studentId,
+      isCompleted: isCompleted ?? this.isCompleted,
+      updatedAt: updatedAt ?? this.updatedAt,
+      studentComment: studentComment ?? this.studentComment,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+    );
   }
 }

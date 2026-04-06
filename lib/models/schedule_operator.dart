@@ -37,6 +37,7 @@ class ScheduleOperator {
 
   Map<String, dynamic> toMap() {
     return {
+      if (id.isNotEmpty) 'id': id,
       'institution_id': institutionId,
       'name': name,
       'surname': surname,
@@ -44,5 +45,27 @@ class ScheduleOperator {
       'login': login,
       'password': password,
     };
+  }
+
+  ScheduleOperator copyWith({
+    String? id,
+    String? institutionId,
+    String? name,
+    String? surname,
+    String? email,
+    String? login,
+    String? password,
+    DateTime? createdAt,
+  }) {
+    return ScheduleOperator(
+      id: id ?? this.id,
+      institutionId: institutionId ?? this.institutionId,
+      name: name ?? this.name,
+      surname: surname ?? this.surname,
+      email: email ?? this.email,
+      login: login ?? this.login,
+      password: password ?? this.password,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

@@ -16,6 +16,20 @@ class Lesson {
   }
 
   Map<String, dynamic> toMap() {
-    return {'schedule_id': scheduleId, 'topic': topic, 'attendance_status': attendanceStatus};
+    return {
+      if (id != null && id!.isNotEmpty) 'id': id,
+      'schedule_id': scheduleId,
+      'topic': topic,
+      'attendance_status': attendanceStatus,
+    };
+  }
+
+  Lesson copyWith({String? id, String? scheduleId, String? topic, String? attendanceStatus}) {
+    return Lesson(
+      id: id ?? this.id,
+      scheduleId: scheduleId ?? this.scheduleId,
+      topic: topic ?? this.topic,
+      attendanceStatus: attendanceStatus ?? this.attendanceStatus,
+    );
   }
 }

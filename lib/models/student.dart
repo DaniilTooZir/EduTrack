@@ -51,7 +51,7 @@ class Student {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'name': name,
       'surname': surname,
       'email': email,
@@ -62,5 +62,33 @@ class Student {
       'created_at': createdAt.toIso8601String(),
       'avatar_url': avatarUrl,
     };
+  }
+
+  Student copyWith({
+    String? id,
+    String? name,
+    String? surname,
+    String? email,
+    String? login,
+    String? password,
+    String? groupId,
+    bool? isHeadman,
+    DateTime? createdAt,
+    Group? group,
+    String? avatarUrl,
+  }) {
+    return Student(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      surname: surname ?? this.surname,
+      email: email ?? this.email,
+      login: login ?? this.login,
+      password: password ?? this.password,
+      groupId: groupId ?? this.groupId,
+      isHeadman: isHeadman ?? this.isHeadman,
+      createdAt: createdAt ?? this.createdAt,
+      group: group ?? this.group,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+    );
   }
 }

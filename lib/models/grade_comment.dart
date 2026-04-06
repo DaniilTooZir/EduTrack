@@ -29,12 +29,30 @@ class GradeComment {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'grade_id': gradeId,
       'sender_teacher_id': senderTeacherId,
       'sender_students_id': senderStudentId,
       'message': message,
       'timestamp': timestamp.toIso8601String(),
     };
+  }
+
+  GradeComment copyWith({
+    String? id,
+    String? gradeId,
+    String? senderTeacherId,
+    String? senderStudentId,
+    String? message,
+    DateTime? timestamp,
+  }) {
+    return GradeComment(
+      id: id ?? this.id,
+      gradeId: gradeId ?? this.gradeId,
+      senderTeacherId: senderTeacherId ?? this.senderTeacherId,
+      senderStudentId: senderStudentId ?? this.senderStudentId,
+      message: message ?? this.message,
+      timestamp: timestamp ?? this.timestamp,
+    );
   }
 }

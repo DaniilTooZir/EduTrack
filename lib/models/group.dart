@@ -19,11 +19,21 @@ class Group {
 
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id,
+      if (id != null && id!.isNotEmpty) 'id': id,
       'name': name,
       'institution_id': institutionId,
       'curator_id': curatorId,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
+  }
+
+  Group copyWith({String? id, String? name, String? institutionId, String? curatorId, DateTime? createdAt}) {
+    return Group(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      institutionId: institutionId ?? this.institutionId,
+      curatorId: curatorId ?? this.curatorId,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }

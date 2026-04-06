@@ -34,12 +34,23 @@ class Chat {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'type': type,
       'name': name,
       'group_id': groupId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
+  }
+
+  Chat copyWith({String? id, String? type, String? name, String? groupId, DateTime? createdAt, DateTime? updatedAt}) {
+    return Chat(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      name: name ?? this.name,
+      groupId: groupId ?? this.groupId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

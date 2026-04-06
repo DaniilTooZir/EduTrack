@@ -35,6 +35,7 @@ class LessonComment {
 
   Map<String, dynamic> toMap() {
     return {
+      if (id != null && id!.isNotEmpty) 'id': id,
       'lesson_id': lessonId,
       'sender_teacher_id': senderTeacherId,
       'sender_student_id': senderStudentId,
@@ -43,5 +44,27 @@ class LessonComment {
       'file_url': fileUrl,
       'file_name': fileName,
     };
+  }
+
+  LessonComment copyWith({
+    String? id,
+    String? lessonId,
+    String? senderTeacherId,
+    String? senderStudentId,
+    String? message,
+    DateTime? timestamp,
+    String? fileUrl,
+    String? fileName,
+  }) {
+    return LessonComment(
+      id: id ?? this.id,
+      lessonId: lessonId ?? this.lessonId,
+      senderTeacherId: senderTeacherId ?? this.senderTeacherId,
+      senderStudentId: senderStudentId ?? this.senderStudentId,
+      message: message ?? this.message,
+      timestamp: timestamp ?? this.timestamp,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+    );
   }
 }

@@ -26,11 +26,21 @@ class ChatMember {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'chat_id': chatId,
       'user_id': userId,
       'user_role': userRole,
       'joined_at': joinedAt.toIso8601String(),
     };
+  }
+
+  ChatMember copyWith({String? id, String? chatId, String? userId, String? userRole, DateTime? joinedAt}) {
+    return ChatMember(
+      id: id ?? this.id,
+      chatId: chatId ?? this.chatId,
+      userId: userId ?? this.userId,
+      userRole: userRole ?? this.userRole,
+      joinedAt: joinedAt ?? this.joinedAt,
+    );
   }
 }
