@@ -1,4 +1,5 @@
 import 'package:edu_track/data/services/institution_request_status_service.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -207,7 +208,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                context.push('/login');
+                context.push(AppRoutes.login);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.secondary,

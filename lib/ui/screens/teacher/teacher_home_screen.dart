@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/chat_list_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart';
@@ -95,7 +96,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             onPressed: () async {
               await SessionService.clearSession();
               userProvider.clearUser();
-              if (context.mounted) context.go('/');
+              if (context.mounted) context.go(AppRoutes.welcome);
             },
           ),
         ],

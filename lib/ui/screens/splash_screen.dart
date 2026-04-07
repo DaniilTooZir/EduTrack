@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller.forward();
     Timer(const Duration(seconds: 4), () {
       if (!_isSkipping && mounted) {
-        context.go('/');
+        context.go(AppRoutes.welcome);
       }
     });
   }

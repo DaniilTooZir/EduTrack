@@ -1,13 +1,14 @@
+import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/data/local/app_database.dart';
 
 class StudentLessonScreen extends StatefulWidget {
   const StudentLessonScreen({super.key});
@@ -93,7 +94,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () => context.push('/student/lesson_comments', extra: lesson.id),
+              onTap: () => context.push(AppRoutes.studentLessonComments, extra: lesson.id),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -161,7 +162,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                         color: colors.onSecondaryContainer,
                         tooltip: 'Открыть чат',
                         onPressed: () {
-                          context.push('/student/lesson_comments', extra: lesson.id);
+                          context.push(AppRoutes.studentLessonComments, extra: lesson.id);
                         },
                       ),
                     ),

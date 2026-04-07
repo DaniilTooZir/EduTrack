@@ -1,5 +1,6 @@
 import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
@@ -55,19 +56,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
         switch (authResult.role) {
           case 'admin':
-            context.go('/admin-home');
+            context.go(AppRoutes.adminHome);
             break;
           case 'teacher':
-            context.go('/teacher-home');
+            context.go(AppRoutes.teacherHome);
             break;
           case 'student':
-            context.go('/student-home');
+            context.go(AppRoutes.studentHome);
             break;
           case 'schedule_operator':
-            context.go('/schedule-operator-home');
+            context.go(AppRoutes.scheduleOperatorHome);
             break;
           default:
-            context.go('/');
+            context.go(AppRoutes.welcome);
             break;
         }
       }
@@ -107,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.topLeft,
                 child: IconButton(
                   icon: Icon(Icons.arrow_back, color: colors.primary),
-                  onPressed: () => context.go('/'),
+                  onPressed: () => context.go(AppRoutes.welcome),
                 ),
               ),
               Align(

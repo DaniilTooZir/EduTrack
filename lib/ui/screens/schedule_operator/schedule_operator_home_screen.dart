@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
@@ -88,7 +89,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             onPressed: () async {
               await SessionService.clearSession();
               userProvider.clearUser();
-              if (context.mounted) context.go('/');
+              if (context.mounted) context.go(AppRoutes.welcome);
             },
           ),
         ],

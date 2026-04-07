@@ -2,8 +2,9 @@ import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/ui/screens/chat_screen.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/chat_list_screen.dart';
+import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
 import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
@@ -146,7 +147,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               await SessionService.clearSession();
               if (context.mounted) {
                 Provider.of<UserProvider>(context, listen: false).clearUser();
-                context.go('/');
+                context.go(AppRoutes.welcome);
               }
             },
           ),

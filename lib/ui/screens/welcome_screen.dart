@@ -1,3 +1,4 @@
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +60,7 @@ class WelcomeScreen extends StatelessWidget {
                               SizedBox(
                                 width: buttonWidth,
                                 child: ElevatedButton(
-                                  onPressed: () => context.push('/login'),
+                                  onPressed: () => context.push(AppRoutes.login),
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: colors.onPrimary,
                                     backgroundColor: colors.primary,
@@ -79,7 +80,7 @@ class WelcomeScreen extends StatelessWidget {
                               SizedBox(
                                 width: buttonWidth,
                                 child: OutlinedButton(
-                                  onPressed: () => context.push('/institution-request'),
+                                  onPressed: () => context.push(AppRoutes.institutionRequest),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: colors.primary,
                                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -98,7 +99,7 @@ class WelcomeScreen extends StatelessWidget {
                               SizedBox(
                                 width: buttonWidth,
                                 child: TextButton(
-                                  onPressed: () => context.push('/check-status'),
+                                  onPressed: () => context.push(AppRoutes.checkStatus),
                                   style: TextButton.styleFrom(
                                     foregroundColor: colors.secondary,
                                     textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),

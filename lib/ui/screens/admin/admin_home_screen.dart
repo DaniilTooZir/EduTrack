@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/dashboard_service.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
 import 'package:edu_track/ui/screens/admin/admin_profile_screen.dart';
 import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
@@ -83,7 +84,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             onPressed: () async {
               await SessionService.clearSession();
               userProvider.clearUser();
-              if (context.mounted) context.go('/');
+              if (context.mounted) context.go(AppRoutes.welcome);
             },
           ),
         ],

@@ -8,6 +8,7 @@ import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -115,13 +116,13 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     FilledButton.tonalIcon(
-                      onPressed: () => context.push('/teacher/lesson_comments', extra: lesson.id),
+                      onPressed: () => context.push(AppRoutes.teacherLessonComments, extra: lesson.id),
                       icon: const Icon(Icons.chat_bubble_outline, size: 18),
                       label: const Text('Чат'),
                     ),
                     const SizedBox(width: 8),
                     FilledButton.icon(
-                      onPressed: () => context.push('/teacher/grades', extra: lesson),
+                      onPressed: () => context.push(AppRoutes.teacherGrades, extra: lesson),
                       icon: const Icon(Icons.grade, size: 18),
                       label: const Text('Оценки'),
                     ),
