@@ -7,6 +7,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:edu_track/data/services/lesson_comment_service.dart';
+import 'package:edu_track/models/lesson_comment.dart';
 
 class StudentHomeworkScreen extends StatefulWidget {
   const StudentHomeworkScreen({super.key});
@@ -82,16 +84,85 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
         child: Text('Нет домашних заданий.', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16)),
       );
     }
+    final activeHomeworks =
+        _homeworks.where((hw) {
+          final status = _statuses[hw.id];
+          return status == null || (!status.isCompleted && status.fileUrl == null && status.studentComment == null);
+        }).toList();
+    final reviewHomeworks =
+        _homeworks.where((hw) {
+          final status = _statuses[hw.id];
+          return status != null && !status.isCompleted && (status.fileUrl != null || status.studentComment != null);
+        }).toList();
+    final completedHomeworks =
+        _homeworks.where((hw) {
+          final status = _statuses[hw.id];
+          return status != null && status.isCompleted;
+        }).toList();
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          Container(
+            color: colors.surface,
+            child: TabBar(
+              labelColor: colors.primary,
+              unselectedLabelColor: colors.onSurfaceVariant,
+              indicatorColor: colors.primary,
+              tabs: [
+                Tab(text: 'Актуальные (${activeHomeworks.length})'),
+                Tab(text: 'На проверке (${reviewHomeworks.length})'),
+                Tab(text: 'Завершенные (${completedHomeworks.length})'),
+              ],
+            ),
+          ),
+          // Содержимое вкладок
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildHomeworkList(activeHomeworks, colors),
+                _buildHomeworkList(reviewHomeworks, colors),
+                _buildHomeworkList(completedHomeworks, colors),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeworkList(List<Homework> list, ColorScheme colors) {
+    if (list.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.assignment_turned_in_outlined, size: 64, color: colors.onSurfaceVariant.withOpacity(0.3)),
+            const SizedBox(height: 16),
+            Text('В этой категории пусто', style: TextStyle(color: colors.onSurfaceVariant)),
+          ],
+        ),
+      );
+    }
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 800),
         child: ListView.builder(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          itemCount: _homeworks.length,
+          itemCount: list.length,
           itemBuilder: (context, index) {
-            final hw = _homeworks[index];
+            final hw = list[index];
             final status = _statuses[hw.id];
             final isDone = status?.isCompleted ?? false;
+            IconData statusIcon = Icons.priority_high;
+            Color statusColor = colors.onSurfaceVariant;
+            if (isDone) {
+              statusIcon = Icons.check_circle;
+              statusColor = Colors.green;
+            } else if (status?.fileUrl != null || status?.studentComment != null) {
+              statusIcon = Icons.access_time_filled;
+              statusColor = Colors.orange;
+            }
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 8),
               elevation: 2,
@@ -106,15 +177,8 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isDone ? Colors.green.withOpacity(0.1) : colors.surfaceContainerHighest,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isDone ? Icons.check : Icons.priority_high,
-                          color: isDone ? Colors.green : colors.onSurfaceVariant,
-                          size: 24,
-                        ),
+                        decoration: BoxDecoration(color: statusColor.withOpacity(0.1), shape: BoxShape.circle),
+                        child: Icon(statusIcon, color: statusColor, size: 24),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -178,20 +242,41 @@ class _HomeworkSubmissionSheet extends StatefulWidget {
 
 class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
   final _commentController = TextEditingController();
+  final _lessonCommentService = LessonCommentService();
   PlatformFile? _selectedFile;
   bool _isSubmitting = false;
   bool _isDone = false;
+  List<LessonComment> _teacherFeedback = [];
+  bool _isLoadingFeedback = false;
 
   @override
   void initState() {
     super.initState();
     _isDone = widget.status?.isCompleted ?? false;
+    _loadTeacherFeedback();
   }
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadTeacherFeedback() async {
+    if (widget.homework.lessonId == null) return;
+    setState(() => _isLoadingFeedback = true);
+    try {
+      final allComments = await _lessonCommentService.getCommentsByLessonId(widget.homework.lessonId!);
+      if (mounted) {
+        setState(() {
+          _teacherFeedback = allComments.where((c) => c.senderTeacherId != null).toList();
+          _isLoadingFeedback = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Ошибка загрузки фидбека: $e');
+      if (mounted) setState(() => _isLoadingFeedback = false);
+    }
   }
 
   Future<void> _pickFile() async {
@@ -332,6 +417,70 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           ),
                         ),
                       ),
+                    if (widget.homework.lessonId != null) ...[
+                      const SizedBox(height: 24),
+                      Text(
+                        'Обратная связь от учителя',
+                        style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_isLoadingFeedback)
+                        const LinearProgressIndicator()
+                      else if (_teacherFeedback.isEmpty)
+                        Text(
+                          'Преподаватель пока не оставил комментариев.',
+                          style: TextStyle(color: colors.onSurfaceVariant, fontStyle: FontStyle.italic, fontSize: 13),
+                        )
+                      else
+                        ..._teacherFeedback.map(
+                          (comment) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: colors.primaryContainer.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: colors.primary.withOpacity(0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (comment.message != null)
+                                  Text(comment.message!, style: const TextStyle(fontSize: 14)),
+                                if (comment.fileUrl != null) ...[
+                                  const SizedBox(height: 8),
+                                  InkWell(
+                                    onTap: () => _openFile(comment.fileUrl!),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.attachment, size: 16, color: colors.primary),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            comment.fileName ?? 'Прикрепленный файл',
+                                            style: TextStyle(
+                                              color: colors.primary,
+                                              fontSize: 12,
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 4),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Text(
+                                    "${comment.timestamp.day}.${comment.timestamp.month} ${comment.timestamp.hour}:${comment.timestamp.minute.toString().padLeft(2, '0')}",
+                                    style: TextStyle(fontSize: 10, color: colors.onSurfaceVariant),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                     const Divider(height: 40),
                     Text(
                       _isDone ? 'Ваш ответ (Сдано)' : 'Ваше решение',
@@ -343,6 +492,39 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                     ),
                     const SizedBox(height: 16),
                     if (_isDone) ...[
+                      if (status?.teacherComment != null && status!.teacherComment!.isNotEmpty) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.comment_bank_outlined, size: 18, color: Colors.orange[800]),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Замечания преподавателя:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.orange[800],
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(status.teacherComment!, style: const TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      ],
                       if (status?.studentComment != null && status!.studentComment!.isNotEmpty)
                         Container(
                           width: double.infinity,

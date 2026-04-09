@@ -6,6 +6,7 @@ class HomeworkStatus {
   final bool isCompleted;
   final DateTime updatedAt;
   final String? studentComment;
+  final String? teacherComment;
   final String? fileUrl;
   final String? fileName;
 
@@ -16,6 +17,7 @@ class HomeworkStatus {
     required this.isCompleted,
     required this.updatedAt,
     this.studentComment,
+    this.teacherComment,
     this.fileUrl,
     this.fileName,
   });
@@ -31,6 +33,7 @@ class HomeworkStatus {
               ? DateTime.tryParse(map['updated_at'].toString()) ?? DateTime.now()
               : DateTime.now(),
       studentComment: map['student_comment']?.toString(),
+      teacherComment: map['teacher_comment']?.toString(),
       fileUrl: map['file_url']?.toString(),
       fileName: map['file_name']?.toString(),
     );
@@ -44,6 +47,7 @@ class HomeworkStatus {
       'is_completed': isCompleted,
       'updated_at': updatedAt.toIso8601String(),
       'student_comment': studentComment,
+      'teacher_comment': teacherComment,
       'file_url': fileUrl,
       'file_name': fileName,
     };
@@ -56,6 +60,7 @@ class HomeworkStatus {
     bool? isCompleted,
     DateTime? updatedAt,
     String? studentComment,
+    String? teacherComment,
     String? fileUrl,
     String? fileName,
   }) {
@@ -66,6 +71,7 @@ class HomeworkStatus {
       isCompleted: isCompleted ?? this.isCompleted,
       updatedAt: updatedAt ?? this.updatedAt,
       studentComment: studentComment ?? this.studentComment,
+      teacherComment: teacherComment ?? this.teacherComment,
       fileUrl: fileUrl ?? this.fileUrl,
       fileName: fileName ?? this.fileName,
     );

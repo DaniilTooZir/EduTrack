@@ -281,11 +281,12 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
             student: student,
             status: status,
             homework: widget.homework,
-            onUpdate: (isCompleted) async {
+            onUpdate: (isCompleted, comment) async {
               await widget.homeworkService.evaluateHomework(
                 homeworkId: widget.homework.id,
                 studentId: student.id,
                 isCompleted: isCompleted,
+                teacherComment: comment,
               );
               _loadDetails();
             },
@@ -410,11 +411,11 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
   }
 }
 
-class _EvaluationDialog extends StatelessWidget {
+class _EvaluationDialog extends StatefulWidget {
   final Student student;
   final HomeworkStatus? status;
   final Homework homework;
-  final Function(bool) onUpdate;
+  final Function(bool, String?) onUpdate;
 
   const _EvaluationDialog({
     required this.student,
@@ -422,6 +423,25 @@ class _EvaluationDialog extends StatelessWidget {
     required this.homework,
     required this.onUpdate,
   });
+
+  @override
+  State<_EvaluationDialog> createState() => _EvaluationDialogState();
+}
+
+class _EvaluationDialogState extends State<_EvaluationDialog> {
+  late TextEditingController _feedbackController;
+
+  @override
+  void initState() {
+    super.initState();
+    _feedbackController = TextEditingController(text: widget.status?.teacherComment);
+  }
+
+  @override
+  void dispose() {
+    _feedbackController.dispose();
+    super.dispose();
+  }
 
   Future<void> _openFile(BuildContext context, String url) async {
     final uri = Uri.parse(url);
@@ -437,10 +457,10 @@ class _EvaluationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final isCompleted = status?.isCompleted ?? false;
-    final hasAnswer = status?.studentComment != null || status?.fileUrl != null;
+    final isCompleted = widget.status?.isCompleted ?? false;
+    final hasAnswer = widget.status?.studentComment != null || widget.status?.fileUrl != null;
     return AlertDialog(
-      title: Text('${student.surname} ${student.name}'),
+      title: Text('${widget.student.surname} ${widget.student.name}'),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,8 +472,11 @@ class _EvaluationDialog extends StatelessWidget {
                 style: TextStyle(color: colors.onSurfaceVariant, fontStyle: FontStyle.italic),
               )
             else ...[
-              if (status?.studentComment != null) ...[
-                Text('Комментарий:', style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold)),
+              if (widget.status?.studentComment != null) ...[
+                Text(
+                  'Комментарий студента:',
+                  style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
                 const SizedBox(height: 4),
                 Container(
                   width: double.infinity,
@@ -462,38 +485,60 @@ class _EvaluationDialog extends StatelessWidget {
                     color: colors.surfaceContainerHighest.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(status!.studentComment!),
+                  child: Text(widget.status!.studentComment!),
                 ),
                 const SizedBox(height: 16),
               ],
-              if (status?.fileUrl != null)
+              if (widget.status?.fileUrl != null)
                 OutlinedButton.icon(
-                  onPressed: () => _openFile(context, status!.fileUrl!),
+                  onPressed: () => _openFile(context, widget.status!.fileUrl!),
                   icon: const Icon(Icons.file_download),
-                  label: Text(status?.fileName ?? 'Скачать файл'),
+                  label: Text(widget.status?.fileName ?? 'Скачать файл'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: colors.primary,
                     side: BorderSide(color: colors.primary),
                   ),
                 ),
             ],
+            const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider()),
+            Text('Ваш отзыв:', style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _feedbackController,
+              maxLines: 3,
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Напишите замечания или похвалу...',
+                hintStyle: TextStyle(fontSize: 14, color: colors.onSurfaceVariant.withOpacity(0.5)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: colors.surface,
+              ),
+            ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Закрыть')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
         ElevatedButton.icon(
           onPressed: () {
-            onUpdate(!isCompleted);
+            widget.onUpdate(true, _feedbackController.text.trim());
             Navigator.pop(context);
           },
-          icon: Icon(isCompleted ? Icons.close : Icons.check),
-          label: Text(isCompleted ? 'Отменить сдачу' : 'Принять работу'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isCompleted ? colors.error : Colors.green,
-            foregroundColor: Colors.white,
-          ),
+          icon: const Icon(Icons.check),
+          label: const Text('Принять'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
         ),
+        if (isCompleted)
+          TextButton.icon(
+            onPressed: () {
+              widget.onUpdate(false, _feedbackController.text.trim());
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('На доработку'),
+            style: TextButton.styleFrom(foregroundColor: colors.error),
+          ),
       ],
     );
   }

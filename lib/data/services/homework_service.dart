@@ -124,8 +124,16 @@ class HomeworkService {
     required String homeworkId,
     required String studentId,
     required bool isCompleted,
+    String? teacherComment,
   }) async {
     try {
+      final data = {
+        'homework_id': homeworkId,
+        'student_id': studentId,
+        'is_completed': isCompleted,
+        'teacher_comment': teacherComment,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
       final existing =
           await _client
               .from('homework_status')
@@ -134,17 +142,9 @@ class HomeworkService {
               .eq('student_id', studentId)
               .maybeSingle();
       if (existing != null) {
-        await _client
-            .from('homework_status')
-            .update({'is_completed': isCompleted, 'updated_at': DateTime.now().toIso8601String()})
-            .eq('id', existing['id']);
+        await _client.from('homework_status').update(data).eq('id', existing['id']);
       } else {
-        await _client.from('homework_status').insert({
-          'homework_id': homeworkId,
-          'student_id': studentId,
-          'is_completed': isCompleted,
-          'updated_at': DateTime.now().toIso8601String(),
-        });
+        await _client.from('homework_status').insert(data);
       }
     } catch (e) {
       throw Exception('Ошибка при оценке задания: $e');
