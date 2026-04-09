@@ -25,6 +25,19 @@ class _ChatScreenState extends State<ChatScreen> {
   PlatformFile? _selectedFile;
   bool _isSending = false;
 
+  void _markChatAsRead() {
+    final myId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (myId != null) {
+      _chatService.markAsRead(widget.chatId, myId);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _markChatAsRead());
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
@@ -109,6 +122,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
+                  WidgetsBinding.instance.addPostFrameCallback((_) => _markChatAsRead());
                   final messages = snapshot.data!;
                   if (messages.isEmpty) {
                     return Center(child: Text('Сообщений пока нет', style: TextStyle(color: colors.onSurfaceVariant)));
@@ -120,7 +134,37 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemBuilder: (context, index) {
                       final message = messages[index];
                       final isMe = message.senderId == myId;
-                      return _buildMessageBubble(message, isMe, colors);
+                      bool showDateSeparator = false;
+                      if (index == messages.length - 1) {
+                        showDateSeparator = true;
+                      } else {
+                        final prevMessage = messages[index + 1];
+                        if (message.createdAt.day != prevMessage.createdAt.day) {
+                          showDateSeparator = true;
+                        }
+                      }
+                      return Column(
+                        children: [
+                          if (showDateSeparator)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: colors.surfaceContainerHighest.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _formatSeparatorDate(message.createdAt),
+                                    style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          _buildMessageBubble(message, isMe, colors),
+                        ],
+                      );
                     },
                   );
                 },
@@ -170,50 +214,97 @@ class _ChatScreenState extends State<ChatScreen> {
                     BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(0, 1)),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (message.content != null)
-                    Text(
-                      message.content!,
-                      style: TextStyle(color: isMe ? colors.onPrimaryContainer : colors.onSurface),
-                    ),
-                  if (message.fileUrl != null) ...[
-                    if (message.content != null) const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () => _openFile(message.fileUrl!),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: isMe ? Colors.white.withOpacity(0.3) : colors.surfaceContainerHighest,
+              child: IntrinsicWidth(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (message.content != null)
+                      Text(
+                        message.content!,
+                        style: TextStyle(color: isMe ? colors.onPrimaryContainer : colors.onSurface),
+                      ),
+                    if (message.fileUrl != null) ...[
+                      if (message.fileUrl!.toLowerCase().endsWith('.jpg') ||
+                          message.fileUrl!.toLowerCase().endsWith('.png') ||
+                          message.fileUrl!.toLowerCase().endsWith('.jpeg'))
+                        ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.attach_file,
-                              size: 16,
-                              color: isMe ? colors.onPrimaryContainer : colors.onSurface,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                message.fileName ?? 'Файл',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isMe ? colors.onPrimaryContainer : colors.onSurface,
-                                  decoration: TextDecoration.underline,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                          child: Image.network(
+                            message.fileUrl!,
+                            width: 200,
+                            height: 200,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+                          ),
+                        )
+                      else if (message.content != null)
+                        const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () => _openFile(message.fileUrl!),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isMe ? Colors.white.withOpacity(0.3) : colors.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.attach_file,
+                                size: 16,
+                                color: isMe ? colors.onPrimaryContainer : colors.onSurface,
                               ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  message.fileName ?? 'Файл',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isMe ? colors.onPrimaryContainer : colors.onSurface,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: isMe ? Alignment.bottomRight : Alignment.bottomLeft,
+                      child: Row(
+                        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isMe) const SizedBox(width: 20),
+                          Text(
+                            "${message.createdAt.hour}:${message.createdAt.minute.toString().padLeft(2, '0')}",
+                            style: TextStyle(
+                              fontSize: 10,
+                              color:
+                                  isMe
+                                      ? colors.onPrimaryContainer.withOpacity(0.5)
+                                      : colors.onSurfaceVariant.withOpacity(0.5),
+                            ),
+                          ),
+                          if (isMe) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              message.isRead ? Icons.done_all : Icons.done,
+                              size: 14,
+                              color: message.isRead ? Colors.blue : colors.onPrimaryContainer.withOpacity(0.3),
                             ),
                           ],
-                        ),
+                          if (!isMe) const SizedBox(width: 20),
+                        ],
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
             ),
           ],
@@ -290,5 +381,35 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  String _formatSeparatorDate(DateTime date) {
+    final now = DateTime.now();
+    if (date.day == now.day && date.month == now.month && date.year == now.year) {
+      return "Сегодня";
+    }
+    final yesterday = now.subtract(const Duration(days: 1));
+    if (date.day == yesterday.day && date.month == yesterday.month && date.year == yesterday.year) {
+      return "Вчера";
+    }
+    return "${date.day} ${_getMonthName(date.month)}";
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'января',
+      'февраля',
+      'марта',
+      'апреля',
+      'мая',
+      'июня',
+      'июля',
+      'августа',
+      'сентября',
+      'октября',
+      'ноября',
+      'декабря',
+    ];
+    return months[month - 1];
   }
 }

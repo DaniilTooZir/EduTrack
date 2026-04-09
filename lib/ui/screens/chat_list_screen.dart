@@ -95,10 +95,32 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
-                          isGroup ? 'Групповой чат' : 'Личное сообщение',
-                          style: TextStyle(color: colors.onSurfaceVariant),
+                          chatPreview.lastMessage ?? (isGroup ? 'Групповой чат' : 'Личное сообщение'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: chatPreview.isRead ? colors.onSurfaceVariant : colors.primary,
+                            fontWeight: chatPreview.isRead ? FontWeight.normal : FontWeight.bold,
+                          ),
                         ),
-                        trailing: Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (chatPreview.lastMessageTime != null)
+                              Text(
+                                "${chatPreview.lastMessageTime!.hour}:${chatPreview.lastMessageTime!.minute.toString().padLeft(2, '0')}",
+                                style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                              ),
+                            const SizedBox(height: 4),
+                            if (!chatPreview.isRead)
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle),
+                              ),
+                          ],
+                        ),
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(

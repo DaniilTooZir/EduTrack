@@ -8,11 +8,21 @@ class ChatPreview {
   final String title;
   final String? avatarUrl;
   final String? lastMessage;
-  ChatPreview({required this.chat, required this.title, this.avatarUrl, this.lastMessage});
+  final DateTime? lastMessageTime;
+  final bool isRead;
+  ChatPreview({
+    required this.chat,
+    required this.title,
+    this.avatarUrl,
+    this.lastMessage,
+    this.lastMessageTime,
+    this.isRead = true,
+  });
 }
 
 class ChatService {
   final SupabaseClient _client;
+
   ChatService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
   Future<List<Chat>> getUserChats(String userId) async {
@@ -196,19 +206,57 @@ class ChatService {
     try {
       final response = await _client.from('chat_members').select('chat:chats(*)').eq('user_id', userId);
       final List<dynamic> data = response as List<dynamic>;
-      final chats = data.map((e) => Chat.fromMap(e['chat'] as Map<String, dynamic>)).toList();
-      chats.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      final List<Chat> chats = data.map((e) => Chat.fromMap(e['chat'] as Map<String, dynamic>)).toList();
       final List<ChatPreview> previews = [];
       for (var chat in chats) {
+        final msgRes =
+            await _client
+                .from('messages')
+                .select()
+                .eq('chat_id', chat.id)
+                .order('created_at', ascending: false)
+                .limit(1)
+                .maybeSingle();
+        String? lastText;
+        DateTime? lastTime;
+        bool isRead = true;
+        if (msgRes != null) {
+          lastText = msgRes['content'] ?? (msgRes['file_url'] != null ? '📎 Файл' : '');
+          lastTime = DateTime.tryParse(msgRes['created_at'].toString());
+          if (msgRes['sender_id'] != userId) {
+            isRead = msgRes['is_read'] == true;
+          }
+        }
         if (chat.type == 'group') {
-          previews.add(ChatPreview(chat: chat, title: chat.name ?? 'Группа', avatarUrl: null));
+          previews.add(
+            ChatPreview(
+              chat: chat,
+              title: chat.name ?? 'Группа',
+              lastMessage: lastText,
+              lastMessageTime: lastTime,
+              isRead: isRead,
+            ),
+          );
         } else {
           final interlocutor = await getChatInterlocutor(chat.id, userId);
           previews.add(
-            ChatPreview(chat: chat, title: interlocutor['name'] ?? 'Неизвестный', avatarUrl: interlocutor['avatar']),
+            ChatPreview(
+              chat: chat,
+              title: interlocutor['name'] ?? 'Неизвестный',
+              avatarUrl: interlocutor['avatar'],
+              lastMessage: lastText,
+              lastMessageTime: lastTime,
+              isRead: isRead,
+            ),
           );
         }
       }
+      previews.sort((a, b) {
+        if (a.lastMessageTime == null) return 1;
+        if (b.lastMessageTime == null) return -1;
+        return b.lastMessageTime!.compareTo(a.lastMessageTime!);
+      });
+
       return previews;
     } catch (e) {
       throw Exception('Ошибка загрузки списка чатов: $e');
@@ -222,5 +270,18 @@ class ChatService {
         .eq('chat_id', chatId)
         .order('created_at', ascending: false)
         .map((maps) => maps.map((map) => Message.fromMap(map)).toList());
+  }
+
+  Future<void> markAsRead(String chatId, String userId) async {
+    try {
+      await _client
+          .from('messages')
+          .update({'is_read': true})
+          .eq('chat_id', chatId)
+          .neq('sender_id', userId)
+          .eq('is_read', false);
+    } catch (e) {
+      throw Exception('Ошибка при отметке сообщений прочитанными: $e');
+    }
   }
 }
