@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 
 class FileService {
   final _supabase = SupabaseConnection.client;
+
   Future<PlatformFile?> pickFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -30,16 +31,52 @@ class FileService {
   }
 
   String _sanitizeFileName(String name) {
-    const ru = 'а-б-в-г-д-е-ё-ж-з-и-й-к-л-м-н-о-п-р-с-т-у-ф-х-ц-ч-ш-щ-ъ-ы-ь-э-ю-я';
-    const en = 'a-b-v-g-d-e-yo-zh-z-i-y-k-l-m-n-o-p-r-s-t-u-f-kh-ts-ch-sh-shch--y--e-yu-ya';
-    final ruList = ru.split('-');
-    final enList = en.split('-');
-    String res = name.toLowerCase();
-    for (int i = 0; i < ruList.length; i++) {
-      res = res.replaceAll(ruList[i], enList[i]);
+    const ruToEn = {
+      'а': 'a',
+      'б': 'b',
+      'в': 'v',
+      'г': 'g',
+      'д': 'd',
+      'е': 'e',
+      'ё': 'yo',
+      'ж': 'zh',
+      'з': 'z',
+      'и': 'i',
+      'й': 'y',
+      'к': 'k',
+      'л': 'l',
+      'м': 'm',
+      'н': 'n',
+      'о': 'o',
+      'п': 'p',
+      'р': 'r',
+      'с': 's',
+      'т': 't',
+      'у': 'u',
+      'ф': 'f',
+      'х': 'kh',
+      'ц': 'ts',
+      'ч': 'ch',
+      'ш': 'sh',
+      'щ': 'shch',
+      'ъ': '',
+      'ы': 'y',
+      'ь': '',
+      'э': 'e',
+      'ю': 'yu',
+      'я': 'ya',
+    };
+    String result = name.toLowerCase();
+    String transliterated = '';
+    for (int i = 0; i < result.length; i++) {
+      transliterated += ruToEn[result[i]] ?? result[i];
     }
-    res = res.replaceAll(' ', '_');
-    res = res.replaceAll(RegExp(r'[^a-z0-9._-]'), '');
-    return res;
+    result = transliterated.replaceAll(' ', '_');
+    result = result.replaceAll(RegExp(r'[^a-z0-9._-]'), '');
+    if (result.length > 100) {
+      final ext = result.contains('.') ? result.split('.').last : '';
+      result = result.substring(0, 80) + (ext.isNotEmpty ? '.$ext' : '');
+    }
+    return result;
   }
 }

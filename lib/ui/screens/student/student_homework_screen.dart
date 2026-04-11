@@ -243,10 +243,11 @@ class _HomeworkSubmissionSheet extends StatefulWidget {
 class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
   final _commentController = TextEditingController();
   final _lessonCommentService = LessonCommentService();
-  PlatformFile? _selectedFile;
+  //PlatformFile? _selectedFile;
   bool _isSubmitting = false;
   bool _isDone = false;
   List<LessonComment> _teacherFeedback = [];
+  List<PlatformFile> _selectedFiles = [];
   bool _isLoadingFeedback = false;
 
   @override
@@ -280,20 +281,28 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
   }
 
   Future<void> _pickFile() async {
-    final file = await widget.fileService.pickFile();
-    if (file != null) {
-      setState(() => _selectedFile = file);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png', 'zip', 'rar'],
+      allowMultiple: true,
+    );
+    if (result != null) {
+      setState(() {
+        _selectedFiles.addAll(result.files);
+      });
     }
   }
 
   Future<void> _submitWork() async {
+    if (_selectedFiles.isEmpty && _commentController.text.trim().isEmpty) return;
     setState(() => _isSubmitting = true);
     try {
       String? fileUrl;
       String? fileName;
-      if (_selectedFile != null) {
-        fileUrl = await widget.fileService.uploadFile(file: _selectedFile!, folderName: 'student_homeworks');
-        fileName = _selectedFile!.name;
+      if (_selectedFiles.isNotEmpty) {
+        final fileToUpload = _selectedFiles.first;
+        fileUrl = await widget.fileService.uploadFile(file: fileToUpload, folderName: 'student_homeworks');
+        fileName = fileToUpload.name;
         if (fileUrl == null) throw Exception('Не удалось загрузить файл');
       }
       await widget.homeworkService.submitHomework(
@@ -600,25 +609,53 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             children: [
                               Icon(Icons.upload_file, color: colors.primary),
                               const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _selectedFile != null ? _selectedFile!.name : 'Прикрепить файл (необязательно)',
-                                  style: TextStyle(
-                                    color: _selectedFile != null ? colors.onSurface : colors.onSurfaceVariant,
-                                    fontWeight: _selectedFile != null ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                              Text(
+                                'Прикрепить файлы (необязательно)',
+                                style: TextStyle(color: colors.onSurfaceVariant),
                               ),
-                              if (_selectedFile != null)
-                                IconButton(
-                                  icon: Icon(Icons.close, color: colors.error),
-                                  onPressed: () => setState(() => _selectedFile = null),
-                                ),
                             ],
                           ),
                         ),
                       ),
+                      if (_selectedFiles.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        ..._selectedFiles.map(
+                          (file) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colors.surfaceContainerHighest.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: colors.outline.withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.insert_drive_file_outlined, size: 20, color: colors.primary),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    file.name,
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.close, size: 20, color: colors.error),
+                                  onPressed: () => setState(() => _selectedFiles.remove(file)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (_selectedFiles.length > 1)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4, bottom: 8),
+                            child: Text(
+                              'Будет отправлен только первый файл: ${_selectedFiles.first.name}',
+                              style: TextStyle(color: colors.error, fontSize: 11, fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                      ],
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
