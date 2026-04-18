@@ -27,6 +27,9 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   String? _institutionId;
   final _formKey = GlobalKey<FormState>();
 
+  String? _currentConflictError;
+  bool _isCheckingConflict = false;
+
   DateTime? _selectedDate;
   String? _selectedSubjectId;
   String? _selectedGroupId;
@@ -189,6 +192,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       setState(() {
         _selectedSubjectId = null;
         _selectedGroupId = null;
+        _currentConflictError = null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -232,6 +236,43 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     }
   }
 
+  Future<void> _validateConflict() async {
+    if (_selectedDate == null ||
+        _startTime == null ||
+        _endTime == null ||
+        _selectedTeacherId == null ||
+        _selectedGroupId == null ||
+        _institutionId == null) {
+      setState(() => _currentConflictError = null);
+      return;
+    }
+    if (_timeToMinutes(_endTime!) <= _timeToMinutes(_startTime!)) {
+      setState(() => _currentConflictError = 'Конец не может быть раньше начала');
+      return;
+    }
+    setState(() => _isCheckingConflict = true);
+    try {
+      final conflict = await _scheduleService.checkConflict(
+        institutionId: _institutionId!,
+        date: _selectedDate!,
+        startTime: _formatTimeOfDay(_startTime!),
+        endTime: _formatTimeOfDay(_endTime!),
+        teacherId: _selectedTeacherId!,
+        groupId: _selectedGroupId!,
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentConflictError = conflict;
+          _isCheckingConflict = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Ошибка автопроверки: $e');
+      if (mounted) setState(() => _isCheckingConflict = false);
+    }
+  }
+
   Widget _buildDatePicker(ColorScheme colors) => InkWell(
     onTap: () async {
       final picked = await showDatePicker(
@@ -240,7 +281,10 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         firstDate: DateTime.now().subtract(const Duration(days: 365)),
         lastDate: DateTime.now().add(const Duration(days: 365)),
       );
-      if (picked != null) setState(() => _selectedDate = picked);
+      if (picked != null) {
+        setState(() => _selectedDate = picked);
+        _validateConflict();
+      }
     },
     child: InputDecorator(
       decoration: InputDecoration(
@@ -265,7 +309,10 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
             initialTime: time ?? const TimeOfDay(hour: 8, minute: 0),
             helpText: label.toUpperCase(),
           );
-          if (picked != null) onTimePicked(picked);
+          if (picked != null) {
+            onTimePicked(picked);
+            _validateConflict();
+          }
         },
         child: InputDecorator(
           decoration: InputDecoration(
@@ -347,7 +394,10 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                             ),
                                           )
                                           .toList(),
-                                  onChanged: (val) => setState(() => _selectedSubjectId = val),
+                                  onChanged: (val) {
+                                    setState(() => _selectedSubjectId = val);
+                                    _validateConflict();
+                                  },
                                   validator: (val) => val == null ? 'Предмет?' : null,
                                 ),
                               ),
@@ -370,7 +420,10 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                             ),
                                           )
                                           .toList(),
-                                  onChanged: (val) => setState(() => _selectedGroupId = val),
+                                  onChanged: (val) {
+                                    setState(() => _selectedGroupId = val);
+                                    _validateConflict();
+                                  },
                                   validator: (val) => val == null ? 'Группа?' : null,
                                 ),
                               ),
@@ -394,20 +447,62 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                       ),
                                     )
                                     .toList(),
-                            onChanged: (val) => setState(() => _selectedTeacherId = val),
+                            onChanged: (val) {
+                              setState(() => _selectedTeacherId = val);
+                              _validateConflict();
+                            },
                             validator: (val) => val == null ? 'Преподаватель?' : null,
                           ),
+                          if (_isCheckingConflict || _currentConflictError != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color:
+                                      _isCheckingConflict
+                                          ? colors.surfaceVariant.withOpacity(0.5)
+                                          : colors.errorContainer.withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: _isCheckingConflict ? colors.outline : colors.error),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _isCheckingConflict
+                                        ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                        : Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        _isCheckingConflict ? 'Проверка наложений...' : _currentConflictError!,
+                                        style: TextStyle(
+                                          color:
+                                              _isCheckingConflict ? colors.onSurfaceVariant : colors.onErrorContainer,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 backgroundColor: colors.primary,
                                 foregroundColor: colors.onPrimary,
                               ),
-                              onPressed: _isAdding ? null : _addScheduleEntry,
+                              onPressed: (_isAdding || _currentConflictError != null) ? null : _addScheduleEntry,
                               icon:
                                   _isAdding
                                       ? SizedBox(
