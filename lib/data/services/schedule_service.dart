@@ -150,4 +150,30 @@ class ScheduleService {
       return null;
     }
   }
+
+  Future<void> copyScheduleToNextWeek(String institutionId, DateTime startOfCurrentWeek) async {
+    try {
+      final endOfCurrentWeek = startOfCurrentWeek.add(const Duration(days: 6));
+      final response = await _client
+          .from('schedule')
+          .select()
+          .eq('institution_id', institutionId)
+          .gte('date', startOfCurrentWeek.toIso8601String())
+          .lte('date', endOfCurrentWeek.toIso8601String());
+      final List<dynamic> data = response as List<dynamic>;
+      if (data.isEmpty) throw Exception('На этой неделе нет занятий для копирования');
+      final newEntries =
+          data.map((item) {
+            final oldDate = DateTime.parse(item['date']);
+            final newDate = oldDate.add(const Duration(days: 7));
+            final newItem = Map<String, dynamic>.from(item);
+            newItem.remove('id');
+            newItem['date'] = newDate.toIso8601String();
+            return newItem;
+          }).toList();
+      await _client.from('schedule').insert(newEntries);
+    } catch (e) {
+      throw Exception('Ошибка при копировании расписания: $e');
+    }
+  }
 }

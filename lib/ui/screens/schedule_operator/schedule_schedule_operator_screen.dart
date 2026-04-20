@@ -29,6 +29,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
 
   String? _currentConflictError;
   bool _isCheckingConflict = false;
+  bool _isCloning = false;
 
   DateTime? _selectedDate;
   String? _selectedSubjectId;
@@ -201,6 +202,37 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       );
     } finally {
       if (mounted) setState(() => _isAdding = false);
+    }
+  }
+
+  Future<void> _duplicateSchedule() async {
+    final now = DateTime.now();
+    final startOfWeeks = now.subtract(Duration(days: now.weekday - 1));
+    final mondayFormatted = "${startOfWeeks.day}.${startOfWeeks.month}";
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Копирование недели'),
+            content: Text('Скопировать все занятия с текущей недели (начиная с $mondayFormatted) на следующую?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Да, копировать')),
+            ],
+          ),
+    );
+    if (confirmed == true) {
+      setState(() => _isCloning = true);
+      try {
+        await _scheduleService.copyScheduleToNextWeek(_institutionId!, startOfWeeks);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Расписание успешно скопировано!')));
+        _loadSchedule();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      } finally {
+        if (mounted) setState(() => _isCloning = false);
+      }
     }
   }
 
@@ -520,12 +552,22 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                   ),
                 ),
                 const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Расписание занятий',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Расписание занятий',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary),
+                    ),
+                    if (!_isCloning)
+                      IconButton.filledTonal(
+                        onPressed: _duplicateSchedule,
+                        icon: const Icon(Icons.copy_all, size: 20),
+                        tooltip: 'Копировать неделю',
+                      )
+                    else
+                      const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Expanded(
