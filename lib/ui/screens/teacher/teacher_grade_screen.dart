@@ -43,17 +43,26 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
       final schedule = await _studentService.getScheduleById(lesson.scheduleId);
       if (schedule == null) throw Exception('Не удалось найти расписание урока');
       final groupId = schedule.groupId;
-      _students = await _studentService.getStudentsByGroupId(groupId);
-
-      // Загружается же существующие оценки (если есть) - опционально, пока просто инит null
-      // В идеале тут нужен метод getGradesByLesson, но пока оставлю простую логику
-      for (final student in _students) {
-        _grades[student.id] = null;
+      final results = await Future.wait([
+        _studentService.getStudentsByGroupId(groupId),
+        _gradeService.getGradesByLesson(lesson.id!),
+      ]);
+      final students = results[0] as List<Student>;
+      final grades = results[1] as List<Grade>;
+      if (mounted) {
+        setState(() {
+          _students = students;
+          final Map<String, int> existingGradesMap = {for (var g in grades) g.studentId: g.value};
+          for (final student in _students) {
+            _grades[student.id] = existingGradesMap[student.id];
+          }
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      debugPrint('Ошибка при загрузке студентов: $e');
+      debugPrint('Ошибка при загрузке данных журнала: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() => _isLoading = false);
   }
 
   Future<void> _submitGrades() async {
@@ -130,7 +139,10 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                                                     grade.toString(),
                                                     style: TextStyle(
                                                       fontWeight: FontWeight.bold,
-                                                      color: colors.onSurface,
+                                                      color:
+                                                          grade >= 4
+                                                              ? Colors.green
+                                                              : (grade == 3 ? Colors.orange : Colors.red),
                                                     ),
                                                   ),
                                                 ),
