@@ -8,9 +8,7 @@ class Validators {
 
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) return 'Введите Email';
-    final emailReg = RegExp(
-      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
-    );
+    final emailReg = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
     if (!emailReg.hasMatch(value)) {
       return 'Введите корректный Email';
     }
@@ -33,14 +31,13 @@ class Validators {
 
   static String? validatePhone(String? value) {
     if (value == null || value.trim().isEmpty) return null;
-    final phoneReg = RegExp(r'^\+?[0-9\s\-\(\)]+$');
-    final cleanPhone = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (!phoneReg.hasMatch(value)) {
-      return 'Некорректный формат телефона';
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    var body = digits;
+    if ((body.startsWith('7') || body.startsWith('8')) && body.length > 1) {
+      body = body.substring(1);
     }
-    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
-      return 'Телефон должен содержать от 10 до 15 цифр';
-    }
+    if (body.isEmpty) return null;
+    if (body.length < 10) return 'Введите номер полностью';
     return null;
   }
 
@@ -55,7 +52,6 @@ class Validators {
     if (value == null || value.trim().isEmpty) {
       return 'Название обязательно';
     }
-
 
     final nameReg = RegExp(r'^[a-zA-Zа-яА-ЯёЁ0-9\s"\-.,№\(\)«»]+$');
     if (!nameReg.hasMatch(value)) {

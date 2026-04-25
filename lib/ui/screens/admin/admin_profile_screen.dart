@@ -5,6 +5,7 @@ import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/phone_mask_formatter.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -89,7 +90,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     if (_admin == null) return;
     _nameController.text = _admin!.name;
     _surnameController.text = _admin!.surname;
-    _phoneController.text = _admin!.phone;
+    _phoneController.text = PhoneMaskFormatter.format(_admin!.phone);
     _loginController.text = _admin!.login;
   }
 
@@ -325,7 +326,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
             label: 'Телефон',
             type: TextInputType.phone,
             validator: Validators.validatePhone,
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\(\)\s]'))],
+            inputFormatters: [PhoneMaskFormatter()],
+            hintText: '+7 (___) ___-__-__',
           ),
           _buildField(
             controller: _loginController,
@@ -412,12 +414,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     TextInputType type = TextInputType.text,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
+    String? hintText,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        decoration: InputDecoration(labelText: label, hintText: hintText, border: const OutlineInputBorder()),
         keyboardType: type,
         validator: validator,
         inputFormatters: inputFormatters,

@@ -1,5 +1,6 @@
 import 'package:edu_track/data/services/institution_request_service.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/phone_mask_formatter.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -153,7 +154,8 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             icon: Icons.phone,
                             inputType: TextInputType.phone,
                             validator: Validators.validatePhone,
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9\+\-\s\(\)]'))],
+                            inputFormatters: [PhoneMaskFormatter()],
+                            hintText: '+7 (___) ___-__-__',
                             colors: colors,
                           ),
                           _buildTextField(
@@ -211,6 +213,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
     TextInputType inputType = TextInputType.text,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
+    String? hintText,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -224,10 +227,11 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
         autovalidateMode: AutovalidateMode.onUserInteraction,
         decoration: InputDecoration(
           labelText: label,
+          hintText: hintText,
           prefixIcon: icon != null ? Icon(icon, color: colors.primary) : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: colors.surfaceContainerHighest.withOpacity(0.3),
+          fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.3),
           counterText: '',
         ),
       ),
