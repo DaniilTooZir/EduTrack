@@ -1,14 +1,15 @@
 import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
+import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
+import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:edu_track/data/services/lesson_comment_service.dart';
-import 'package:edu_track/models/lesson_comment.dart';
 
 class StudentHomeworkScreen extends StatefulWidget {
   const StudentHomeworkScreen({super.key});
@@ -77,7 +78,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return _buildHomeworkSkeleton();
     }
     if (_homeworks.isEmpty) {
       return Center(
@@ -220,6 +221,41 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
       ),
     );
   }
+
+  Widget _buildHomeworkSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      itemBuilder:
+          (context, index) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Row(
+                children: [
+                  Skeleton(height: 44, width: 44, borderRadius: 22),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Skeleton(height: 16, width: 150),
+                        SizedBox(height: 8),
+                        Skeleton(height: 12, width: 100),
+                      ],
+                    ),
+                  ),
+                  Skeleton(height: 20, width: 20, borderRadius: 10),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
 }
 
 class _HomeworkSubmissionSheet extends StatefulWidget {
@@ -247,7 +283,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
   bool _isSubmitting = false;
   bool _isDone = false;
   List<LessonComment> _teacherFeedback = [];
-  List<PlatformFile> _selectedFiles = [];
+  final List<PlatformFile> _selectedFiles = [];
   bool _isLoadingFeedback = false;
 
   @override

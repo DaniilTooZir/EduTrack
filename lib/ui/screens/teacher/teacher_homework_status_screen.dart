@@ -167,7 +167,7 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedSubjectId,
+                    initialValue: _selectedSubjectId,
                     decoration: const InputDecoration(
                       labelText: 'Предмет',
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -185,7 +185,7 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedGroupId,
+                    initialValue: _selectedGroupId,
                     decoration: const InputDecoration(
                       labelText: 'Группа',
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),

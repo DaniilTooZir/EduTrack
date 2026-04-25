@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/models/message.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -120,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     return Center(child: Text('Ошибка: ${snapshot.error}'));
                   }
                   if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
+                    return _buildMessagesSkeleton();
                   }
                   WidgetsBinding.instance.addPostFrameCallback((_) => _markChatAsRead());
                   final messages = snapshot.data!;
@@ -386,13 +387,13 @@ class _ChatScreenState extends State<ChatScreen> {
   String _formatSeparatorDate(DateTime date) {
     final now = DateTime.now();
     if (date.day == now.day && date.month == now.month && date.year == now.year) {
-      return "Сегодня";
+      return 'Сегодня';
     }
     final yesterday = now.subtract(const Duration(days: 1));
     if (date.day == yesterday.day && date.month == yesterday.month && date.year == yesterday.year) {
-      return "Вчера";
+      return 'Вчера';
     }
-    return "${date.day} ${_getMonthName(date.month)}";
+    return '${date.day} ${_getMonthName(date.month)}';
   }
 
   String _getMonthName(int month) {
@@ -411,5 +412,23 @@ class _ChatScreenState extends State<ChatScreen> {
       'декабря',
     ];
     return months[month - 1];
+  }
+
+  Widget _buildMessagesSkeleton() {
+    return ListView.builder(
+      reverse: true,
+      itemCount: 8,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final isMe = index % 2 == 0;
+        return Align(
+          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Skeleton(height: 50, width: 150 + (index * 20 % 100).toDouble(), borderRadius: 16),
+          ),
+        );
+      },
+    );
   }
 }

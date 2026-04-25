@@ -38,11 +38,11 @@ class AppTheme {
       elevation: 0,
       centerTitle: true,
     ),
-      cardTheme: const CardThemeData(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-        color: Color(0xFF1E1E1E),
-      ),
+    cardTheme: const CardThemeData(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+      color: Color(0xFF1E1E1E),
+    ),
   );
 
   static final ThemeData purpleTheme = ThemeData(

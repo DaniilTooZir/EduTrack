@@ -57,6 +57,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
 
   connectivity_plus: ^6.0.0
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

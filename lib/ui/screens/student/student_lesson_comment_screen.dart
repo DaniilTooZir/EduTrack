@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -208,7 +209,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
           Expanded(
             child:
                 _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? _buildLoadingSkeleton()
                     : _comments.isEmpty
                     ? Center(child: Text('Нет комментариев', style: TextStyle(color: colors.onSurfaceVariant)))
                     : RefreshIndicator(
@@ -310,6 +311,32 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton() {
+    const bubbles = [
+      (true, 180.0),
+      (false, 140.0),
+      (true, 220.0),
+      (false, 110.0),
+      (true, 160.0),
+      (false, 200.0),
+    ];
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      children:
+          bubbles
+              .map(
+                (b) => Align(
+                  alignment: b.$1 ? Alignment.centerLeft : Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                    child: Skeleton(height: 52, width: b.$2, borderRadius: 16),
+                  ),
+                ),
+              )
+              .toList(),
     );
   }
 }

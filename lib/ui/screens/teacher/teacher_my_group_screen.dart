@@ -6,6 +6,7 @@ import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -100,7 +101,7 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
         child: SafeArea(
           child:
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? _buildMyGroupSkeleton()
                   : _myGroup == null
                   ? Center(
                     child: Column(
@@ -189,7 +190,7 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                                       message: 'Назначить старостой',
                                       child: Switch(
                                         value: student.isHeadman,
-                                        activeColor: Colors.amber,
+                                        activeThumbColor: Colors.amber,
                                         onChanged: (value) {
                                           if (value) {
                                             _setHeadman(student);
@@ -245,5 +246,29 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
     }
+  }
+
+  Widget _buildMyGroupSkeleton() {
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Skeleton(height: 120, width: double.infinity, borderRadius: 16),
+        ),
+        const SizedBox(height: 24),
+        Expanded(
+          child: ListView.builder(
+            itemCount: 8,
+            itemBuilder:
+                (context, index) => const ListTile(
+                  leading: Skeleton(height: 40, width: 40, borderRadius: 20),
+                  title: Skeleton(height: 14, width: 140),
+                  subtitle: Skeleton(height: 10, width: 180),
+                  trailing: Skeleton(height: 24, width: 40),
+                ),
+          ),
+        ),
+      ],
+    );
   }
 }

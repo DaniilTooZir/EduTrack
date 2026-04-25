@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/user_add_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,7 +26,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
   String? _selectedRole;
   List<Group> _groups = [];
   Group? _selectedGroup;
-  bool _isLoading = false;
+  bool _isGroupsLoading = true;
+  bool _isSubmitting = false;
   bool _isPasswordVisible = false;
   final _groupService = GroupService();
 
@@ -48,14 +50,17 @@ class _AddUserScreenState extends State<AddUserScreen> {
   Future<void> _loadGroups() async {
     final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
+    setState(() => _isGroupsLoading = true);
     try {
       final groups = await _groupService.getGroups(institutionId);
       if (mounted) {
         setState(() {
           _groups = groups;
+          _isGroupsLoading = false;
         });
       }
     } catch (e) {
+      if (mounted) setState(() => _isGroupsLoading = false);
       debugPrint('Ошибка загрузки групп: $e');
     }
   }
@@ -71,7 +76,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() => _isSubmitting = true);
 
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -109,7 +114,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.redAccent));
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -130,6 +135,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
+    if (_isGroupsLoading) return _buildFormSkeleton(themeProvider);
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
@@ -266,9 +272,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             foregroundColor: colors.onPrimary,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          onPressed: _isLoading ? null : _addUser,
+                          onPressed: _isSubmitting ? null : _addUser,
                           child:
-                              _isLoading
+                              _isSubmitting
                                   ? SizedBox(
                                     height: 24,
                                     width: 24,
@@ -281,6 +287,53 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormSkeleton(ThemeProvider themeProvider) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Center(child: Skeleton(height: 28, width: 220)),
+                      const SizedBox(height: 24),
+                      const Row(
+                        children: [
+                          Expanded(child: Skeleton(height: 56)),
+                          SizedBox(width: 16),
+                          Expanded(child: Skeleton(height: 56)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Skeleton(height: 56),
+                      const SizedBox(height: 16),
+                      const Skeleton(height: 56),
+                      const SizedBox(height: 16),
+                      const Skeleton(height: 56),
+                      const SizedBox(height: 16),
+                      const Skeleton(height: 56),
+                      const SizedBox(height: 24),
+                      const Skeleton(height: 48),
+                    ],
                   ),
                 ),
               ),

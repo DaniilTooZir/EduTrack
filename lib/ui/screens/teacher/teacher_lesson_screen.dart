@@ -10,6 +10,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -192,7 +193,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                       const SizedBox(height: 12),
                       DropdownButtonFormField<Group>(
                         decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
-                        value: selectedGroup,
+                        initialValue: selectedGroup,
                         items: _groups.map((g) => DropdownMenuItem(value: g, child: Text(g.name))).toList(),
                         onChanged:
                             selectedSubject == null
@@ -290,7 +291,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
         child: SafeArea(
           child:
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? _buildTeacherLessonsSkeleton()
                   : _lessons.isEmpty
                   ? Center(
                     child: Text('Проведенных занятий пока нет', style: TextStyle(color: colors.onSurfaceVariant)),
@@ -302,6 +303,53 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                   ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTeacherLessonsSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: 5,
+      itemBuilder:
+          (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Column(
+                children: [
+                  Row(
+                    children: [
+                      Skeleton(height: 48, width: 48, borderRadius: 24),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Skeleton(height: 16, width: 120),
+                            SizedBox(height: 8),
+                            Skeleton(height: 12, width: 200),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Skeleton(height: 36, width: 80, borderRadius: 18),
+                      SizedBox(width: 8),
+                      Skeleton(height: 36, width: 100, borderRadius: 18),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
     );
   }
 }

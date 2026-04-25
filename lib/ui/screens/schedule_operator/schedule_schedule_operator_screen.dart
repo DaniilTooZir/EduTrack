@@ -8,6 +8,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,7 +24,10 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   late final SubjectService _subjectService;
   late final GroupService _groupService;
   late final TeacherService _teacherService;
-  late Future<List<Schedule>> _scheduleFuture;
+
+  bool _isLoading = true;
+  List<Schedule> _schedules = [];
+
   String? _institutionId;
   final _formKey = GlobalKey<FormState>();
 
@@ -69,8 +73,6 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       _loadGroups();
       _loadTeachers();
       _loadSchedule();
-    } else {
-      _scheduleFuture = Future.error('ID учреждения не найден');
     }
   }
 
@@ -101,13 +103,19 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     }
   }
 
-  void _loadSchedule() {
-    if (_institutionId == null) {
-      _scheduleFuture = Future.error('ID учреждения не найден');
-    } else {
-      _scheduleFuture = _scheduleService.getScheduleForInstitution(_institutionId!);
+  Future<void> _loadSchedule() async {
+    if (_institutionId == null) return;
+    setState(() => _isLoading = true);
+    try {
+      final list = await _scheduleService.getScheduleForInstitution(_institutionId!);
+      if (mounted)
+        setState(() {
+          _schedules = list;
+          _isLoading = false;
+        });
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
     }
-    setState(() {});
   }
 
   String _formatTimeOfDay(TimeOfDay time) =>
@@ -189,12 +197,12 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Урок добавлен'), backgroundColor: Colors.green));
-      _loadSchedule();
       setState(() {
         _selectedSubjectId = null;
         _selectedGroupId = null;
         _currentConflictError = null;
       });
+      _loadSchedule();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -358,6 +366,95 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
           ),
         ),
       );
+
+  Widget _buildScheduleList(ColorScheme colors, ThemeData theme) {
+    final schedules = List<Schedule>.from(_schedules)..sort((a, b) {
+      if (a.date != null && b.date != null) {
+        final d = a.date!.compareTo(b.date!);
+        if (d != 0) return d;
+      }
+      if (a.date == null) return 1;
+      if (b.date == null) return -1;
+      return a.startTime.compareTo(b.startTime);
+    });
+    final grouped = <String, List<Schedule>>{};
+    for (final s in schedules) {
+      final header =
+          s.date != null ? '${_getWeekdayName(s.weekday)}, ${_formatDate(s.date!)}' : _getWeekdayName(s.weekday);
+      grouped.putIfAbsent(header, () => []).add(s);
+    }
+    return ListView.builder(
+      itemCount: grouped.length,
+      itemBuilder: (context, index) {
+        final header = grouped.keys.elementAt(index);
+        final items = grouped[header]!;
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: colors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 18, color: colors.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      header,
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: colors.primary),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columnSpacing: 15,
+                    horizontalMargin: 5,
+                    headingRowHeight: 30,
+                    dataRowMinHeight: 40,
+                    columns: const [
+                      DataColumn(label: Text('Время')),
+                      DataColumn(label: Text('Группа')),
+                      DataColumn(label: Text('Предмет')),
+                      DataColumn(label: Text('Препод.')),
+                      DataColumn(label: Text('')),
+                    ],
+                    rows:
+                        items.map((s) {
+                          final subjectName = s.subject?.name ?? '—';
+                          final groupName = s.group?.name ?? '—';
+                          final teacherName = s.teacherName;
+                          final timeRange = '${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)}';
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Text(timeRange, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              ),
+                              DataCell(Text(groupName)),
+                              DataCell(Text(subjectName)),
+                              DataCell(SizedBox(width: 100, child: Text(teacherName, overflow: TextOverflow.ellipsis))),
+                              DataCell(
+                                IconButton(
+                                  icon: Icon(Icons.delete, color: colors.error, size: 20),
+                                  onPressed: () => _deleteScheduleEntry(s.id),
+                                  tooltip: 'Удалить',
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -571,132 +668,65 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                 ),
                 const SizedBox(height: 8),
                 Expanded(
-                  child: FutureBuilder<List<Schedule>>(
-                    future: _scheduleFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Ошибка: ${snapshot.error}', style: TextStyle(color: colors.error)));
-                      }
-                      final schedules = snapshot.data ?? [];
-                      if (schedules.isEmpty) {
-                        return Center(
-                          child: Text('Расписание пустое', style: TextStyle(color: colors.onSurfaceVariant)),
-                        );
-                      }
-                      schedules.sort((a, b) {
-                        if (a.date != null && b.date != null) {
-                          final d = a.date!.compareTo(b.date!);
-                          if (d != 0) return d;
-                        }
-                        if (a.date == null) return 1;
-                        if (b.date == null) return -1;
-                        return a.startTime.compareTo(b.startTime);
-                      });
-                      final Map<String, List<Schedule>> grouped = {};
-                      for (final s in schedules) {
-                        String header;
-                        final String dayName = _getWeekdayName(s.weekday);
-                        if (s.date != null) {
-                          header = '$dayName, ${_formatDate(s.date!)}';
-                        } else {
-                          header = dayName;
-                        }
-                        grouped.putIfAbsent(header, () => []).add(s);
-                      }
-                      return ListView.builder(
-                        itemCount: grouped.length,
-                        itemBuilder: (context, index) {
-                          final header = grouped.keys.elementAt(index);
-                          final items = grouped[header]!;
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            color: colors.surface.withOpacity(0.9),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.calendar_today, size: 18, color: colors.primary),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        header,
-                                        style: theme.textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: colors.primary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(),
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: DataTable(
-                                      columnSpacing: 15,
-                                      horizontalMargin: 5,
-                                      headingRowHeight: 30,
-                                      dataRowMinHeight: 40,
-                                      columns: const [
-                                        DataColumn(label: Text('Время')),
-                                        DataColumn(label: Text('Группа')),
-                                        DataColumn(label: Text('Предмет')),
-                                        DataColumn(label: Text('Препод.')),
-                                        DataColumn(label: Text('')),
-                                      ],
-                                      rows:
-                                          items.map((s) {
-                                            final subjectName = s.subject?.name ?? '—';
-                                            final groupName = s.group?.name ?? '—';
-                                            final teacherName = s.teacherName;
-                                            final timeRange =
-                                                '${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)}';
-                                            return DataRow(
-                                              cells: [
-                                                DataCell(
-                                                  Text(
-                                                    timeRange,
-                                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                                  ),
-                                                ),
-                                                DataCell(Text(groupName)),
-                                                DataCell(Text(subjectName)),
-                                                DataCell(
-                                                  SizedBox(
-                                                    width: 100,
-                                                    child: Text(teacherName, overflow: TextOverflow.ellipsis),
-                                                  ),
-                                                ),
-                                                DataCell(
-                                                  IconButton(
-                                                    icon: Icon(Icons.delete, color: colors.error, size: 20),
-                                                    onPressed: () => _deleteScheduleEntry(s.id),
-                                                    tooltip: 'Удалить',
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }).toList(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+                  child:
+                      _isLoading
+                          ? _buildScheduleListSkeleton()
+                          : _schedules.isEmpty
+                          ? Center(child: Text('Расписание пустое', style: TextStyle(color: colors.onSurfaceVariant)))
+                          : _buildScheduleList(colors, theme),
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildScheduleListSkeleton() {
+    return ListView.builder(
+      itemCount: 3,
+      itemBuilder:
+          (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Skeleton(height: 18, width: 18, borderRadius: 4),
+                      SizedBox(width: 8),
+                      Skeleton(height: 16, width: 180),
+                    ],
+                  ),
+                  const Divider(),
+                  ...List.generate(
+                    3,
+                    (_) => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Skeleton(height: 13, width: 65),
+                          SizedBox(width: 15),
+                          Skeleton(height: 13, width: 55),
+                          SizedBox(width: 15),
+                          Skeleton(height: 13, width: 90),
+                          SizedBox(width: 15),
+                          Skeleton(height: 13, width: 110),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -186,7 +187,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
         child: SafeArea(
           child:
               _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? _buildLessonsSkeleton()
                   : _lessons.isEmpty
                   ? Center(
                     child: Column(
@@ -208,6 +209,33 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                   ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLessonsSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 5,
+      itemBuilder:
+          (context, index) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                const Skeleton(height: 60, width: 60),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Skeleton(height: 14, width: 80),
+                      const SizedBox(height: 8),
+                      const Skeleton(height: 18, width: double.infinity),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
     );
   }
 }

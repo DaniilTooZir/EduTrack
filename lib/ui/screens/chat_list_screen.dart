@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -51,7 +52,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child:
             _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? _buildChatListSkeleton()
                 : _chats.isEmpty
                 ? Center(
                   child: Column(
@@ -134,6 +135,34 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   },
                 ),
       ),
+    );
+  }
+
+  Widget _buildChatListSkeleton() {
+    return ListView.builder(
+      itemCount: 10,
+      padding: const EdgeInsets.all(16),
+      itemBuilder:
+          (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                const Skeleton(height: 56, width: 56, borderRadius: 28),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Skeleton(height: 16, width: 140),
+                      const SizedBox(height: 10),
+                      Skeleton(height: 12, width: MediaQuery.of(context).size.width * 0.5),
+                    ],
+                  ),
+                ),
+                const Skeleton(height: 12, width: 40),
+              ],
+            ),
+          ),
     );
   }
 }

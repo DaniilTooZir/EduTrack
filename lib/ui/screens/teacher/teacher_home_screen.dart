@@ -12,6 +12,7 @@ import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +26,9 @@ class TeacherHomeScreen extends StatefulWidget {
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   int _selectedIndex = 0;
+  bool _isLoading = true;
+  bool _hasError = false;
+  List<Subject> _subjects = [];
   final List<String> _titles = [
     'Главная',
     'Домашние задания',
@@ -34,12 +38,41 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     'Проверка ДЗ',
     'Моя группа',
   ];
-  Key _refreshKey = UniqueKey();
+
+  Future<void> _loadData() async {
+    final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (teacherId == null) return;
+    if (mounted)
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    try {
+      final subjects = await SubjectService().getSubjectsByTeacherId(teacherId);
+      if (mounted) {
+        setState(() {
+          _subjects = subjects;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Ошибка загрузки дашборда: $e');
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
   void _refreshDashboard() {
-    setState(() {
-      _refreshKey = UniqueKey();
-    });
+    _loadData();
   }
 
   void _navigateToTab(int index) {
@@ -57,10 +90,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     Widget bodyContent;
     switch (_selectedIndex) {
       case 0:
-        bodyContent = _buildDashboard(colors);
+        bodyContent =
+            _isLoading
+                ? _buildTeacherHomeSkeleton()
+                : _hasError
+                ? _buildErrorState(colors)
+                : _buildDashboard(colors);
         break;
       case 1:
-        bodyContent = TeacherHomeworkScreen(onTabRequest: (index) => _navigateToTab(index));
+        bodyContent = TeacherHomeworkScreen(onTabRequest: _navigateToTab);
         break;
       case 2:
         bodyContent = const TeacherLessonScreen();
@@ -214,116 +252,71 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             const SizedBox(height: 24),
             Text('Ваши предметы', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary)),
             const SizedBox(height: 12),
-            FutureBuilder<List<Subject>>(
-              key: _refreshKey,
-              future: SubjectService().getSubjectsByTeacherId(teacherId!),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Padding(padding: EdgeInsets.all(20.0), child: CircularProgressIndicator()),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Card(
-                      color: colors.errorContainer,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          'Ошибка загрузки: ${snapshot.error}',
-                          style: TextStyle(color: colors.onErrorContainer),
-                        ),
-                      ),
-                    ),
-                  );
-                }
-                final subjects = snapshot.data ?? [];
-                if (subjects.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Text(
-                        'У вас пока нет назначенных предметов (в расписании).',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: subjects.length,
-                  itemBuilder: (ctx, index) {
-                    final subject = subjects[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      color: colors.surface,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          // Переход к урокам
-                          _navigateToTab(2);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Container(
-                                height: 50,
-                                width: 50,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [colors.secondary, colors.primary],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    subject.name.isNotEmpty ? subject.name[0].toUpperCase() : '?',
-                                    style: TextStyle(
-                                      color: colors.onPrimary,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      subject.name,
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: colors.onSurface,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Нажмите, чтобы перейти к урокам',
-                                      style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(Icons.arrow_forward_ios, size: 16, color: colors.onSurfaceVariant),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+            if (_subjects.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Text('Предметов пока нет', style: TextStyle(color: Colors.grey)),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _subjects.length,
+                itemBuilder: (ctx, index) {
+                  return _buildSubjectCard(_subjects[index], colors);
+                },
+              ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubjectCard(Subject subject, ColorScheme colors) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: colors.surface,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _navigateToTab(2),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                height: 50,
+                width: 50,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [colors.secondary, colors.primary]),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    subject.name.isNotEmpty ? subject.name[0].toUpperCase() : '?',
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(subject.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Нажмите, чтобы перейти к урокам',
+                      style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, size: 16, color: colors.onSurfaceVariant),
+            ],
+          ),
         ),
       ),
     );
@@ -383,6 +376,58 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(ColorScheme colors) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 48, color: colors.error),
+          const SizedBox(height: 16),
+          Text('Не удалось загрузить данные', style: TextStyle(fontSize: 16, color: colors.error)),
+          const SizedBox(height: 8),
+          TextButton.icon(onPressed: _loadData, icon: const Icon(Icons.refresh), label: const Text('Повторить')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeacherHomeSkeleton() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Skeleton(height: 150, width: double.infinity, borderRadius: 24),
+          const SizedBox(height: 24),
+          const Skeleton(height: 20, width: 150),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 110,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 4,
+              itemBuilder:
+                  (context, index) => const Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: Skeleton(height: 110, width: 110, borderRadius: 16),
+                  ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Skeleton(height: 20, width: 180),
+          const SizedBox(height: 12),
+          ...List.generate(
+            3,
+            (index) => const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Skeleton(height: 80, width: double.infinity, borderRadius: 16),
+            ),
+          ),
+        ],
       ),
     );
   }

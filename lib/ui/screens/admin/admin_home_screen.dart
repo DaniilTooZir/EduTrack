@@ -9,6 +9,7 @@ import 'package:edu_track/ui/screens/admin/subject_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -23,18 +24,44 @@ class AdminHomeScreen extends StatefulWidget {
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _selectedIndex = 0;
   final List<String> _titles = ['Главная', 'Пользователи', 'Добавить пользователя', 'Предметы', 'Группы', 'Профиль'];
-  Key _refreshKey = UniqueKey();
+  final DashboardService _dashboardService = DashboardService();
+  bool _isLoading = true;
+  Map<String, int> _stats = {'students': 0, 'teachers': 0, 'groups': 0, 'subjects': 0};
 
-  void _refreshDashboard() {
-    setState(() {
-      _refreshKey = UniqueKey();
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<Map<String, int>> _fetchStats(String instId) async {
+    final studentCount = await _dashboardService.getStudentCount(instId);
+    final teacherCount = await _dashboardService.getTeacherCount(instId);
+    final groupCount = await _dashboardService.getGroupCount(instId);
+    final subjectCount = await _dashboardService.getSubjectCount(instId);
+    return {'students': studentCount, 'teachers': teacherCount, 'groups': groupCount, 'subjects': subjectCount};
+  }
+
+  Future<void> _loadDashboardData() async {
+    final instId = Provider.of<UserProvider>(context, listen: false).institutionId;
+    if (instId == null) return;
+    setState(() => _isLoading = true);
+    try {
+      final data = await _fetchStats(instId);
+      if (mounted) {
+        setState(() {
+          _stats = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _navigateToTab(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
+    if (index == 0) _loadDashboardData();
   }
 
   @override
@@ -45,7 +72,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     Widget bodyContent;
     switch (_selectedIndex) {
       case 0:
-        bodyContent = _buildDashboard(userProvider.institutionId, colors);
+        bodyContent = _buildDashboard(colors);
         break;
       case 1:
         bodyContent = const UserListScreen();
@@ -77,7 +104,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         centerTitle: true,
         actions: [
           if (_selectedIndex == 0)
-            IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить данные', onPressed: _refreshDashboard),
+            IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить данные', onPressed: _loadDashboardData),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Выйти',
@@ -156,122 +183,124 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
-  Future<Map<String, int>> _fetchStats(String institutionId) async {
-    final dashboardService = DashboardService();
-    await Future.delayed(const Duration(milliseconds: 500));
-    final studentCount = await dashboardService.getStudentCount(institutionId);
-    final teacherCount = await dashboardService.getTeacherCount(institutionId);
-    final groupCount = await dashboardService.getGroupCount(institutionId);
-    final subjectCount = await dashboardService.getSubjectCount(institutionId);
-    return {'students': studentCount, 'teachers': teacherCount, 'groups': groupCount, 'subjects': subjectCount};
-  }
-
-  Widget _buildDashboard(String? institutionId, ColorScheme colors) {
-    if (institutionId == null) return const Center(child: CircularProgressIndicator());
+  Widget _buildDashboard(ColorScheme colors) {
     return RefreshIndicator(
       onRefresh: () async {
-        _refreshDashboard();
+        await _loadDashboardData();
         await Future.delayed(const Duration(seconds: 1));
       },
       color: colors.primary,
-      child: FutureBuilder<Map<String, int>>(
-        key: _refreshKey,
-        future: _fetchStats(institutionId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Ошибка при загрузке: ${snapshot.error}', style: TextStyle(color: colors.error)));
-          }
-          final data = snapshot.data ?? {'students': 0, 'teachers': 0, 'groups': 0, 'subjects': 0};
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [colors.primary.withOpacity(0.8), colors.primary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
-                        ],
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [colors.primary.withOpacity(0.8), colors.primary],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Панель администратора',
+                        style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Панель администратора',
-                            style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Управляйте пользователями, группами и учебным процессом.',
-                            style: TextStyle(color: colors.onPrimary.withOpacity(0.8), fontSize: 16),
-                          ),
-                        ],
+                      const SizedBox(height: 8),
+                      Text(
+                        'Управляйте пользователями, группами и учебным процессом.',
+                        style: TextStyle(color: colors.onPrimary.withOpacity(0.8), fontSize: 16),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Статистика учреждения',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
-                    ),
-                    const SizedBox(height: 12),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Wrap(
-                          spacing: 16,
-                          runSpacing: 16,
-                          children: [
-                            _statCard(
-                              'Преподаватели',
-                              data['teachers'].toString(),
-                              Icons.school,
-                              Colors.orange,
-                              colors,
-                            ),
-                            _statCard('Студенты', data['students'].toString(), Icons.people, Colors.blue, colors),
-                            _statCard('Группы', data['groups'].toString(), Icons.groups, Colors.green, colors),
-                            _statCard('Предметы', data['subjects'].toString(), Icons.menu_book, Colors.purple, colors),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 32),
-                    Text(
-                      'Быстрые действия',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 110,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          _quickActionButton('Добавить\nпользователя', Icons.person_add, 2, colors),
-                          _quickActionButton('Создать\nгруппу', Icons.group_add, 4, colors),
-                          _quickActionButton('Назначить\nпредмет', Icons.book, 3, colors),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                Text(
+                  'Статистика учреждения',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+                ),
+                const SizedBox(height: 12),
+                if (_isLoading)
+                  _buildStatsSkeleton()
+                else
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      _statCard('Преподаватели', (_stats['teachers'] ?? 0).toString(), Icons.school, Colors.orange, colors),
+                      _statCard('Студенты', (_stats['students'] ?? 0).toString(), Icons.people, Colors.blue, colors),
+                      _statCard('Группы', (_stats['groups'] ?? 0).toString(), Icons.groups, Colors.green, colors),
+                      _statCard('Предметы', (_stats['subjects'] ?? 0).toString(), Icons.menu_book, Colors.purple, colors),
+                    ],
+                  ),
+                const SizedBox(height: 32),
+                Text(
+                  'Быстрые действия',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+                ),
+                const SizedBox(height: 16),
+                if (_isLoading)
+                  _buildQuickActionsSkeleton()
+                else
+                  SizedBox(
+                    height: 110,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _quickActionButton('Добавить\nпользователя', Icons.person_add, 2, colors),
+                        _quickActionButton('Создать\nгруппу', Icons.group_add, 4, colors),
+                        _quickActionButton('Назначить\nпредмет', Icons.book, 3, colors),
+                      ],
+                    ),
+                  ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsSkeleton() {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      children: List.generate(
+        4,
+        (_) => const SizedBox(
+          width: 160,
+          height: 88,
+          child: Skeleton(height: 88, width: 160, borderRadius: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsSkeleton() {
+    return SizedBox(
+      height: 110,
+      child: Row(
+        children: List.generate(
+          3,
+          (_) => const Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Skeleton(height: 110, width: 120, borderRadius: 16),
+          ),
+        ),
       ),
     );
   }

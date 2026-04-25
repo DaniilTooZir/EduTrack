@@ -4,6 +4,7 @@ import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -52,7 +53,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
       if (mounted) {
         setState(() {
           _students = students;
-          final Map<String, int> existingGradesMap = {for (var g in grades) g.studentId: g.value};
+          final Map<String, int> existingGradesMap = {for (final g in grades) g.studentId: g.value};
           for (final student in _students) {
             _grades[student.id] = existingGradesMap[student.id];
           }
@@ -93,7 +94,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
         child: SafeArea(
           child:
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? _buildGradesSkeleton()
                   : Column(
                     children: [
                       Expanded(
@@ -190,6 +191,26 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                   ),
         ),
       ),
+    );
+  }
+
+  Widget _buildGradesSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 10,
+      itemBuilder:
+          (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                const Skeleton(height: 40, width: 40, borderRadius: 20),
+                const SizedBox(width: 12),
+                const Skeleton(height: 16, width: 150),
+                const Spacer(),
+                const Skeleton(height: 40, width: 60, borderRadius: 8),
+              ],
+            ),
+          ),
     );
   }
 }

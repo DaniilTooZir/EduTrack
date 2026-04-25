@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/users_fetch_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -95,7 +96,7 @@ class _UserListScreenState extends State<UserListScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return _buildUserSkeleton();
     if (_error != null) return Center(child: Text(_error!, style: TextStyle(color: colors.error)));
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -249,6 +250,20 @@ class _UserListScreenState extends State<UserListScreen> {
                 child: const Text('Удалить', style: TextStyle(color: Colors.red)),
               ),
             ],
+          ),
+    );
+  }
+
+  Widget _buildUserSkeleton() {
+    return ListView.builder(
+      itemCount: 8,
+      padding: const EdgeInsets.all(16),
+      itemBuilder:
+          (context, index) => ListTile(
+            leading: const Skeleton(height: 48, width: 48, borderRadius: 24),
+            title: const Skeleton(height: 16, width: 120),
+            subtitle: const Skeleton(height: 12, width: 200),
+            trailing: Skeleton(height: 32, width: 32, borderRadius: 8),
           ),
     );
   }

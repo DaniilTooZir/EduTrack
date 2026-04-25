@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -79,7 +80,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return _buildLoadingSkeleton();
     if (_scheduleList.isEmpty) {
       return Center(
         child: Text('Расписание отсутствует.', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
@@ -160,6 +161,40 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton() {
+    return ListView.builder(
+      itemCount: 5,
+      padding: const EdgeInsets.all(16),
+      itemBuilder:
+          (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Row(
+                children: [
+                  Skeleton(height: 50, width: 50),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Skeleton(height: 18, width: 150),
+                        SizedBox(height: 8),
+                        Skeleton(height: 14, width: 100),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
     );
   }
 }

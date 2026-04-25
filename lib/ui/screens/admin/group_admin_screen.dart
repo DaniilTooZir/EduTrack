@@ -4,6 +4,7 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -309,7 +310,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                 Expanded(
                   child:
                       _isLoading
-                          ? const Center(child: CircularProgressIndicator())
+                          ? _buildListSkeleton()
                           : _groups.isEmpty
                           ? Center(child: Text('Группы не найдены', style: TextStyle(color: colors.onSurfaceVariant)))
                           : ListView.separated(
@@ -375,6 +376,37 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildListSkeleton() {
+    return ListView.separated(
+      itemCount: 6,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder:
+          (_, __) => Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 3,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Skeleton(height: 40, width: 40, borderRadius: 20),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Skeleton(height: 14, width: 110),
+                        SizedBox(height: 6),
+                        Skeleton(height: 12, width: 170),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
     );
   }
 }

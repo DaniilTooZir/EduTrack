@@ -11,6 +11,7 @@ import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
 import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -113,7 +114,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     Widget body;
     switch (_selectedIndex) {
       case 0:
-        body = _buildDashboard(colors);
+        body = _isDashboardLoading ? _buildDashboardSkeleton(colors) : _buildDashboard(colors);
         break;
       case 1:
         body = const StudentHomeworkScreen();
@@ -427,5 +428,40 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
       }
     }
+  }
+
+  Widget _buildDashboardSkeleton(ColorScheme colors) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Skeleton(height: 160, width: double.infinity, borderRadius: 24),
+          const SizedBox(height: 24),
+          const Skeleton(height: 24, width: 180),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 110,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 3,
+              itemBuilder:
+                  (context, index) => const Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: Skeleton(height: 110, width: 110, borderRadius: 16),
+                  ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Skeleton(height: 24, width: 200),
+          const SizedBox(height: 12),
+          const Skeleton(height: 90, width: double.infinity, borderRadius: 16),
+          const SizedBox(height: 12),
+          const Skeleton(height: 90, width: double.infinity, borderRadius: 16),
+          const SizedBox(height: 12),
+          const Skeleton(height: 90, width: double.infinity, borderRadius: 16),
+        ],
+      ),
+    );
   }
 }

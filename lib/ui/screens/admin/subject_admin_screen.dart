@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -230,7 +231,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                 Expanded(
                   child:
                       _isLoading
-                          ? const Center(child: CircularProgressIndicator())
+                          ? _buildListSkeleton()
                           : _subjects.isEmpty
                           ? Center(
                             child: Text('Список предметов пуст', style: TextStyle(color: colors.onSurfaceVariant)),
@@ -294,6 +295,28 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildListSkeleton() {
+    return ListView.separated(
+      itemCount: 6,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder:
+          (_, __) => Card(
+            elevation: 3,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Skeleton(height: 40, width: 40, borderRadius: 20),
+                  const SizedBox(width: 16),
+                  const Expanded(child: Skeleton(height: 14)),
+                ],
+              ),
+            ),
+          ),
     );
   }
 }

@@ -215,7 +215,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       DropdownButtonFormField<String>(
-                        value: editSelectedGroupId,
+                        initialValue: editSelectedGroupId,
                         decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
                         items: _groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
                         onChanged: (val) => setStateDialog(() => editSelectedGroupId = val),
@@ -496,7 +496,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                             child: Column(
                               children: [
                                 DropdownButtonFormField<String>(
-                                  value: _selectedSubjectId,
+                                  initialValue: _selectedSubjectId,
                                   decoration: const InputDecoration(labelText: 'Предмет', border: OutlineInputBorder()),
                                   items:
                                       _subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
@@ -505,7 +505,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 DropdownButtonFormField<String>(
-                                  value: _selectedGroupId,
+                                  initialValue: _selectedGroupId,
                                   decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
                                   items:
                                       _groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),

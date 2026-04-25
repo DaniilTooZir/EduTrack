@@ -6,6 +6,7 @@ import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -21,8 +22,8 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   int _selectedIndex = 0;
   final List<String> _titles = ['Главная', 'Расписание'];
   final ScheduleService _scheduleService = ScheduleService();
-  late Future<List<Schedule>> _scheduleFuture;
-  Key _refreshKey = UniqueKey();
+  bool _isLoading = true;
+  List<Schedule> _schedules = [];
 
   @override
   void initState() {
@@ -30,30 +31,29 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     _loadData();
   }
 
-  void _loadData() {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final institutionId = userProvider.institutionId;
-    if (institutionId != null) {
-      _scheduleFuture = _scheduleService.getScheduleForInstitution(institutionId);
-    } else {
-      _scheduleFuture = Future.error('ID учреждения не найден');
+  Future<void> _loadData() async {
+    final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
+    if (institutionId == null) return;
+    setState(() => _isLoading = true);
+    try {
+      final list = await _scheduleService.getScheduleForInstitution(institutionId);
+      if (mounted)
+        setState(() {
+          _schedules = list;
+          _isLoading = false;
+        });
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _refreshDashboard() {
-    setState(() {
-      _refreshKey = UniqueKey();
-      _loadData();
-    });
+    _loadData();
   }
 
   void _navigateToTab(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (_selectedIndex == 0) {
-        _refreshDashboard();
-      }
-    });
+    setState(() => _selectedIndex = index);
+    if (index == 0) _loadData();
   }
 
   @override
@@ -167,6 +167,23 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   }
 
   Widget _buildDashboard(ColorScheme colors) {
+    final sorted = List<Schedule>.from(_schedules)..sort((a, b) {
+      if (a.date == null && b.date != null) return -1;
+      if (a.date != null && b.date == null) return 1;
+      if (a.date != null && b.date != null) {
+        final d = a.date!.compareTo(b.date!);
+        if (d != 0) return d;
+      }
+      final w = a.weekday.compareTo(b.weekday);
+      if (w != 0) return w;
+      return a.startTime.compareTo(b.startTime);
+    });
+    final grouped = <String, List<Schedule>>{};
+    for (final s in sorted) {
+      final header =
+          s.date != null ? '${_getWeekdayName(s.weekday)}, ${_formatDate(s.date!)}' : _getWeekdayName(s.weekday);
+      grouped.putIfAbsent(header, () => []).add(s);
+    }
     return RefreshIndicator(
       onRefresh: () async {
         _refreshDashboard();
@@ -206,57 +223,17 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             const SizedBox(height: 4),
             Text('Группировка по дням и датам.', style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
             const SizedBox(height: 12),
-            FutureBuilder<List<Schedule>>(
-              key: _refreshKey,
-              future: _scheduleFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator()),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Ошибка: ${snapshot.error}', style: TextStyle(color: colors.error)));
-                }
-                final schedules = snapshot.data ?? [];
-                if (schedules.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Text('Расписание пусто.', style: TextStyle(color: colors.onSurfaceVariant)),
-                    ),
-                  );
-                }
-                schedules.sort((a, b) {
-                  if (a.date == null && b.date != null) return -1;
-                  if (a.date != null && b.date == null) return 1;
-                  if (a.date != null && b.date != null) {
-                    final dateComp = a.date!.compareTo(b.date!);
-                    if (dateComp != 0) return dateComp;
-                  }
-                  final dayComp = a.weekday.compareTo(b.weekday);
-                  if (dayComp != 0) return dayComp;
-                  return a.startTime.compareTo(b.startTime);
-                });
-                final Map<String, List<Schedule>> grouped = {};
-                for (final s in schedules) {
-                  String header;
-                  final String dayName = _getWeekdayName(s.weekday);
-                  if (s.date != null) {
-                    header = '$dayName, ${_formatDate(s.date!)}';
-                  } else {
-                    header = dayName;
-                  }
-                  grouped.putIfAbsent(header, () => []).add(s);
-                }
-                return Column(
-                  children:
-                      grouped.entries.map((entry) {
-                        return _buildDayScheduleCard(entry.key, entry.value, colors);
-                      }).toList(),
-                );
-              },
-            ),
+            if (_isLoading)
+              _buildScheduleSkeleton(colors)
+            else if (_schedules.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Text('Расписание пусто.', style: TextStyle(color: colors.onSurfaceVariant)),
+                ),
+              )
+            else
+              Column(children: grouped.entries.map((e) => _buildDayScheduleCard(e.key, e.value, colors)).toList()),
           ],
         ),
       ),
@@ -370,6 +347,60 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScheduleSkeleton(ColorScheme colors) {
+    return Column(
+      children: List.generate(
+        3,
+        (_) => Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Skeleton(height: 36, width: 36, borderRadius: 8),
+                      SizedBox(width: 12),
+                      Skeleton(height: 18, width: 160),
+                    ],
+                  ),
+                ),
+                const Divider(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: List.generate(
+                      3,
+                      (_) => const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Skeleton(height: 13, width: 65),
+                            SizedBox(width: 20),
+                            Skeleton(height: 13, width: 55),
+                            SizedBox(width: 20),
+                            Skeleton(height: 13, width: 100),
+                            SizedBox(width: 20),
+                            Skeleton(height: 13, width: 120),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
