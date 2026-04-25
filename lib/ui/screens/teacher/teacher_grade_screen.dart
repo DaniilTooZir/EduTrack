@@ -98,7 +98,9 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                   : Column(
                     children: [
                       Expanded(
-                        child: ListView.separated(
+                        child: RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: ListView.separated(
                           padding: const EdgeInsets.all(16),
                           itemCount: _students.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -162,6 +164,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                             );
                           },
                         ),
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -169,7 +172,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                           color: colors.surface,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, -5),
                             ),

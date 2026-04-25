@@ -308,17 +308,27 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child:
-                      _isLoading
-                          ? _buildListSkeleton()
-                          : _groups.isEmpty
-                          ? Center(child: Text('Группы не найдены', style: TextStyle(color: colors.onSurfaceVariant)))
-                          : ListView.separated(
-                            itemCount: _groups.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final group = _groups[index];
-                              return Card(
+                  child: RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: _isLoading
+                        ? _buildListSkeleton()
+                        : _groups.isEmpty
+                        ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: 300,
+                              child: Center(child: Text('Группы не найдены', style: TextStyle(color: colors.onSurfaceVariant))),
+                            ),
+                          ],
+                        )
+                        : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _groups.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final group = _groups[index];
+                            return Card(
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 elevation: 3,
                                 child: ListTile(
@@ -370,6 +380,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                               );
                             },
                           ),
+                  ),
                 ),
               ],
             ),

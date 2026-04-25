@@ -110,19 +110,30 @@ class _UserListScreenState extends State<UserListScreen> {
                 _buildFilters(colors),
                 const SizedBox(height: 16),
                 Expanded(
-                  child:
-                      _filteredUsers.isEmpty
-                          ? Center(
-                            child: Text('Пользователи не найдены', style: TextStyle(color: colors.onSurfaceVariant)),
-                          )
-                          : ListView.separated(
-                            itemCount: _filteredUsers.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final user = _filteredUsers[index];
-                              return _buildUserCard(user, colors);
-                            },
-                          ),
+                  child: RefreshIndicator(
+                    onRefresh: _loadUsers,
+                    child: _filteredUsers.isEmpty
+                        ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: 300,
+                              child: Center(
+                                child: Text('Пользователи не найдены', style: TextStyle(color: colors.onSurfaceVariant)),
+                              ),
+                            ),
+                          ],
+                        )
+                        : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _filteredUsers.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final user = _filteredUsers[index];
+                            return _buildUserCard(user, colors);
+                          },
+                        ),
+                  ),
                 ),
               ],
             ),

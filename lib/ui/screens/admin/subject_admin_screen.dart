@@ -229,19 +229,27 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child:
-                      _isLoading
-                          ? _buildListSkeleton()
-                          : _subjects.isEmpty
-                          ? Center(
-                            child: Text('Список предметов пуст', style: TextStyle(color: colors.onSurfaceVariant)),
-                          )
-                          : ListView.separated(
-                            itemCount: _subjects.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final subject = _subjects[index];
-                              return Card(
+                  child: RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: _isLoading
+                        ? _buildListSkeleton()
+                        : _subjects.isEmpty
+                        ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: 300,
+                              child: Center(child: Text('Список предметов пуст', style: TextStyle(color: colors.onSurfaceVariant))),
+                            ),
+                          ],
+                        )
+                        : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _subjects.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final subject = _subjects[index];
+                            return Card(
                                 elevation: 3,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 child: ListTile(
@@ -289,6 +297,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                               );
                             },
                           ),
+                  ),
                 ),
               ],
             ),

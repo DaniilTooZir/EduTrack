@@ -17,19 +17,22 @@ class StudentScheduleScreen extends StatefulWidget {
 class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   bool _isLoading = true;
+  bool _initialized = false;
   List<Schedule> _scheduleList = [];
   Map<String, List<Schedule>> _groupedSchedule = {};
 
   @override
   void initState() {
     super.initState();
-    //_loadSchedule();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadSchedule();
+    if (!_initialized) {
+      _initialized = true;
+      _loadSchedule();
+    }
   }
 
   Future<void> _loadSchedule() async {
@@ -87,8 +90,19 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     final colors = Theme.of(context).colorScheme;
     if (_isLoading) return _buildLoadingSkeleton();
     if (_scheduleList.isEmpty) {
-      return Center(
-        child: Text('Расписание отсутствует.', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
+      return RefreshIndicator(
+        onRefresh: _loadSchedule,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Center(
+                child: Text('Расписание отсутствует.', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
+              ),
+            ),
+          ],
+        ),
       );
     }
     return Container(
@@ -96,7 +110,9 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
-          child: ListView(
+          child: RefreshIndicator(
+            onRefresh: _loadSchedule,
+            child: ListView(
             padding: const EdgeInsets.all(16),
             children:
                 _groupedSchedule.entries.map((entry) {
@@ -113,6 +129,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
                     ],
                   );
                 }).toList(),
+            ),
           ),
         ),
       ),
@@ -124,7 +141,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      color: colors.surface.withOpacity(0.9),
+      color: colors.surface.withValues(alpha: 0.9),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(

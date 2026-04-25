@@ -188,24 +188,36 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
           child:
               _loading
                   ? _buildLessonsSkeleton()
-                  : _lessons.isEmpty
-                  ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  : RefreshIndicator(
+                    onRefresh: _loadLessons,
+                    child: _lessons.isEmpty
+                    ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
-                        Icon(Icons.class_outlined, size: 64, color: colors.onSurfaceVariant.withOpacity(0.5)),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Пока нет проведенных уроков',
-                          style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.class_outlined, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Пока нет проведенных уроков',
+                                  style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
+                    )
+                    : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.only(top: 10, bottom: 20),
+                      itemCount: _lessons.length,
+                      itemBuilder: (context, index) => _buildLessonCard(_lessons[index], colors),
                     ),
-                  )
-                  : ListView.builder(
-                    padding: const EdgeInsets.only(top: 10, bottom: 20),
-                    itemCount: _lessons.length,
-                    itemBuilder: (context, index) => _buildLessonCard(_lessons[index], colors),
                   ),
         ),
       ),

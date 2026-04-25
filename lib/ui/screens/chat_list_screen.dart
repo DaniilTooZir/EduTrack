@@ -53,18 +53,29 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child:
             _isLoading
                 ? _buildChatListSkeleton()
-                : _chats.isEmpty
-                ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                : RefreshIndicator(
+                  onRefresh: _loadChats,
+                  child: _chats.isEmpty
+                  ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
-                      Icon(Icons.chat_bubble_outline, size: 64, color: colors.onSurfaceVariant.withOpacity(0.5)),
-                      const SizedBox(height: 16),
-                      Text('У вас пока нет диалогов', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.chat_bubble_outline, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
+                              const SizedBox(height: 16),
+                              Text('У вас пока нет диалогов', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
-                  ),
-                )
-                : ListView.builder(
+                  )
+                  : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(16),
                   itemCount: _chats.length,
                   itemBuilder: (context, index) {
@@ -128,11 +139,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               builder: (_) => ChatScreen(chatId: chatPreview.chat.id, title: chatPreview.title),
                             ),
                           );
-                          _loadChats();
+                          await _loadChats();
                         },
                       ),
                     );
                   },
+                ),
                 ),
       ),
     );

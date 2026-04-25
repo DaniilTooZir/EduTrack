@@ -103,15 +103,26 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
               _isLoading
                   ? _buildMyGroupSkeleton()
                   : _myGroup == null
-                  ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  ? RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
-                        Icon(Icons.supervised_user_circle, size: 64, color: colors.onSurfaceVariant.withOpacity(0.5)),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Вы не являетесь куратором группы.',
-                          style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.supervised_user_circle, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Вы не являетесь куратором группы.',
+                                  style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -152,7 +163,10 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                         ),
                       ),
                       Expanded(
-                        child: ListView.separated(
+                        child: RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           itemCount: _students.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -203,6 +217,7 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                               ),
                             );
                           },
+                        ),
                         ),
                       ),
                     ],

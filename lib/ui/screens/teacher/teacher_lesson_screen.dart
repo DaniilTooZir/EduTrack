@@ -292,14 +292,26 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
           child:
               _isLoading
                   ? _buildTeacherLessonsSkeleton()
-                  : _lessons.isEmpty
-                  ? Center(
-                    child: Text('Проведенных занятий пока нет', style: TextStyle(color: colors.onSurfaceVariant)),
-                  )
-                  : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _lessons.length,
-                    itemBuilder: (context, index) => _buildLessonTile(_lessons[index], colors),
+                  : RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: _lessons.isEmpty
+                    ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: Center(
+                            child: Text('Проведенных занятий пока нет', style: TextStyle(color: colors.onSurfaceVariant)),
+                          ),
+                        ),
+                      ],
+                    )
+                    : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(12),
+                      itemCount: _lessons.length,
+                      itemBuilder: (context, index) => _buildLessonTile(_lessons[index], colors),
+                    ),
                   ),
         ),
       ),

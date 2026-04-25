@@ -384,6 +384,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       grouped.putIfAbsent(header, () => []).add(s);
     }
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: grouped.length,
       itemBuilder: (context, index) {
         final header = grouped.keys.elementAt(index);
@@ -668,12 +669,22 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                 ),
                 const SizedBox(height: 8),
                 Expanded(
-                  child:
-                      _isLoading
-                          ? _buildScheduleListSkeleton()
-                          : _schedules.isEmpty
-                          ? Center(child: Text('Расписание пустое', style: TextStyle(color: colors.onSurfaceVariant)))
-                          : _buildScheduleList(colors, theme),
+                  child: RefreshIndicator(
+                    onRefresh: _loadSchedule,
+                    child: _isLoading
+                        ? _buildScheduleListSkeleton()
+                        : _schedules.isEmpty
+                        ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: 300,
+                              child: Center(child: Text('Расписание пустое', style: TextStyle(color: colors.onSurfaceVariant))),
+                            ),
+                          ],
+                        )
+                        : _buildScheduleList(colors, theme),
+                  ),
                 ),
               ],
             ),

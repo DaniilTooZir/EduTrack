@@ -134,22 +134,36 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
 
   Widget _buildHomeworkList(List<Homework> list, ColorScheme colors) {
     if (list.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      return RefreshIndicator(
+        onRefresh: _loadHomework,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
-            Icon(Icons.assignment_turned_in_outlined, size: 64, color: colors.onSurfaceVariant.withOpacity(0.3)),
-            const SizedBox(height: 16),
-            Text('В этой категории пусто', style: TextStyle(color: colors.onSurfaceVariant)),
+            SizedBox(
+              height: 300,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.assignment_turned_in_outlined, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.3)),
+                    const SizedBox(height: 16),
+                    Text('В этой категории пусто', style: TextStyle(color: colors.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       );
     }
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+    return RefreshIndicator(
+      onRefresh: _loadHomework,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           itemCount: list.length,
           itemBuilder: (context, index) {
             final hw = list[index];
@@ -178,7 +192,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: statusColor.withOpacity(0.1), shape: BoxShape.circle),
+                        decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), shape: BoxShape.circle),
                         child: Icon(statusIcon, color: statusColor, size: 24),
                       ),
                       const SizedBox(width: 16),
@@ -217,6 +231,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
               ),
             );
           },
+        ),
         ),
       ),
     );

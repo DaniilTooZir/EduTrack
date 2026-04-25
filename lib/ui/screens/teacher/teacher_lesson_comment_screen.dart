@@ -216,16 +216,28 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
             child:
                 _isLoading
                     ? _buildLoadingSkeleton()
-                    : _comments.isEmpty
-                    ? Center(child: Text('Нет комментариев', style: TextStyle(color: colors.onSurfaceVariant)))
-                    : ListView.builder(
-                      reverse: true,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      itemCount: _comments.length,
-                      itemBuilder: (context, index) {
-                        final comment = _comments[index];
-                        return _buildCommentBubble(comment, colors);
-                      },
+                    : RefreshIndicator(
+                      onRefresh: _loadComments,
+                      child: _comments.isEmpty
+                      ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.5,
+                            child: Center(child: Text('Нет комментариев', style: TextStyle(color: colors.onSurfaceVariant))),
+                          ),
+                        ],
+                      )
+                      : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        reverse: true,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        itemCount: _comments.length,
+                        itemBuilder: (context, index) {
+                          final comment = _comments[index];
+                          return _buildCommentBubble(comment, colors);
+                        },
+                      ),
                     ),
           ),
           Divider(height: 1, color: colors.outlineVariant),
