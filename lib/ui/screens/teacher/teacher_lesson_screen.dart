@@ -175,6 +175,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
               content: SingleChildScrollView(
                 child: Form(
                   key: formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [

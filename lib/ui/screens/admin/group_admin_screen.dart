@@ -111,6 +111,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                 title: const Text('Редактировать группу'),
                 content: Form(
                   key: editFormKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -231,6 +232,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Form(
                       key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       child: Column(
                         children: [
                           Row(

@@ -151,6 +151,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
                   child: Form(
                     key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [

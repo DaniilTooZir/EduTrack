@@ -94,6 +94,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                 title: const Text('Изменить предмет'),
                 content: Form(
                   key: editFormKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: TextFormField(
                     controller: editNameController,
                     decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
@@ -184,6 +185,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Form(
                       key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                       child: Column(
                         children: [
                           TextFormField(
