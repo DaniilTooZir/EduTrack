@@ -5,6 +5,7 @@ import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -40,46 +41,45 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    try {
-      final schedule = await _studentService.getScheduleById(lesson.scheduleId);
-      if (schedule == null) throw Exception('Не удалось найти расписание урока');
-      final groupId = schedule.groupId;
-      final results = await Future.wait([
-        _studentService.getStudentsByGroupId(groupId),
-        _gradeService.getGradesByLesson(lesson.id!),
-      ]);
-      final students = results[0] as List<Student>;
-      final grades = results[1] as List<Grade>;
-      if (mounted) {
-        setState(() {
-          _students = students;
-          final Map<String, int> existingGradesMap = {for (final g in grades) g.studentId: g.value};
-          for (final student in _students) {
-            _grades[student.id] = existingGradesMap[student.id];
-          }
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Ошибка при загрузке данных журнала: $e');
+    final scheduleResult = await _studentService.getScheduleById(lesson.scheduleId);
+    if (scheduleResult.isFailure || scheduleResult.data == null) {
       if (mounted) setState(() => _isLoading = false);
+      return;
     }
+    final groupId = scheduleResult.data!.groupId;
+    final studentsResult = await _studentService.getStudentsByGroupId(groupId);
+    final gradesResult = await _gradeService.getGradesByLesson(lesson.id!);
+    if (!mounted) return;
+    if (studentsResult.isFailure || gradesResult.isFailure) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    final students = studentsResult.data;
+    final grades = gradesResult.data;
+    setState(() {
+      _students = students;
+      final Map<String, int> existingGradesMap = {for (final g in grades) g.studentId: g.value};
+      for (final student in _students) {
+        _grades[student.id] = existingGradesMap[student.id];
+      }
+      _isLoading = false;
+    });
   }
 
   Future<void> _submitGrades() async {
     for (final entry in _grades.entries) {
-      final studentId = entry.key;
       final gradeValue = entry.value;
-      if (gradeValue != null) {
-        // lesson.id (int?) -> если null, то сохранять нельзя, но он должен быть
-        if (lesson.id != null) {
-          final grade = Grade(lessonId: lesson.id!, studentId: studentId, value: gradeValue);
-          await _gradeService.addOrUpdateGrade(grade);
+      if (gradeValue != null && lesson.id != null) {
+        final grade = Grade(lessonId: lesson.id!, studentId: entry.key, value: gradeValue);
+        final result = await _gradeService.addOrUpdateGrade(grade);
+        if (result.isFailure) {
+          MessengerHelper.showError(result.errorMessage);
+          return;
         }
       }
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Оценки сохранены')));
+    MessengerHelper.showSuccess('Оценки сохранены');
     Navigator.pop(context);
   }
 

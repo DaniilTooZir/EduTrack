@@ -3,6 +3,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -35,52 +36,58 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final login = _loginController.text.trim();
     final password = _passwordController.text.trim();
-    try {
-      final authResult = await AuthService.login(login, password);
-      if (!mounted) return;
-      if (authResult == null) {
-        setState(() => _errorMessage = 'Неверный логин или пароль.');
-      } else {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        userProvider.setUser(
-          userId: authResult.userId,
-          role: authResult.role,
-          institutionId: authResult.institutionId,
-          groupId: authResult.groupId,
-          name: authResult.name,
-          email: authResult.email,
-          avatar: authResult.avatarUrl,
-          instName: authResult.institutionName,
-          groupName: authResult.groupName,
-        );
 
-        switch (authResult.role) {
-          case 'admin':
-            context.go(AppRoutes.adminHome);
-            break;
-          case 'teacher':
-            context.go(AppRoutes.teacherHome);
-            break;
-          case 'student':
-            context.go(AppRoutes.studentHome);
-            break;
-          case 'schedule_operator':
-            context.go(AppRoutes.scheduleOperatorHome);
-            break;
-          default:
-            context.go(AppRoutes.welcome);
-            break;
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = 'Ошибка при авторизации. Проверьте соединение.');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    final result = await AuthService.login(login, password);
+
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
     }
+
+    final authResult = result.data;
+    if (!mounted) return;
+
+    if (authResult == null) {
+      setState(() {
+        _errorMessage = 'Неверный логин или пароль.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    userProvider.setUser(
+      userId: authResult.userId,
+      role: authResult.role,
+      institutionId: authResult.institutionId,
+      groupId: authResult.groupId,
+      name: authResult.name,
+      email: authResult.email,
+      avatar: authResult.avatarUrl,
+      instName: authResult.institutionName,
+      groupName: authResult.groupName,
+    );
+
+    switch (authResult.role) {
+      case 'admin':
+        context.go(AppRoutes.adminHome);
+        break;
+      case 'teacher':
+        context.go(AppRoutes.teacherHome);
+        break;
+      case 'student':
+        context.go(AppRoutes.studentHome);
+        break;
+      case 'schedule_operator':
+        context.go(AppRoutes.scheduleOperatorHome);
+        break;
+      default:
+        context.go(AppRoutes.welcome);
+        break;
+    }
+
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override

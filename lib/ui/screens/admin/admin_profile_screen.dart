@@ -4,7 +4,7 @@ import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/phone_mask_formatter.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -47,43 +47,66 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   Future<void> _loadAdminData() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId == null) return;
-    try {
-      final admin = await _headService.getHeadById(userId);
-      if (admin != null) {
-        final inst = await _institutionService.getInstitutionById(admin.institutionId);
-        if (mounted) {
-          setState(() {
-            _admin = admin;
-            _institution = inst;
-            _fillControllers();
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
+    setState(() => _isLoading = true);
+
+    final adminResult = await _headService.getHeadById(userId);
+    if (adminResult.isFailure) {
+      MessengerHelper.showError(adminResult.errorMessage);
       if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    final admin = adminResult.data;
+    if (admin == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    final instResult = await _institutionService.getInstitutionById(admin.institutionId);
+    if (instResult.isFailure) {
+      MessengerHelper.showError(instResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _admin = admin;
+        _institution = instResult.data;
+        _fillControllers();
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _updateAvatar() async {
-    final file = await _avatarService.pickImage();
-    if (file == null) return;
-    setState(() => _isSaving = true);
-    try {
-      final url = await _avatarService.uploadAvatar(file: file, userId: _admin!.id);
-      if (url != null) {
-        await _headService.updateHeadData(_admin!.id, {'avatar_url': url});
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Фото профиля обновлено')));
-        _loadAdminData();
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Colors.red));
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    final pickResult = await _avatarService.pickImage();
+    if (pickResult.isFailure) {
+      MessengerHelper.showError(pickResult.errorMessage);
+      return;
     }
+    final file = pickResult.data;
+    if (file == null) return;
+
+    setState(() => _isSaving = true);
+
+    final uploadResult = await _avatarService.uploadAvatar(file: file, userId: _admin!.id);
+    if (uploadResult.isFailure) {
+      MessengerHelper.showError(uploadResult.errorMessage);
+      if (mounted) setState(() => _isSaving = false);
+      return;
+    }
+
+    final url = uploadResult.data;
+    final updateResult = await _headService.updateHeadData(_admin!.id, {'avatar_url': url});
+    if (updateResult.isFailure) {
+      MessengerHelper.showError(updateResult.errorMessage);
+      if (mounted) setState(() => _isSaving = false);
+      return;
+    }
+
+    MessengerHelper.showSuccess('Фото профиля обновлено');
+    if (mounted) setState(() => _isSaving = false);
+    _loadAdminData();
   }
 
   void _fillControllers() {
@@ -103,7 +126,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
+      MessengerHelper.showError('Пароли не совпадают');
       setState(() => _isSaving = false);
       return;
     }
@@ -120,25 +143,23 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       });
       return;
     }
-    try {
-      await _headService.updateHeadData(_admin!.id, updatedData);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Профиль обновлён'), backgroundColor: Colors.green));
-        setState(() {
-          _isEditing = false;
-          _passwordController.clear();
-          _confirmPasswordController.clear();
-        });
-        await _loadAdminData();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
-      }
-    } finally {
+
+    final result = await _headService.updateHeadData(_admin!.id, updatedData);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
       if (mounted) setState(() => _isSaving = false);
+      return;
+    }
+
+    if (mounted) {
+      MessengerHelper.showSuccess('Профиль обновлён');
+      setState(() {
+        _isEditing = false;
+        _isSaving = false;
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+      });
+      await _loadAdminData();
     }
   }
 
@@ -162,7 +183,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Colors.transparent,

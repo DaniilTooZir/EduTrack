@@ -6,6 +6,7 @@ import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -35,23 +36,24 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
     final studentId = Provider.of<UserProvider>(context, listen: false).userId;
     if (studentId == null) return;
     if (_homeworks.isEmpty) setState(() => _isLoading = true);
-    try {
-      final homeworks = await _homeworkService.getHomeworksByStudentGroup(studentId);
-      final statuses = await _homeworkService.getHomeworkStatusesForStudent(studentId);
-      if (mounted) {
-        setState(() {
-          _homeworks = homeworks;
-          _statuses = {for (final s in statuses) s.homeworkId: s};
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-        );
-      }
+    final homeworksResult = await _homeworkService.getHomeworksByStudentGroup(studentId);
+    if (homeworksResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      MessengerHelper.showError(homeworksResult.errorMessage);
+      return;
+    }
+    final statusesResult = await _homeworkService.getHomeworkStatusesForStudent(studentId);
+    if (statusesResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      MessengerHelper.showError(statusesResult.errorMessage);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _homeworks = homeworksResult.data;
+        _statuses = {for (final s in statusesResult.data) s.homeworkId: s};
+        _isLoading = false;
+      });
     }
   }
 
@@ -317,18 +319,16 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
   Future<void> _loadTeacherFeedback() async {
     if (widget.homework.lessonId == null) return;
     setState(() => _isLoadingFeedback = true);
-    try {
-      final allComments = await _lessonCommentService.getCommentsByLessonId(widget.homework.lessonId!);
-      if (mounted) {
-        setState(() {
-          _teacherFeedback = allComments.where((c) => c.senderTeacherId != null).toList();
-          _isLoadingFeedback = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Ошибка загрузки фидбека: $e');
-      if (mounted) setState(() => _isLoadingFeedback = false);
+    final result = await _lessonCommentService.getCommentsByLessonId(widget.homework.lessonId!);
+    if (!mounted) return;
+    if (result.isFailure) {
+      setState(() => _isLoadingFeedback = false);
+      return;
     }
+    setState(() {
+      _teacherFeedback = result.data.where((c) => c.senderTeacherId != null).toList();
+      _isLoadingFeedback = false;
+    });
   }
 
   Future<void> _pickFile() async {
@@ -347,52 +347,50 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
   Future<void> _submitWork() async {
     if (_selectedFiles.isEmpty && _commentController.text.trim().isEmpty) return;
     setState(() => _isSubmitting = true);
-    try {
-      String? fileUrl;
-      String? fileName;
-      if (_selectedFiles.isNotEmpty) {
-        final fileToUpload = _selectedFiles.first;
-        fileUrl = await widget.fileService.uploadFile(file: fileToUpload, folderName: 'student_homeworks');
-        fileName = fileToUpload.name;
-        if (fileUrl == null) throw Exception('Не удалось загрузить файл');
+    String? fileUrl;
+    String? fileName;
+    if (_selectedFiles.isNotEmpty) {
+      final fileToUpload = _selectedFiles.first;
+      final uploadResult = await widget.fileService.uploadFile(file: fileToUpload, folderName: 'student_homeworks');
+      if (uploadResult.isFailure) {
+        MessengerHelper.showError(uploadResult.errorMessage);
+        if (mounted) setState(() => _isSubmitting = false);
+        return;
       }
-      await widget.homeworkService.submitHomework(
-        homeworkId: widget.homework.id,
-        studentId: widget.studentId,
-        comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
-        fileUrl: fileUrl,
-        fileName: fileName,
-      );
-      if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Работа успешно сдана!'), backgroundColor: Colors.green));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Theme.of(context).colorScheme.error));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      fileUrl = uploadResult.data;
+      fileName = fileToUpload.name;
     }
+    final submitResult = await widget.homeworkService.submitHomework(
+      homeworkId: widget.homework.id,
+      studentId: widget.studentId,
+      comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
+      fileUrl: fileUrl,
+      fileName: fileName,
+    );
+    if (!mounted) return;
+    if (submitResult.isFailure) {
+      MessengerHelper.showError(submitResult.errorMessage);
+      setState(() => _isSubmitting = false);
+      return;
+    }
+    Navigator.pop(context);
+    MessengerHelper.showSuccess('Работа успешно сдана!');
   }
 
   Future<void> _cancelSubmission() async {
     setState(() => _isSubmitting = true);
-    try {
-      await widget.homeworkService.cancelSubmission(homeworkId: widget.homework.id, studentId: widget.studentId);
-      if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Сдача отменена')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Theme.of(context).colorScheme.error));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+    final result = await widget.homeworkService.cancelSubmission(
+      homeworkId: widget.homework.id,
+      studentId: widget.studentId,
+    );
+    if (!mounted) return;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      setState(() => _isSubmitting = false);
+      return;
     }
+    Navigator.pop(context);
+    MessengerHelper.showSuccess('Сдача отменена');
   }
 
   Future<void> _openFile(String url) async {

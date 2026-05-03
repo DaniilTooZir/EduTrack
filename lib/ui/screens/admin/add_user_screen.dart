@@ -4,6 +4,8 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_result.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,17 +53,17 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
     setState(() => _isGroupsLoading = true);
-    try {
-      final groups = await _groupService.getGroups(institutionId);
-      if (mounted) {
-        setState(() {
-          _groups = groups;
-          _isGroupsLoading = false;
-        });
-      }
-    } catch (e) {
+    final result = await _groupService.getGroups(institutionId);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
       if (mounted) setState(() => _isGroupsLoading = false);
-      debugPrint('Ошибка загрузки групп: $e');
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _groups = result.data;
+        _isGroupsLoading = false;
+      });
     }
   }
 
@@ -70,51 +72,56 @@ class _AddUserScreenState extends State<AddUserScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedRole == 'student' && _selectedGroup == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пожалуйста, выберите группу для студента'), backgroundColor: Colors.redAccent),
-      );
+      MessengerHelper.showError('Пожалуйста, выберите группу для студента');
       return;
     }
 
     setState(() => _isSubmitting = true);
 
-    try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final institutionId = userProvider.institutionId;
-      if (institutionId == null) throw Exception('Не удалось получить ID учреждения');
-      final service = UserAddService();
-      final userData = {
-        'name': _nameController.text.trim(),
-        'surname': _surnameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'login': _loginController.text.trim(),
-        'password': _passwordController.text.trim(),
-        'institution_id': institutionId,
-      };
-      switch (_selectedRole) {
-        case 'student':
-          await service.addStudent(userData: userData, groupId: _selectedGroup!.id.toString());
-          break;
-        case 'teacher':
-          await service.addTeacher(userData);
-          break;
-        case 'schedule_operator':
-          await service.addScheduleOperator(userData);
-          break;
-      }
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final institutionId = userProvider.institutionId;
+    if (institutionId == null) {
+      MessengerHelper.showError('Не удалось получить ID учреждения');
+      setState(() => _isSubmitting = false);
+      return;
+    }
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Пользователь успешно добавлен'), backgroundColor: Colors.green));
-      _resetForm();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.redAccent));
-    } finally {
+    final service = UserAddService();
+    final userData = {
+      'name': _nameController.text.trim(),
+      'surname': _surnameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'login': _loginController.text.trim(),
+      'password': _passwordController.text.trim(),
+      'institution_id': institutionId,
+    };
+
+    late final AppResult<void> result;
+    switch (_selectedRole) {
+      case 'student':
+        result = await service.addStudent(userData: userData, groupId: _selectedGroup!.id.toString());
+        break;
+      case 'teacher':
+        result = await service.addTeacher(userData);
+        break;
+      case 'schedule_operator':
+        result = await service.addScheduleOperator(userData);
+        break;
+      default:
+        setState(() => _isSubmitting = false);
+        return;
+    }
+
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
       if (mounted) setState(() => _isSubmitting = false);
+      return;
+    }
+
+    MessengerHelper.showSuccess('Пользователь успешно добавлен');
+    if (mounted) {
+      _resetForm();
+      setState(() => _isSubmitting = false);
     }
   }
 

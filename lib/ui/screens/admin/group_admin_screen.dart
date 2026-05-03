@@ -5,6 +5,7 @@ import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -44,21 +45,28 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
   Future<void> _loadData() async {
     final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
-    try {
-      final groups = await _service.getGroups(institutionId);
-      final teachers = await _teacherService.getTeachers(institutionId);
-      if (mounted) {
-        setState(() {
-          _groups = groups;
-          _teachers = teachers;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e')));
-      }
+    setState(() => _isLoading = true);
+
+    final groupsResult = await _service.getGroups(institutionId);
+    if (groupsResult.isFailure) {
+      MessengerHelper.showError(groupsResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    final teachersResult = await _teacherService.getTeachers(institutionId);
+    if (teachersResult.isFailure) {
+      MessengerHelper.showError(teachersResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _groups = groupsResult.data;
+        _teachers = teachersResult.data;
+        _isLoading = false;
+      });
     }
   }
 
@@ -72,30 +80,35 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isAdding = true);
-    try {
-      final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
-      if (institutionId == null) throw Exception('ID учреждения не найден');
-      final newGroup = Group(
-        name: _nameController.text.trim(),
-        institutionId: institutionId,
-        curatorId: _selectedCuratorId,
-      );
-      await _service.addGroup(newGroup);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Группа добавлена'), backgroundColor: Colors.green));
-      _nameController.clear();
-      setState(() => _selectedCuratorId = null);
-      await _loadData();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.redAccent));
-    } finally {
+
+    final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
+    if (institutionId == null) {
+      MessengerHelper.showError('ID учреждения не найден');
       if (mounted) setState(() => _isAdding = false);
+      return;
     }
+
+    final newGroup = Group(
+      name: _nameController.text.trim(),
+      institutionId: institutionId,
+      curatorId: _selectedCuratorId,
+    );
+    final result = await _service.addGroup(newGroup);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      if (mounted) setState(() => _isAdding = false);
+      return;
+    }
+
+    MessengerHelper.showSuccess('Группа добавлена');
+    _nameController.clear();
+    if (mounted) {
+      setState(() {
+        _selectedCuratorId = null;
+        _isAdding = false;
+      });
+    }
+    await _loadData();
   }
 
   Future<void> _editGroup(Group group) async {
@@ -154,22 +167,16 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                   ElevatedButton(
                     onPressed: () async {
                       if (!editFormKey.currentState!.validate()) return;
-                      try {
-                        Navigator.pop(ctx);
-                        setState(() => _isLoading = true);
-
-                        await _service.updateGroup(group.id!, editController.text.trim(), editCuratorId);
-
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Группа обновлена')));
-                        await _loadData();
-                      } catch (e) {
-                        if (!mounted) return;
-                        setState(() => _isLoading = false);
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
+                      Navigator.pop(ctx);
+                      setState(() => _isLoading = true);
+                      final result = await _service.updateGroup(group.id!, editController.text.trim(), editCuratorId);
+                      if (result.isFailure) {
+                        MessengerHelper.showError(result.errorMessage);
+                        if (mounted) setState(() => _isLoading = false);
+                        return;
                       }
+                      MessengerHelper.showSuccess('Группа обновлена');
+                      await _loadData();
                     },
                     child: const Text('Сохранить'),
                   ),
@@ -198,16 +205,14 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
     );
     if (confirmed == true) {
       setState(() => _isLoading = true);
-      try {
-        await _service.deleteGroup(group.id!);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Группа удалена')));
-        await _loadData();
-      } catch (e) {
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
+      final result = await _service.deleteGroup(group.id!);
+      if (result.isFailure) {
+        MessengerHelper.showError(result.errorMessage);
+        if (mounted) setState(() => _isLoading = false);
+        return;
       }
+      MessengerHelper.showSuccess('Группа удалена');
+      await _loadData();
     }
   }
 

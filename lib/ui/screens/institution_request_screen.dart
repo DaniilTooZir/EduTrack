@@ -1,5 +1,6 @@
 import 'package:edu_track/data/services/institution_request_service.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/phone_mask_formatter.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -29,30 +30,26 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
-    try {
-      await InstitutionRequestService().submitInstitutionRequest(
-        name: _nameController.text.trim(),
-        address: _addressController.text.trim(),
-        headName: _headNameController.text.trim(),
-        headSurname: _headSurnameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-        comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Заявка успешно отправлена!')));
-      Navigator.of(context).pop();
-    } catch (e, stackTrace) {
-      debugPrint('[InstitutionRequestScreen] Ошибка: $e');
-      debugPrint('[InstitutionRequestScreen] StackTrace: $stackTrace');
-      if (!mounted) return;
-      final errorMessage = e.toString().replaceAll('Exception: ', '');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(errorMessage), backgroundColor: Theme.of(context).colorScheme.error));
-    } finally {
-      setState(() => _isSubmitting = false);
+
+    final result = await InstitutionRequestService().submitInstitutionRequest(
+      name: _nameController.text.trim(),
+      address: _addressController.text.trim(),
+      headName: _headNameController.text.trim(),
+      headSurname: _headSurnameController.text.trim(),
+      email: _emailController.text.trim(),
+      phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+      comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
+    );
+
+    setState(() => _isSubmitting = false);
+
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+
+    MessengerHelper.showSuccess('Заявка успешно отправлена!');
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override

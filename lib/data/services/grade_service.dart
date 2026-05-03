@@ -1,10 +1,11 @@
 import 'package:edu_track/models/grade.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class GradeService {
   final _supabase = Supabase.instance.client;
 
-  Future<bool> addOrUpdateGrade(Grade grade) async {
+  Future<AppResult<bool>> addOrUpdateGrade(Grade grade) async {
     try {
       final existing =
           await _supabase
@@ -19,34 +20,37 @@ class GradeService {
       } else {
         await _supabase.from('grade').insert(grade.toMap());
       }
-      return true;
+      return AppResult.success(true);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при сохранении оценки: ${e.message}');
     } catch (e) {
-      print('Ошибка при добавлении/обновлении оценки: $e');
-      return false;
+      return AppResult.failure('Не удалось сохранить оценку. Попробуйте позже.');
     }
   }
 
-  Future<List<Grade>> getGradesByStudent(String studentId) async {
+  Future<AppResult<List<Grade>>> getGradesByStudent(String studentId) async {
     try {
       final response = await _supabase
           .from('grade')
           .select()
           .eq('student_id', studentId)
           .order('lessons_id', ascending: false);
-      return (response as List).map((map) => Grade.fromMap(map)).toList();
+      return AppResult.success((response as List).map((map) => Grade.fromMap(map)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при получении оценок студента: ${e.message}');
     } catch (e) {
-      print('Ошибка при получении оценок: $e');
-      return [];
+      return AppResult.failure('Не удалось загрузить оценки студента.');
     }
   }
 
-  Future<List<Grade>> getGradesByLesson(String lessonId) async {
+  Future<AppResult<List<Grade>>> getGradesByLesson(String lessonId) async {
     try {
       final response = await _supabase.from('grade').select().eq('lessons_id', lessonId);
-      return (response as List).map((map) => Grade.fromMap(map)).toList();
+      return AppResult.success((response as List).map((map) => Grade.fromMap(map)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при получении оценок урока: ${e.message}');
     } catch (e) {
-      print('Ошибка при получении оценок по уроку: $e');
-      return [];
+      return AppResult.failure('Не удалось загрузить оценки урока.');
     }
   }
 }

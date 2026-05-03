@@ -42,26 +42,17 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Future<void> _loadData() async {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
-    if (mounted)
+    if (mounted) setState(() { _isLoading = true; _hasError = false; });
+    final result = await SubjectService().getSubjectsByTeacherId(teacherId);
+    if (result.isFailure) {
+      if (mounted) setState(() { _isLoading = false; _hasError = true; });
+      return;
+    }
+    if (mounted) {
       setState(() {
-        _isLoading = true;
-        _hasError = false;
+        _subjects = result.data;
+        _isLoading = false;
       });
-    try {
-      final subjects = await SubjectService().getSubjectsByTeacherId(teacherId);
-      if (mounted) {
-        setState(() {
-          _subjects = subjects;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Ошибка загрузки дашборда: $e');
-      if (mounted)
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-        });
     }
   }
 

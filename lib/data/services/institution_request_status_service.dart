@@ -1,7 +1,8 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/utils/app_result.dart';
 
 class InstitutionRequestStatusService {
-  static Future<Map<String, dynamic>?> getRequestDetailsByEmail(String email) async {
+  static Future<AppResult<Map<String, dynamic>?>> getRequestDetailsByEmail(String email) async {
     try {
       final normalizedEmail = email.trim().toLowerCase();
       final request =
@@ -12,15 +13,13 @@ class InstitutionRequestStatusService {
               .maybeSingle();
 
       if (request == null) {
-        print('[StatusService] Заявка не найдена для email: $normalizedEmail');
-        return null;
+        return AppResult.success(null);
       }
 
       final status = request['status'] as String;
-      print('[StatusService] Статус заявки: $status');
 
       if (status != 'approved') {
-        return {'status': status};
+        return AppResult.success({'status': status});
       }
 
       final head =
@@ -31,16 +30,12 @@ class InstitutionRequestStatusService {
               .maybeSingle();
 
       if (head == null) {
-        print('[StatusService] Не найден руководитель по email: $normalizedEmail');
-        return {'status': status};
+        return AppResult.success({'status': status});
       }
 
-      return {'status': status, 'login': head['login'], 'password': head['password']};
-    } catch (e, stackTrace) {
-      print('[StatusService] Ошибка при получении данных по email: $email');
-      print('[StatusService] $e');
-      print('[StatusService] $stackTrace');
-      throw Exception('Не удалось проверить статус. Проверьте соединение.');
+      return AppResult.success({'status': status, 'login': head['login'], 'password': head['password']});
+    } catch (e) {
+      return AppResult.failure('Не удалось проверить статус заявки. Проверьте соединение.');
     }
   }
 }

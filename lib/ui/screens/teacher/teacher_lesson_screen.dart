@@ -11,6 +11,8 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_result.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -47,40 +49,34 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     if (teacherId == null || institutionId == null) return;
     setState(() => _isLoading = true);
     final db = Provider.of<AppDatabase>(context, listen: false);
-    try {
-      _groups = await _groupService.getGroups(institutionId!);
-      _subjects = await _subjectService.getSubjectsByTeacherId(teacherId!);
-      final schedules = await _scheduleService.getScheduleForTeacher(teacherId!, db);
-      final List<Lesson> allLessons = [];
-      for (final schedule in schedules) {
-        try {
-          final lessons = await _lessonService.getLessonsByScheduleId(schedule.id);
-          allLessons.addAll(lessons);
-        } catch (_) {}
-      }
-      //allLessons.sort((a, b) => (b.id ?? '').compareTo(a.id ?? '')); пока не будет сортироваться, т.к. id теперь uuid
-      if (mounted) {
-        setState(() {
-          _lessons = allLessons;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
-      }
+    final groupsResult = await _groupService.getGroups(institutionId!);
+    final subjectsResult = await _subjectService.getSubjectsByTeacherId(teacherId!);
+    final schedulesResult = await _scheduleService.getScheduleForTeacher(teacherId!, db);
+    final List<Lesson> allLessons = [];
+    for (final schedule in schedulesResult.data) {
+      final lessonsResult = await _lessonService.getLessonsByScheduleId(schedule.id);
+      if (lessonsResult.isSuccess) allLessons.addAll(lessonsResult.data);
+    }
+    if (mounted) {
+      setState(() {
+        if (groupsResult.isSuccess) _groups = groupsResult.data;
+        if (subjectsResult.isSuccess) _subjects = subjectsResult.data;
+        _lessons = allLessons;
+        _isLoading = false;
+      });
     }
   }
 
   Widget _buildLessonTile(Lesson lesson, ColorScheme colors) {
-    return FutureBuilder<Schedule?>(
+    return FutureBuilder<AppResult<Schedule?>>(
       future: _scheduleService.getScheduleById(lesson.scheduleId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Card(child: ListTile(title: LinearProgressIndicator()));
         }
-        final schedule = snapshot.data!;
+        final result = snapshot.data!;
+        if (result.isFailure || result.data == null) return const SizedBox.shrink();
+        final schedule = result.data!;
         final subjectName = schedule.subject?.name ?? 'Предмет';
         final groupName = schedule.group?.name ?? 'Группа';
         final dateStr =
@@ -154,20 +150,15 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
             Future<void> updateSchedules() async {
               if (selectedGroup == null || selectedSubject == null) return;
               setStateDialog(() => isDialogLoading = true);
-              try {
-                final teacherSchedules = await _scheduleService.getScheduleForTeacher(teacherId!, db);
-                final filtered =
-                    teacherSchedules
-                        .where((s) => s.groupId == selectedGroup!.id && s.subjectId == selectedSubject!.id)
-                        .toList();
-                setStateDialog(() {
-                  availableSchedules = filtered;
-                  selectedSchedule = null;
-                  isDialogLoading = false;
-                });
-              } catch (e) {
-                setStateDialog(() => isDialogLoading = false);
-              }
+              final result = await _scheduleService.getScheduleForTeacher(teacherId!, db);
+              final filtered = result.data
+                  .where((s) => s.groupId == selectedGroup!.id && s.subjectId == selectedSubject!.id)
+                  .toList();
+              setStateDialog(() {
+                availableSchedules = filtered;
+                selectedSchedule = null;
+                isDialogLoading = false;
+              });
             }
 
             return AlertDialog(
@@ -248,24 +239,21 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                   onPressed: () async {
                     if (!formKey.currentState!.validate()) return;
                     if (selectedSchedule == null) return;
-                    try {
-                      final lesson = Lesson(
-                        scheduleId: selectedSchedule!.id,
-                        topic: topicController.text.trim(),
-                        attendanceStatus: 'pending',
-                      );
-                      await _lessonService.addLesson(lesson);
-                      if (!mounted) return;
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('Занятие добавлено'), backgroundColor: Colors.green));
-                      _loadData();
-                    } catch (e) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.redAccent));
+                    final lesson = Lesson(
+                      scheduleId: selectedSchedule!.id,
+                      topic: topicController.text.trim(),
+                      attendanceStatus: 'pending',
+                    );
+                    final navigator = Navigator.of(context);
+                    final result = await _lessonService.addLesson(lesson);
+                    if (!mounted) return;
+                    if (result.isFailure) {
+                      MessengerHelper.showError(result.errorMessage);
+                      return;
                     }
+                    navigator.pop();
+                    MessengerHelper.showSuccess('Занятие добавлено');
+                    await _loadData();
                   },
                   child: const Text('Сохранить'),
                 ),

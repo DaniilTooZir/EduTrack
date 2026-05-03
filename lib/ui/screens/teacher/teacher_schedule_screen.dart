@@ -33,36 +33,32 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
     final teacherId = userProvider.userId;
     final db = Provider.of<AppDatabase>(context, listen: false);
     if (teacherId == null) return;
-    try {
-      final list = await _scheduleService.getScheduleForTeacher(teacherId, db);
-      list.sort((a, b) {
-        if (a.date == null && b.date != null) return -1;
-        if (a.date != null && b.date == null) return 1;
-        if (a.date != null && b.date != null) {
-          final d = a.date!.compareTo(b.date!);
-          if (d != 0) return d;
-        }
-        final w = a.weekday.compareTo(b.weekday);
-        if (w != 0) return w;
-        return a.startTime.compareTo(b.startTime);
+    setState(() => _isLoading = true);
+    final result = await _scheduleService.getScheduleForTeacher(teacherId, db);
+    final list = result.data;
+    list.sort((a, b) {
+      if (a.date == null && b.date != null) return -1;
+      if (a.date != null && b.date == null) return 1;
+      if (a.date != null && b.date != null) {
+        final d = a.date!.compareTo(b.date!);
+        if (d != 0) return d;
+      }
+      final w = a.weekday.compareTo(b.weekday);
+      if (w != 0) return w;
+      return a.startTime.compareTo(b.startTime);
+    });
+    final Map<String, List<Schedule>> grouped = {};
+    for (final s in list) {
+      String header = _getWeekdayName(s.weekday);
+      if (s.date != null) header += ', ${_formatDate(s.date!)}';
+      grouped.putIfAbsent(header, () => []).add(s);
+    }
+    if (mounted) {
+      setState(() {
+        _scheduleList = list;
+        _groupedSchedule = grouped;
+        _isLoading = false;
       });
-      final Map<String, List<Schedule>> grouped = {};
-      for (final s in list) {
-        String header = _getWeekdayName(s.weekday);
-        if (s.date != null) {
-          header += ', ${_formatDate(s.date!)}';
-        }
-        grouped.putIfAbsent(header, () => []).add(s);
-      }
-      if (mounted) {
-        setState(() {
-          _scheduleList = list;
-          _groupedSchedule = grouped;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -81,33 +77,46 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
     if (_isLoading) return _buildLoadingSkeleton();
-    if (_scheduleList.isEmpty) {
-      return Center(
-        child: Text('Расписание отсутствует.', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
-      );
-    }
     return Container(
       decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children:
-                _groupedSchedule.entries.map((entry) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        entry.key,
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+          child: RefreshIndicator(
+            onRefresh: _loadSchedule,
+            child: _scheduleList.isEmpty
+                ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      child: Center(
+                        child: Text(
+                          'Расписание отсутствует.',
+                          style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      ...entry.value.map((s) => _buildScheduleCard(s, colors)),
-                      const SizedBox(height: 20),
-                    ],
-                  );
-                }).toList(),
+                    ),
+                  ],
+                )
+                : ListView(
+                  padding: const EdgeInsets.all(16),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: _groupedSchedule.entries.map((entry) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.key,
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+                        ),
+                        const SizedBox(height: 10),
+                        ...entry.value.map((s) => _buildScheduleCard(s, colors)),
+                        const SizedBox(height: 20),
+                      ],
+                    );
+                  }).toList(),
+                ),
           ),
         ),
       ),
@@ -119,7 +128,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
       elevation: 4,
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      color: colors.surface.withOpacity(0.9),
+      color: colors.surface.withValues(alpha: 0.9),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(

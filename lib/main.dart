@@ -5,6 +5,7 @@ import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
@@ -79,6 +80,7 @@ class MyApp extends StatelessWidget {
       title: 'EduTrack',
       theme: themeProvider.currentThemeData,
       routerConfig: router,
+      scaffoldMessengerKey: MessengerHelper.scaffoldMessengerKey,
     );
   }
 }

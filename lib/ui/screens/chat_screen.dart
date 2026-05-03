@@ -4,6 +4,7 @@ import 'package:edu_track/models/message.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -46,9 +47,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _pickFile() async {
-    final file = await _fileService.pickFile();
-    if (file != null) {
-      setState(() => _selectedFile = file);
+    final result = await _fileService.pickFile();
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
+    }
+    if (result.data != null) {
+      setState(() => _selectedFile = result.data);
     }
   }
 
@@ -57,32 +62,37 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty && _selectedFile == null) return;
     setState(() => _isSending = true);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    try {
-      String? fileUrl;
-      String? fileName;
-      if (_selectedFile != null) {
-        fileUrl = await _fileService.uploadFile(file: _selectedFile!, folderName: 'chat_files');
-        fileName = _selectedFile!.name;
+
+    String? fileUrl;
+    String? fileName;
+    if (_selectedFile != null) {
+      final uploadResult = await _fileService.uploadFile(file: _selectedFile!, folderName: 'chat_files');
+      if (uploadResult.isFailure) {
+        MessengerHelper.showError(uploadResult.errorMessage);
+        if (mounted) setState(() => _isSending = false);
+        return;
       }
-      await _chatService.sendMessage(
-        chatId: widget.chatId,
-        senderId: userProvider.userId!,
-        senderRole: userProvider.role!,
-        content: text.isEmpty ? null : text,
-        fileUrl: fileUrl,
-        fileName: fileName,
-      );
-      if (mounted) {
-        _messageController.clear();
-        setState(() => _selectedFile = null);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _isSending = false);
+      fileUrl = uploadResult.data;
+      fileName = _selectedFile!.name;
     }
+
+    final result = await _chatService.sendMessage(
+      chatId: widget.chatId,
+      senderId: userProvider.userId!,
+      senderRole: userProvider.role!,
+      content: text.isEmpty ? null : text,
+      fileUrl: fileUrl,
+      fileName: fileName,
+    );
+
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+    } else if (mounted) {
+      _messageController.clear();
+      setState(() => _selectedFile = null);
+    }
+
+    if (mounted) setState(() => _isSending = false);
   }
 
   Future<void> _openFile(String url) async {

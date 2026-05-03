@@ -3,6 +3,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,27 +30,24 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
   void initState() {
     super.initState();
     _subjectService = SubjectService();
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    _institutionId = userProvider.institutionId;
+    _institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     _loadData();
   }
 
   Future<void> _loadData() async {
     if (_institutionId == null) return;
     setState(() => _isLoading = true);
-    try {
-      final subjects = await _subjectService.getSubjectsForInstitution(_institutionId!);
-      if (mounted) {
-        setState(() {
-          _subjects = subjects;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e')));
-      }
+    final result = await _subjectService.getSubjectsForInstitution(_institutionId!);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _subjects = result.data;
+        _isLoading = false;
+      });
     }
   }
 
@@ -64,22 +62,16 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_institutionId == null) return;
     setState(() => _isAdding = true);
-    try {
-      await _subjectService.addSubject(name: _nameController.text.trim(), institutionId: _institutionId!);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Предмет успешно добавлен'), backgroundColor: Colors.green));
-      _nameController.clear();
-      _loadData();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.redAccent));
-    } finally {
+    final result = await _subjectService.addSubject(name: _nameController.text.trim(), institutionId: _institutionId!);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
       if (mounted) setState(() => _isAdding = false);
+      return;
     }
+    MessengerHelper.showSuccess('Предмет успешно добавлен');
+    _nameController.clear();
+    if (mounted) setState(() => _isAdding = false);
+    await _loadData();
   }
 
   Future<void> _editSubject(Subject subject) async {
@@ -89,7 +81,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
       context: context,
       builder:
           (ctx) => StatefulBuilder(
-            builder: (context, setState) {
+            builder: (context, setStateDialog) {
               return AlertDialog(
                 title: const Text('Изменить предмет'),
                 content: Form(
@@ -107,20 +99,19 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                   ElevatedButton(
                     onPressed: () async {
                       if (!editFormKey.currentState!.validate()) return;
-                      try {
-                        Navigator.pop(ctx);
-                        this.setState(() => _isLoading = true);
-                        await _subjectService.updateSubject(id: subject.id, name: editNameController.text.trim());
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Предмет обновлен')));
-                        _loadData();
-                      } catch (e) {
-                        if (!mounted) return;
-                        this.setState(() => _isLoading = false);
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
+                      Navigator.pop(ctx);
+                      setState(() => _isLoading = true);
+                      final result = await _subjectService.updateSubject(
+                        id: subject.id,
+                        name: editNameController.text.trim(),
+                      );
+                      if (result.isFailure) {
+                        MessengerHelper.showError(result.errorMessage);
+                        if (mounted) setState(() => _isLoading = false);
+                        return;
                       }
+                      MessengerHelper.showSuccess('Предмет обновлён');
+                      await _loadData();
                     },
                     child: const Text('Сохранить'),
                   ),
@@ -152,16 +143,14 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
 
     if (confirmed == true) {
       setState(() => _isLoading = true);
-      try {
-        await _subjectService.deleteSubject(subject.id);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Предмет удален')));
-        _loadData();
-      } catch (e) {
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
+      final result = await _subjectService.deleteSubject(subject.id);
+      if (result.isFailure) {
+        MessengerHelper.showError(result.errorMessage);
+        if (mounted) setState(() => _isLoading = false);
+        return;
       }
+      MessengerHelper.showSuccess('Предмет удалён');
+      await _loadData();
     }
   }
 

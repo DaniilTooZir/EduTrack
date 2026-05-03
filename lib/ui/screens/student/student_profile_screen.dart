@@ -7,6 +7,7 @@ import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -53,54 +54,59 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     final userId = userProvider.userId;
     final institutionId = userProvider.institutionId;
     if (userId == null) return;
-    try {
-      final student = await _studentService.getStudentById(userId);
-      if (student != null && institutionId != null) {
-        final inst = await _institutionService.getInstitutionById(institutionId);
-        Map<String, dynamic>? curator;
-        if (student.groupId != null) {
-          final groupResponse =
-              await Supabase.instance.client
-                  .from('groups')
-                  .select('teacher:teachers(id, name, surname)')
-                  .eq('id', student.groupId!)
-                  .single();
-          curator = groupResponse['teacher'] as Map<String, dynamic>?;
-        }
-        if (mounted) {
-          setState(() {
-            _student = student;
-            _institution = inst;
-            _curatorInfo = curator;
-            _fillControllers();
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
+    final studentResult = await _studentService.getStudentById(userId);
+    if (studentResult.isFailure || studentResult.data == null) {
       if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    final student = studentResult.data!;
+    Institution? inst;
+    if (institutionId != null) {
+      final instResult = await _institutionService.getInstitutionById(institutionId);
+      if (instResult.isSuccess) inst = instResult.data;
+    }
+    Map<String, dynamic>? curator;
+    if (student.groupId != null) {
+      try {
+        final groupResponse =
+            await Supabase.instance.client
+                .from('groups')
+                .select('teacher:teachers(id, name, surname)')
+                .eq('id', student.groupId!)
+                .single();
+        curator = groupResponse['teacher'] as Map<String, dynamic>?;
+      } catch (_) {}
+    }
+    if (mounted) {
+      setState(() {
+        _student = student;
+        _institution = inst;
+        _curatorInfo = curator;
+        _fillControllers();
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _updateAvatar() async {
-    final file = await _avatarService.pickImage();
-    if (file == null) return;
+    final pickResult = await _avatarService.pickImage();
+    if (pickResult.isFailure || pickResult.data == null) return;
     setState(() => _isSaving = true);
-    try {
-      final url = await _avatarService.uploadAvatar(file: file, userId: _student!.id);
-      if (url != null) {
-        await _studentService.updateStudentData(_student!.id, {'avatar_url': url});
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Фото профиля обновлено')));
-        _loadStudentData();
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Colors.red));
-    } finally {
+    final uploadResult = await _avatarService.uploadAvatar(file: pickResult.data!, userId: _student!.id);
+    if (uploadResult.isFailure) {
+      MessengerHelper.showError(uploadResult.errorMessage);
       if (mounted) setState(() => _isSaving = false);
+      return;
     }
+    final updateResult = await _studentService.updateStudentData(_student!.id, {'avatar_url': uploadResult.data});
+    if (!mounted) return;
+    if (updateResult.isFailure) {
+      MessengerHelper.showError(updateResult.errorMessage);
+    } else {
+      MessengerHelper.showSuccess('Фото профиля обновлено');
+      await _loadStudentData();
+    }
+    setState(() => _isSaving = false);
   }
 
   void _fillControllers() {
@@ -120,7 +126,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     final password = _passwordController.text.trim();
     final confirm = _confirmPasswordController.text.trim();
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
+      MessengerHelper.showError('Пароли не совпадают');
       setState(() => _isSaving = false);
       return;
     }
@@ -137,26 +143,20 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       });
       return;
     }
-    try {
-      await _studentService.updateStudentData(_student!.id, updatedData);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Профиль обновлён'), backgroundColor: Colors.green));
-        setState(() {
-          _isEditing = false;
-          _passwordController.clear();
-          _confirmPasswordController.clear();
-        });
-        await _loadStudentData();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Colors.redAccent));
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    final result = await _studentService.updateStudentData(_student!.id, updatedData);
+    if (!mounted) return;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+    } else {
+      MessengerHelper.showSuccess('Профиль обновлён');
+      setState(() {
+        _isEditing = false;
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+      });
+      await _loadStudentData();
     }
+    if (mounted) setState(() => _isSaving = false);
   }
 
   void _resetChanges() {
@@ -289,22 +289,22 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
 
   Future<void> _openCuratorChat() async {
     if (_curatorInfo == null || _student == null) return;
-    try {
-      final chatId = await ChatService().getOrCreateDirectChat(
-        myId: _student!.id,
-        myRole: 'student',
-        otherId: _curatorInfo!['id'],
-        otherRole: 'teacher',
+    final result = await ChatService().getOrCreateDirectChat(
+      myId: _student!.id,
+      myRole: 'student',
+      otherId: _curatorInfo!['id'] as String,
+      otherRole: 'teacher',
+    );
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
+    }
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(chatId: result.data, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),
+        ),
       );
-      if (mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ChatScreen(chatId: chatId, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
     }
   }
 

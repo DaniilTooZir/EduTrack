@@ -1,12 +1,13 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/models/subject.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SubjectService {
   final SupabaseClient _client;
   SubjectService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
-  Future<List<Subject>> getSubjectsByTeacherId(String teacherId) async {
+  Future<AppResult<List<Subject>>> getSubjectsByTeacherId(String teacherId) async {
     try {
       final response = await _client.from('schedule').select('subject:subjects(*)').eq('teacher_id', teacherId);
       final List<dynamic> data = response as List<dynamic>;
@@ -17,53 +18,62 @@ class SubjectService {
           uniqueSubjects[subject.id] = subject;
         }
       }
-      return uniqueSubjects.values.toList();
+      return AppResult.success(uniqueSubjects.values.toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке предметов преподавателя: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при загрузке предметов учителя: $e');
+      return AppResult.failure('Не удалось загрузить предметы преподавателя.');
     }
   }
 
-  Future<List<Subject>> getSubjectsForInstitution(String institutionId) async {
+  Future<AppResult<List<Subject>>> getSubjectsForInstitution(String institutionId) async {
     try {
       final response = await _client.from('subjects').select().eq('institution_id', institutionId).order('created_at');
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((e) => Subject.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(data.map((e) => Subject.fromMap(e as Map<String, dynamic>)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке предметов учреждения: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при загрузке предметов: $e');
+      return AppResult.failure('Не удалось загрузить список предметов.');
     }
   }
 
-  Future<void> addSubject({required String name, required String institutionId}) async {
+  Future<AppResult<void>> addSubject({required String name, required String institutionId}) async {
     try {
       await _client.from('subjects').insert({'name': name, 'institution_id': institutionId});
+      return AppResult.success(null);
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
-        throw Exception('Предмет с таким названием уже существует');
+        return AppResult.failure('Предмет с таким названием уже существует.');
       }
-      throw Exception('Ошибка базы данных: ${e.message}');
+      return AppResult.failure('Ошибка базы данных при добавлении предмета: ${e.message}');
     } catch (e) {
-      throw Exception('Неизвестная ошибка: $e');
+      return AppResult.failure('Не удалось добавить предмет.');
     }
   }
 
-  Future<void> updateSubject({required String id, required String name}) async {
+  Future<AppResult<void>> updateSubject({required String id, required String name}) async {
     try {
       await _client.from('subjects').update({'name': name}).eq('id', id);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при обновлении предмета: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при обновлении предмета: $e');
+      return AppResult.failure('Не удалось обновить предмет.');
     }
   }
 
-  Future<void> deleteSubject(String id) async {
+  Future<AppResult<void>> deleteSubject(String id) async {
     try {
       await _client.from('subjects').delete().eq('id', id);
+      return AppResult.success(null);
     } on PostgrestException catch (e) {
       if (e.code == '23503') {
-        throw Exception('Нельзя удалить предмет: он используется в расписании или оценках');
+        return AppResult.failure('Нельзя удалить предмет: он используется в расписании или оценках.');
       }
-      throw Exception('Ошибка при удалении: ${e.message}');
+      return AppResult.failure('Ошибка при удалении предмета: ${e.message}');
     } catch (e) {
-      rethrow;
+      return AppResult.failure('Не удалось удалить предмет.');
     }
   }
 }

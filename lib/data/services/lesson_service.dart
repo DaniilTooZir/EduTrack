@@ -1,40 +1,49 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/models/lesson.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LessonService {
   final SupabaseClient _client;
   LessonService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
-  Future<void> addLesson(Lesson lesson) async {
+  Future<AppResult<void>> addLesson(Lesson lesson) async {
     try {
       await _client.from('lessons').insert(lesson.toMap());
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при добавлении урока: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при добавлении урока: $e');
+      return AppResult.failure('Не удалось добавить урок.');
     }
   }
 
-  Future<List<Lesson>> getLessonsByScheduleId(String scheduleId) async {
+  Future<AppResult<List<Lesson>>> getLessonsByScheduleId(String scheduleId) async {
     try {
       final response = await _client
           .from('lessons')
           .select()
           .eq('schedule_id', scheduleId)
           .order('id', ascending: true);
-      return (response as List<dynamic>).map((e) => Lesson.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(
+        (response as List<dynamic>).map((e) => Lesson.fromMap(e as Map<String, dynamic>)).toList(),
+      );
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке уроков расписания: ${e.message}');
     } catch (e) {
-      print('Lesson fetch error: $e');
-      return [];
+      return AppResult.failure('Не удалось загрузить уроки.');
     }
   }
 
-  Future<Lesson?> getLessonById(String id) async {
+  Future<AppResult<Lesson?>> getLessonById(String id) async {
     try {
       final response = await _client.from('lessons').select().eq('id', id).maybeSingle();
-      if (response == null) return null;
-      return Lesson.fromMap(response);
+      if (response == null) return AppResult.success(null);
+      return AppResult.success(Lesson.fromMap(response));
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при получении урока: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при получении урока: $e');
+      return AppResult.failure('Не удалось загрузить урок.');
     }
   }
 }

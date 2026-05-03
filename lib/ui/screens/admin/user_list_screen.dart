@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/users_fetch_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -18,7 +19,6 @@ class _UserListScreenState extends State<UserListScreen> {
   List<Map<String, dynamic>> _allOperators = [];
   List<Map<String, dynamic>> _filteredUsers = [];
   bool _isLoading = true;
-  String? _error;
   String _searchQuery = '';
   String _selectedRole = 'all';
 
@@ -31,24 +31,39 @@ class _UserListScreenState extends State<UserListScreen> {
   Future<void> _loadUsers() async {
     final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) {
-      setState(() => _error = 'Не удалось получить ID учреждения');
+      MessengerHelper.showError('Не удалось получить ID учреждения');
       return;
     }
+    setState(() => _isLoading = true);
     final service = UsersFetchService();
-    try {
-      final teachers = await service.fetchTeachers(institutionId);
-      final students = await service.fetchStudents(institutionId);
-      final operators = await service.fetchScheduleOperators(institutionId);
+
+    final teachersResult = await service.fetchTeachers(institutionId);
+    if (teachersResult.isFailure) {
+      MessengerHelper.showError(teachersResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    final studentsResult = await service.fetchStudents(institutionId);
+    if (studentsResult.isFailure) {
+      MessengerHelper.showError(studentsResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    final operatorsResult = await service.fetchScheduleOperators(institutionId);
+    if (operatorsResult.isFailure) {
+      MessengerHelper.showError(operatorsResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    if (mounted) {
       setState(() {
-        _allTeachers = teachers;
-        _allStudents = students;
-        _allOperators = operators;
+        _allTeachers = teachersResult.data;
+        _allStudents = studentsResult.data;
+        _allOperators = operatorsResult.data;
         _applyFilters();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = 'Ошибка при загрузке данных: $e';
         _isLoading = false;
       });
     }
@@ -81,15 +96,13 @@ class _UserListScreenState extends State<UserListScreen> {
 
   Future<void> _deleteUser(String id, String role) async {
     final service = UsersFetchService();
-    try {
-      await service.deleteUserById(id, role);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Пользователь удалён')));
-      await _loadUsers();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка при удалении: $e')));
+    final result = await service.deleteUserById(id, role);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    MessengerHelper.showSuccess('Пользователь удалён');
+    await _loadUsers();
   }
 
   @override
@@ -97,7 +110,6 @@ class _UserListScreenState extends State<UserListScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
     if (_isLoading) return _buildUserSkeleton();
-    if (_error != null) return Center(child: Text(_error!, style: TextStyle(color: colors.error)));
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(

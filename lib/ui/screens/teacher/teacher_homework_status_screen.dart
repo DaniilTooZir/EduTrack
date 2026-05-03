@@ -8,6 +8,7 @@ import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -48,28 +49,34 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final teacherId = userProvider.userId!;
-      final institutionId = userProvider.institutionId!;
-      final results = await Future.wait([
-        _subjectService.getSubjectsByTeacherId(teacherId),
-        _groupService.getGroups(institutionId),
-        _homeworkService.getHomeworkByTeacherId(teacherId),
-      ]);
-      if (mounted) {
-        setState(() {
-          _subjects = results[0] as List<Subject>;
-          _groups = results[1] as List<Group>;
-          _allHomeworks = results[2] as List<Homework>;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка загрузки данных: $e')));
-      }
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final teacherId = userProvider.userId!;
+    final institutionId = userProvider.institutionId!;
+    final subjectsResult = await _subjectService.getSubjectsByTeacherId(teacherId);
+    if (subjectsResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      MessengerHelper.showError(subjectsResult.errorMessage);
+      return;
+    }
+    final groupsResult = await _groupService.getGroups(institutionId);
+    if (groupsResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      MessengerHelper.showError(groupsResult.errorMessage);
+      return;
+    }
+    final homeworksResult = await _homeworkService.getHomeworkByTeacherId(teacherId);
+    if (homeworksResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      MessengerHelper.showError(homeworksResult.errorMessage);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _subjects = subjectsResult.data;
+        _groups = groupsResult.data;
+        _allHomeworks = homeworksResult.data;
+        _isLoading = false;
+      });
     }
   }
 
@@ -229,48 +236,48 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
   }
 
   Future<void> _loadDetails() async {
-    try {
-      final students = await widget.studentService.getStudentsByGroupId(widget.homework.groupId);
-      final statuses = await widget.homeworkService.getStatusesByHomeworkId(widget.homework.id);
-      if (mounted) {
-        setState(() {
-          _students = students;
-          _statusMap = {for (final s in statuses) s.studentId: s};
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+    final studentsResult = await widget.studentService.getStudentsByGroupId(widget.homework.groupId);
+    final statusesResult = await widget.homeworkService.getStatusesByHomeworkId(widget.homework.id);
+    if (!mounted) return;
+    if (studentsResult.isFailure || statusesResult.isFailure) {
+      setState(() => _isLoading = false);
+      return;
     }
+    setState(() {
+      _students = studentsResult.data;
+      _statusMap = {for (final s in statusesResult.data) s.studentId: s};
+      _isLoading = false;
+    });
   }
 
   Future<void> _toggleStatus(String studentId, bool currentStatus) async {
-    try {
-      await widget.homeworkService.evaluateHomework(
-        homeworkId: widget.homework.id,
-        studentId: studentId,
-        isCompleted: !currentStatus,
-      );
-      setState(() {
-        final existing = _statusMap[studentId];
-        if (existing != null) {
-          _statusMap[studentId] = HomeworkStatus(
-            id: existing.id,
-            homeworkId: existing.homeworkId,
-            studentId: existing.studentId,
-            isCompleted: !currentStatus,
-            updatedAt: DateTime.now(),
-            studentComment: existing.studentComment,
-            fileUrl: existing.fileUrl,
-            fileName: existing.fileName,
-          );
-        } else {
-          _loadDetails();
-        }
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось обновить статус')));
+    final result = await widget.homeworkService.evaluateHomework(
+      homeworkId: widget.homework.id,
+      studentId: studentId,
+      isCompleted: !currentStatus,
+    );
+    if (result.isFailure) {
+      MessengerHelper.showError('Не удалось обновить статус');
+      return;
     }
+    if (!mounted) return;
+    setState(() {
+      final existing = _statusMap[studentId];
+      if (existing != null) {
+        _statusMap[studentId] = HomeworkStatus(
+          id: existing.id,
+          homeworkId: existing.homeworkId,
+          studentId: existing.studentId,
+          isCompleted: !currentStatus,
+          updatedAt: DateTime.now(),
+          studentComment: existing.studentComment,
+          fileUrl: existing.fileUrl,
+          fileName: existing.fileName,
+        );
+      } else {
+        _loadDetails();
+      }
+    });
   }
 
   void _showEvaluationDialog(Student student, HomeworkStatus? status) {
@@ -448,9 +455,7 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось открыть файл')));
-      }
+      MessengerHelper.showError('Не удалось открыть файл');
     }
   }
 

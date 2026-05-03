@@ -3,6 +3,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -27,18 +28,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _loadChats() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId == null) return;
-    try {
-      final chats = await _chatService.getEnrichedUserChats(userId);
-      if (mounted) {
-        setState(() {
-          _chats = chats;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+
+    final result = await _chatService.getEnrichedUserChats(userId);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _chats = result.data;
+        _isLoading = false;
+      });
     }
   }
 

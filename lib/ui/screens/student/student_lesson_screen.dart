@@ -7,6 +7,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -39,23 +40,24 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
     final groupId = userProvider.groupId;
     final db = Provider.of<AppDatabase>(context, listen: false);
     if (studentId == null) return;
-    try {
-      final schedules = await _scheduleService.getScheduleForStudent(studentId, groupId, db);
-      final List<Lesson> allLessons = [];
-      for (final schedule in schedules) {
-        final lessons = await _lessonService.getLessonsByScheduleId(schedule.id);
-        allLessons.addAll(lessons);
-      }
-      allLessons.sort((a, b) => (b.id ?? '').compareTo(a.id ?? ''));
-      if (mounted) {
-        setState(() {
-          _lessons = allLessons;
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Ошибка при загрузке уроков: $e');
+    final schedulesResult = await _scheduleService.getScheduleForStudent(studentId, groupId, db);
+    if (schedulesResult.isFailure) {
       if (mounted) setState(() => _loading = false);
+      return;
+    }
+    final List<Lesson> allLessons = [];
+    for (final schedule in schedulesResult.data) {
+      final lessonsResult = await _lessonService.getLessonsByScheduleId(schedule.id);
+      if (lessonsResult.isSuccess) {
+        allLessons.addAll(lessonsResult.data);
+      }
+    }
+    allLessons.sort((a, b) => (b.id ?? '').compareTo(a.id ?? ''));
+    if (mounted) {
+      setState(() {
+        _lessons = allLessons;
+        _loading = false;
+      });
     }
   }
 
@@ -65,7 +67,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
   }
 
   Widget _buildLessonCard(Lesson lesson, ColorScheme colors) {
-    return FutureBuilder<Schedule?>(
+    return FutureBuilder<AppResult<Schedule?>>(
       future: _scheduleService.getScheduleById(lesson.scheduleId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -78,7 +80,9 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
             ),
           );
         }
-        final schedule = snapshot.data!;
+        final result = snapshot.data!;
+        if (result.isFailure || result.data == null) return const SizedBox.shrink();
+        final schedule = result.data!;
         final subjectName = schedule.subject?.name ?? 'Предмет';
         final date = schedule.date;
         final day = date != null ? date.day.toString().padLeft(2, '0') : '--';

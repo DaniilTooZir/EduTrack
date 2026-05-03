@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -51,24 +52,23 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
   }
 
   Future<void> _loadComments() async {
-    try {
-      final data = await _service.getCommentsByLessonId(lessonId.toString());
-      if (!mounted) return;
-      setState(() {
-        _comments = data;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
+    final result = await _service.getCommentsByLessonId(lessonId.toString());
+    if (!mounted) return;
+    if (result.isFailure) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка загрузки: $e')));
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    setState(() {
+      _comments = result.data;
+      _isLoading = false;
+    });
   }
 
   Future<void> _pickFile() async {
-    final file = await _fileService.pickFile();
-    if (file != null) {
-      setState(() => _selectedFile = file);
+    final result = await _fileService.pickFile();
+    if (result.isSuccess && result.data != null) {
+      setState(() => _selectedFile = result.data);
     }
   }
 
@@ -76,35 +76,39 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
     final text = _messageController.text.trim();
     if (text.isEmpty && _selectedFile == null) return;
     setState(() => _isSending = true);
-    try {
-      String? fileUrl;
-      String? fileName;
-      if (_selectedFile != null) {
-        fileUrl = await _fileService.uploadFile(file: _selectedFile!, folderName: 'lesson_chat_files');
-        fileName = _selectedFile!.name;
-        if (fileUrl == null) throw Exception('Не удалось загрузить файл');
+    String? fileUrl;
+    String? fileName;
+    if (_selectedFile != null) {
+      final uploadResult = await _fileService.uploadFile(file: _selectedFile!, folderName: 'lesson_chat_files');
+      if (uploadResult.isFailure) {
+        MessengerHelper.showError(uploadResult.errorMessage);
+        if (mounted) setState(() => _isSending = false);
+        return;
       }
-      final comment = LessonComment(
-        lessonId: lessonId.toString(),
-        senderStudentId: studentId,
-        message: text.isEmpty ? null : text,
-        fileUrl: fileUrl,
-        fileName: fileName,
-        timestamp: DateTime.now(),
-      );
-      await _service.addComment(comment);
-      if (!mounted) return;
-      _messageController.clear();
-      setState(() => _selectedFile = null);
-      await _loadComments();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Не удалось отправить: $e'), backgroundColor: Colors.redAccent));
-    } finally {
-      if (mounted) setState(() => _isSending = false);
+      fileUrl = uploadResult.data;
+      fileName = _selectedFile!.name;
     }
+    final comment = LessonComment(
+      lessonId: lessonId.toString(),
+      senderStudentId: studentId,
+      message: text.isEmpty ? null : text,
+      fileUrl: fileUrl,
+      fileName: fileName,
+      timestamp: DateTime.now(),
+    );
+    final addResult = await _service.addComment(comment);
+    if (!mounted) return;
+    if (addResult.isFailure) {
+      MessengerHelper.showError(addResult.errorMessage);
+      setState(() => _isSending = false);
+      return;
+    }
+    _messageController.clear();
+    setState(() {
+      _selectedFile = null;
+      _isSending = false;
+    });
+    await _loadComments();
   }
 
   Future<void> _openFile(String url) async {
@@ -112,9 +116,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Не удалось открыть файл')));
-      }
+      MessengerHelper.showError('Не удалось открыть файл');
     }
   }
 

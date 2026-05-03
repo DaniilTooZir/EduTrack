@@ -1,30 +1,28 @@
 import 'dart:math';
 import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/utils/app_result.dart';
 
 /// Сервис для автоматической модерации заявок образовательных организаций.
 /// Обрабатывает заявки в статусе `pending` и создаёт аккаунты руководителей.
 class InstitutionModerationService {
   /// Основной метод: получает все заявки в ожидании и обрабатывает каждую.
-  static Future<void> processPendingRequests() async {
+  static Future<AppResult<void>> processPendingRequests() async {
     try {
-      print('[Moderation] Запуск проверки заявок...');
-      // Запрашивает все заявки со статусом pending
       final pendingRequests = await SupabaseConnection.client
           .from('institution_requests')
           .select()
           .eq('status', 'pending');
 
       if (pendingRequests.isEmpty) {
-        print('[Moderation] Нет новых заявок.');
-        return;
+        return AppResult.success(null);
       }
 
       for (final request in pendingRequests) {
         await _processSingleRequest(request);
       }
-    } catch (e, stack) {
-      print('Глобальная ошибка в processPendingRequests: $e');
-      print(stack);
+      return AppResult.success(null);
+    } catch (e) {
+      return AppResult.failure('Ошибка при обработке заявок на регистрацию учреждений.');
     }
   }
 
@@ -33,13 +31,11 @@ class InstitutionModerationService {
   static Future<void> _processSingleRequest(Map<String, dynamic> request) async {
     final email = request['email'];
     try {
-      // Проверяка, существует ли уже администратор с таким email
       final existingAdmin = await SupabaseConnection.client.from('education_heads').select().eq('email', email);
       if (existingAdmin.isEmpty) {
         final login = _generateLogin(request['head_name'], request['head_surname']);
         final password = _generatePassword();
 
-        // Создание запись учреждения и получаем ID
         final institutionInsert =
             await SupabaseConnection.client
                 .from('institutions')
@@ -48,7 +44,6 @@ class InstitutionModerationService {
                 .single();
         final institutionId = institutionInsert['id'];
 
-        // Создание администратора (руководителя учреждения)
         await SupabaseConnection.client.from('education_heads').insert({
           'name': request['head_name'],
           'surname': request['head_surname'],
@@ -59,16 +54,11 @@ class InstitutionModerationService {
           'phone': request['phone'],
         });
 
-        // обработка статуса заявки
         await _updateRequestStatus(request['id'], 'approved');
-        print('Заявка одобрена для $email. Логин: $login');
       } else {
         await _updateRequestStatus(request['id'], 'rejected');
-        print('Заявка отклонена — дубликат email: $email');
       }
-    } catch (e, stack) {
-      print('Ошибка при обработке заявки для $email: $e');
-      print(stack);
+    } catch (e) {
       await _updateRequestStatus(request['id'], 'failed');
     }
   }

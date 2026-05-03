@@ -10,6 +10,7 @@ import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -34,28 +35,49 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     _loadDashboardData();
   }
 
-  Future<Map<String, int>> _fetchStats(String instId) async {
-    final studentCount = await _dashboardService.getStudentCount(instId);
-    final teacherCount = await _dashboardService.getTeacherCount(instId);
-    final groupCount = await _dashboardService.getGroupCount(instId);
-    final subjectCount = await _dashboardService.getSubjectCount(instId);
-    return {'students': studentCount, 'teachers': teacherCount, 'groups': groupCount, 'subjects': subjectCount};
-  }
-
   Future<void> _loadDashboardData() async {
     final instId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (instId == null) return;
     setState(() => _isLoading = true);
-    try {
-      final data = await _fetchStats(instId);
-      if (mounted) {
-        setState(() {
-          _stats = data;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
+
+    final studentResult = await _dashboardService.getStudentCount(instId);
+    if (studentResult.isFailure) {
+      MessengerHelper.showError(studentResult.errorMessage);
       if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    final teacherResult = await _dashboardService.getTeacherCount(instId);
+    if (teacherResult.isFailure) {
+      MessengerHelper.showError(teacherResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    final groupResult = await _dashboardService.getGroupCount(instId);
+    if (groupResult.isFailure) {
+      MessengerHelper.showError(groupResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    final subjectResult = await _dashboardService.getSubjectCount(instId);
+    if (subjectResult.isFailure) {
+      MessengerHelper.showError(subjectResult.errorMessage);
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _stats = {
+          'students': studentResult.data,
+          'teachers': teacherResult.data,
+          'groups': groupResult.data,
+          'subjects': subjectResult.data,
+        };
+        _isLoading = false;
+      });
     }
   }
 

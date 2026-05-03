@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/session_service.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/chat_list_screen.dart';
@@ -49,52 +50,50 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         _dashboardError = null;
       });
     }
-    try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final studentId = userProvider.userId;
-      if (studentId == null) {
-        if (mounted) {
-          setState(() {
-            _dashboardError = 'Не удалось получить ID студента';
-            _isDashboardLoading = false;
-          });
-        }
-        return;
-      }
-      final groupResponse = await _homeworkService.getGroupByStudentId(studentId);
-      String? groupName;
-      if (groupResponse != null) {
-        groupName = groupResponse['name'] as String;
-      }
-      final homeworks = await _homeworkService.getHomeworksByStudentGroup(studentId);
-      final statuses = await _homeworkService.getHomeworkStatusesForStudent(studentId);
-      final statusMap = {for (final s in statuses) s.homeworkId: s};
-      int completed = 0;
-      int pending = 0;
-      for (final hw in homeworks) {
-        final status = statusMap[hw.id];
-        if (status != null && status.isCompleted) {
-          completed++;
-        } else {
-          pending++;
-        }
-      }
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final studentId = userProvider.userId;
+    if (studentId == null) {
       if (mounted) {
         setState(() {
-          _groupName = groupName;
-          _totalHomework = homeworks.length;
-          _completedHomework = completed;
-          _pendingHomework = pending;
+          _dashboardError = 'Не удалось получить ID студента';
           _isDashboardLoading = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _dashboardError = 'Ошибка загрузки данных: $e';
-          _isDashboardLoading = false;
-        });
-      }
+      return;
+    }
+    final groupResult = await _homeworkService.getGroupByStudentId(studentId);
+    String? groupName;
+    if (groupResult.isSuccess && groupResult.data != null) {
+      groupName = groupResult.data!['name'] as String;
+    }
+    final homeworksResult = await _homeworkService.getHomeworksByStudentGroup(studentId);
+    if (homeworksResult.isFailure) {
+      if (mounted) setState(() { _dashboardError = homeworksResult.errorMessage; _isDashboardLoading = false; });
+      return;
+    }
+    final statusesResult = await _homeworkService.getHomeworkStatusesForStudent(studentId);
+    if (statusesResult.isFailure) {
+      if (mounted) setState(() { _dashboardError = statusesResult.errorMessage; _isDashboardLoading = false; });
+      return;
+    }
+    final homeworks = homeworksResult.data;
+    final statuses = statusesResult.data;
+    final statusMap = {for (final s in statuses) s.homeworkId: s};
+    int completed = 0;
+    int pending = 0;
+    for (final hw in homeworks) {
+      final status = statusMap[hw.id];
+      if (status != null && status.isCompleted) completed++;
+      else pending++;
+    }
+    if (mounted) {
+      setState(() {
+        _groupName = groupName;
+        _totalHomework = homeworks.length;
+        _completedHomework = completed;
+        _pendingHomework = pending;
+        _isDashboardLoading = false;
+      });
     }
   }
 
@@ -413,20 +412,23 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   Future<void> _openGroupChat(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final groupData = await _homeworkService.getGroupByStudentId(userProvider.userId!);
-    if (groupData != null) {
-      final groupId = groupData['id'];
-      final groupName = groupData['name'];
-      try {
-        final chatId = await ChatService().getOrCreateGroupChat(groupId, groupName);
-        if (mounted) {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: 'Группа $groupName')));
-        }
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
-      }
+    final groupResult = await _homeworkService.getGroupByStudentId(userProvider.userId!);
+    if (groupResult.isFailure || groupResult.data == null) {
+      MessengerHelper.showError('Не удалось получить данные группы');
+      return;
+    }
+    final groupData = groupResult.data!;
+    final groupId = groupData['id'] as String;
+    final groupName = groupData['name'] as String;
+    final chatResult = await ChatService().getOrCreateGroupChat(groupId, groupName);
+    if (chatResult.isFailure) {
+      MessengerHelper.showError(chatResult.errorMessage);
+      return;
+    }
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatResult.data, title: 'Группа $groupName')),
+      );
     }
   }
 

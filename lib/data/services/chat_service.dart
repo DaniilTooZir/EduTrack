@@ -1,6 +1,7 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/models/chat.dart';
 import 'package:edu_track/models/message.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatPreview {
@@ -25,19 +26,21 @@ class ChatService {
 
   ChatService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
-  Future<List<Chat>> getUserChats(String userId) async {
+  Future<AppResult<List<Chat>>> getUserChats(String userId) async {
     try {
       final response = await _client.from('chat_members').select('chat:chats(*)').eq('user_id', userId);
       final List<dynamic> data = response as List<dynamic>;
       final chats = data.map((e) => Chat.fromMap(e['chat'] as Map<String, dynamic>)).toList();
       chats.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      return chats;
+      return AppResult.success(chats);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке чатов: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка загрузки чатов: $e');
+      return AppResult.failure('Не удалось загрузить список чатов.');
     }
   }
 
-  Future<List<Message>> getMessages(String chatId) async {
+  Future<AppResult<List<Message>>> getMessages(String chatId) async {
     try {
       final response = await _client
           .from('messages')
@@ -45,13 +48,15 @@ class ChatService {
           .eq('chat_id', chatId)
           .order('created_at', ascending: true);
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((e) => Message.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(data.map((e) => Message.fromMap(e as Map<String, dynamic>)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке сообщений: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка загрузки сообщений: $e');
+      return AppResult.failure('Не удалось загрузить сообщения.');
     }
   }
 
-  Future<void> sendMessage({
+  Future<AppResult<void>> sendMessage({
     required String chatId,
     required String senderId,
     required String senderRole,
@@ -70,12 +75,15 @@ class ChatService {
         'created_at': DateTime.now().toIso8601String(),
       });
       await _client.from('chats').update({'updated_at': DateTime.now().toIso8601String()}).eq('id', chatId);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при отправке сообщения: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка отправки сообщения: $e');
+      return AppResult.failure('Не удалось отправить сообщение.');
     }
   }
 
-  Future<String> getOrCreateDirectChat({
+  Future<AppResult<String>> getOrCreateDirectChat({
     required String myId,
     required String myRole,
     required String otherId,
@@ -100,7 +108,7 @@ class ChatService {
                 .filter('chat_id', 'in', '(${myChatIds.join(',')})')
                 .maybeSingle();
         if (commonChatResponse != null) {
-          return commonChatResponse['chat_id'] as String;
+          return AppResult.success(commonChatResponse['chat_id'] as String);
         }
       }
       final newChatResponse =
@@ -114,9 +122,11 @@ class ChatService {
         {'chat_id': newChatId, 'user_id': myId, 'user_role': myRole},
         {'chat_id': newChatId, 'user_id': otherId, 'user_role': otherRole},
       ]);
-      return newChatId;
+      return AppResult.success(newChatId);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при создании чата: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при создании чата: $e');
+      return AppResult.failure('Не удалось создать чат.');
     }
   }
 
@@ -162,11 +172,11 @@ class ChatService {
     }
   }
 
-  Future<String> getOrCreateGroupChat(String groupId, String groupName) async {
+  Future<AppResult<String>> getOrCreateGroupChat(String groupId, String groupName) async {
     try {
       final existingChat = await _client.from('chats').select('id').eq('group_id', groupId).maybeSingle();
       if (existingChat != null) {
-        return existingChat['id'] as String;
+        return AppResult.success(existingChat['id'] as String);
       }
       final newChatResponse =
           await _client
@@ -181,9 +191,11 @@ class ChatService {
               .single();
       final chatId = newChatResponse['id'] as String;
       await _syncGroupMembers(chatId, groupId);
-      return chatId;
+      return AppResult.success(chatId);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при создании группового чата: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при создании группового чата: $e');
+      return AppResult.failure('Не удалось создать групповой чат.');
     }
   }
 
@@ -191,7 +203,7 @@ class ChatService {
     final students = await _client.from('students').select('id').eq('group_id', groupId);
     final group = await _client.from('groups').select('curator_id').eq('id', groupId).single();
     final List<Map<String, dynamic>> membersToAdd = [];
-    for (var s in students) {
+    for (final s in students) {
       membersToAdd.add({'chat_id': chatId, 'user_id': s['id'], 'user_role': 'student'});
     }
     if (group['curator_id'] != null) {
@@ -202,13 +214,13 @@ class ChatService {
     }
   }
 
-  Future<List<ChatPreview>> getEnrichedUserChats(String userId) async {
+  Future<AppResult<List<ChatPreview>>> getEnrichedUserChats(String userId) async {
     try {
       final response = await _client.from('chat_members').select('chat:chats(*)').eq('user_id', userId);
       final List<dynamic> data = response as List<dynamic>;
       final List<Chat> chats = data.map((e) => Chat.fromMap(e['chat'] as Map<String, dynamic>)).toList();
       final List<ChatPreview> previews = [];
-      for (var chat in chats) {
+      for (final chat in chats) {
         final msgRes =
             await _client
                 .from('messages')
@@ -256,23 +268,25 @@ class ChatService {
         if (b.lastMessageTime == null) return -1;
         return b.lastMessageTime!.compareTo(a.lastMessageTime!);
       });
-
-      return previews;
+      return AppResult.success(previews);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке списка чатов: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка загрузки списка чатов: $e');
+      return AppResult.failure('Не удалось загрузить список чатов.');
     }
   }
 
+  /// Stream — not wrapped in AppResult intentionally.
   Stream<List<Message>> getMessagesStream(String chatId) {
     return _client
         .from('messages')
         .stream(primaryKey: ['id'])
         .eq('chat_id', chatId)
-        .order('created_at', ascending: false)
-        .map((maps) => maps.map((map) => Message.fromMap(map)).toList());
+        .order('created_at')
+        .map((maps) => maps.map(Message.fromMap).toList());
   }
 
-  Future<void> markAsRead(String chatId, String userId) async {
+  Future<AppResult<void>> markAsRead(String chatId, String userId) async {
     try {
       await _client
           .from('messages')
@@ -280,8 +294,11 @@ class ChatService {
           .eq('chat_id', chatId)
           .neq('sender_id', userId)
           .eq('is_read', false);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при отметке сообщений прочитанными: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при отметке сообщений прочитанными: $e');
+      return AppResult.failure('Не удалось отметить сообщения как прочитанные.');
     }
   }
 }

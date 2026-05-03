@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/institution_request_status_service.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,54 +34,46 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
     });
 
     final email = _emailController.text.trim();
-    try {
-      final result = await InstitutionRequestStatusService.getRequestDetailsByEmail(email);
-      if (!mounted) return;
+    final result = await InstitutionRequestStatusService.getRequestDetailsByEmail(email);
 
-      setState(() {
-        _isLoading = false;
-        if (result == null) {
-          _statusMessage = 'Заявка с таким email не найдена.';
-        } else {
-          final status = result['status'] as String;
-          switch (status) {
-            case 'pending':
-              _statusMessage = 'Заявка находится на рассмотрении.';
-              break;
-            case 'approved':
-              _statusMessage = 'Заявка одобрена!';
-              _login = result['login'] as String?;
-              _password = result['password'] as String?;
-              break;
-            case 'rejected':
-              _statusMessage = 'Заявка отклонена.';
-              break;
-            case 'failed':
-              _statusMessage = 'Произошла техническая ошибка при обработке.';
-              break;
-            default:
-              _statusMessage = 'Статус заявки: $status';
-          }
-        }
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _statusMessage = 'Ошибка при проверке: $e';
-      });
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      setState(() => _isLoading = false);
+      return;
     }
+
+    final data = result.data;
+    setState(() {
+      _isLoading = false;
+      if (data == null) {
+        _statusMessage = 'Заявка с таким email не найдена.';
+      } else {
+        final status = data['status'] as String;
+        switch (status) {
+          case 'pending':
+            _statusMessage = 'Заявка находится на рассмотрении.';
+            break;
+          case 'approved':
+            _statusMessage = 'Заявка одобрена!';
+            _login = data['login'] as String?;
+            _password = data['password'] as String?;
+            break;
+          case 'rejected':
+            _statusMessage = 'Заявка отклонена.';
+            break;
+          case 'failed':
+            _statusMessage = 'Произошла техническая ошибка при обработке.';
+            break;
+          default:
+            _statusMessage = 'Статус заявки: $status';
+        }
+      }
+    });
   }
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label скопирован в буфер обмена'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    MessengerHelper.showSuccess('$label скопирован в буфер обмена');
   }
 
   @override

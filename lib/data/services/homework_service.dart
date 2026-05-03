@@ -2,18 +2,23 @@ import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeworkService {
   final SupabaseClient _client;
   HomeworkService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
-  Future<List<Homework>> getHomeworkByTeacherId(String teacherId) async {
+  Future<AppResult<List<Homework>>> getHomeworkByTeacherId(String teacherId) async {
     try {
       final subjectService = SubjectService(client: _client);
-      final subjects = await subjectService.getSubjectsByTeacherId(teacherId);
+      final subjectsResult = await subjectService.getSubjectsByTeacherId(teacherId);
+      if (subjectsResult.isFailure) {
+        return AppResult.failure(subjectsResult.errorMessage);
+      }
+      final subjects = subjectsResult.data;
       if (subjects.isEmpty) {
-        return [];
+        return AppResult.success([]);
       }
       final subjectIds = subjects.map((s) => s.id).toList();
       final response = await _client
@@ -22,18 +27,19 @@ class HomeworkService {
           .filter('subject_id', 'in', '(${subjectIds.join(',')})')
           .order('due_date', ascending: true);
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((e) => Homework.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(data.map((e) => Homework.fromMap(e as Map<String, dynamic>)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке заданий преподавателя: ${e.message}');
     } catch (e) {
-      print('Ошибка при загрузке ДЗ учителя: $e');
-      throw Exception('Не удалось загрузить задания');
+      return AppResult.failure('Не удалось загрузить домашние задания преподавателя.');
     }
   }
 
-  Future<List<Homework>> getHomeworksByStudentGroup(String studentId) async {
+  Future<AppResult<List<Homework>>> getHomeworksByStudentGroup(String studentId) async {
     try {
       final student = await _client.from('students').select('group_id').eq('id', studentId).maybeSingle();
       if (student == null || student['group_id'] == null) {
-        throw Exception('Группа студента не найдена');
+        return AppResult.failure('Группа студента не найдена.');
       }
       final groupId = student['group_id'] as String;
       final response = await _client
@@ -42,22 +48,26 @@ class HomeworkService {
           .eq('group_id', groupId)
           .order('due_date', ascending: true);
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((e) => Homework.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(data.map((e) => Homework.fromMap(e as Map<String, dynamic>)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке домашних заданий группы: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка загрузки домашних заданий по группе: $e');
+      return AppResult.failure('Не удалось загрузить домашние задания группы.');
     }
   }
 
-  Future<Map<String, dynamic>?> getGroupByStudentId(String studentId) async {
+  Future<AppResult<Map<String, dynamic>?>> getGroupByStudentId(String studentId) async {
     try {
       final response = await _client.from('students').select('groups(id, name)').eq('id', studentId).single();
-      return response['groups'] as Map<String, dynamic>?;
+      return AppResult.success(response['groups'] as Map<String, dynamic>?);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при получении группы студента: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка получения группы студента: $e');
+      return AppResult.failure('Не удалось получить группу студента.');
     }
   }
 
-  Future<void> addHomework({
+  Future<AppResult<void>> addHomework({
     required String institutionId,
     required String subjectId,
     required String groupId,
@@ -77,12 +87,15 @@ class HomeworkService {
         'file_url': fileUrl,
         'file_name': fileName,
       });
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при создании домашнего задания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при создании ДЗ: $e');
+      return AppResult.failure('Не удалось создать домашнее задание.');
     }
   }
 
-  Future<void> updateHomework({
+  Future<AppResult<void>> updateHomework({
     required String id,
     String? title,
     String? description,
@@ -106,21 +119,27 @@ class HomeworkService {
         if (fileName != null) updateData['file_name'] = fileName;
       }
       await _client.from('homework').update(updateData).eq('id', id);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при обновлении домашнего задания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при обновлении домашнего задания: $e');
+      return AppResult.failure('Не удалось обновить домашнее задание.');
     }
   }
 
-  Future<void> deleteHomework(String id) async {
+  Future<AppResult<void>> deleteHomework(String id) async {
     try {
       await _client.from('homework_status').delete().eq('homework_id', id);
       await _client.from('homework').delete().eq('id', id);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при удалении домашнего задания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при удалении: $e');
+      return AppResult.failure('Не удалось удалить домашнее задание.');
     }
   }
 
-  Future<void> evaluateHomework({
+  Future<AppResult<void>> evaluateHomework({
     required String homeworkId,
     required String studentId,
     required bool isCompleted,
@@ -146,35 +165,42 @@ class HomeworkService {
       } else {
         await _client.from('homework_status').insert(data);
       }
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при оценке задания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при оценке задания: $e');
+      return AppResult.failure('Не удалось оценить домашнее задание.');
     }
   }
 
-  Future<List<Homework>> getHomeworksForStudent(String studentId) async {
+  Future<AppResult<List<Homework>>> getHomeworksForStudent(String studentId) async {
     try {
       final response = await _client
           .from('homework_status')
           .select('homework_id, homework(*, subject:subjects(*), group:groups(*))')
           .eq('student_id', studentId);
       final List data = response as List;
-      return data.map((item) => Homework.fromMap(item['homework'])).toList();
+      return AppResult.success(data.map((item) => Homework.fromMap(item['homework'])).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке домашних заданий студента: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при загрузке домашних заданий: $e');
+      return AppResult.failure('Не удалось загрузить домашние задания студента.');
     }
   }
 
-  Future<List<HomeworkStatus>> getHomeworkStatusesForStudent(String studentId) async {
+  Future<AppResult<List<HomeworkStatus>>> getHomeworkStatusesForStudent(String studentId) async {
     try {
       final response = await _client.from('homework_status').select().eq('student_id', studentId);
       final List data = response as List;
-      return data.map((e) => HomeworkStatus.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(data.map((e) => HomeworkStatus.fromMap(e as Map<String, dynamic>)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке статусов заданий: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при загрузке статусов: $e');
+      return AppResult.failure('Не удалось загрузить статусы домашних заданий.');
     }
   }
 
-  Future<void> submitHomework({
+  Future<AppResult<void>> submitHomework({
     required String homeworkId,
     required String studentId,
     String? comment,
@@ -203,12 +229,15 @@ class HomeworkService {
       } else {
         await _client.from('homework_status').insert(data);
       }
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при отправке домашнего задания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при отправке домашнего задания: $e');
+      return AppResult.failure('Не удалось отправить домашнее задание.');
     }
   }
 
-  Future<void> cancelSubmission({required String homeworkId, required String studentId}) async {
+  Future<AppResult<void>> cancelSubmission({required String homeworkId, required String studentId}) async {
     try {
       await _client
           .from('homework_status')
@@ -221,18 +250,23 @@ class HomeworkService {
           })
           .eq('homework_id', homeworkId)
           .eq('student_id', studentId);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при отмене сдачи задания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка отмены сдачи: $e');
+      return AppResult.failure('Не удалось отменить сдачу домашнего задания.');
     }
   }
 
-  Future<List<HomeworkStatus>> getStatusesByHomeworkId(String homeworkId) async {
+  Future<AppResult<List<HomeworkStatus>>> getStatusesByHomeworkId(String homeworkId) async {
     try {
       final response = await _client.from('homework_status').select().eq('homework_id', homeworkId);
       final List data = response as List;
-      return data.map((e) => HomeworkStatus.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(data.map((e) => HomeworkStatus.fromMap(e as Map<String, dynamic>)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке статусов домашнего задания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка загрузки статусов ДЗ: $e');
+      return AppResult.failure('Не удалось загрузить статусы домашнего задания.');
     }
   }
 }

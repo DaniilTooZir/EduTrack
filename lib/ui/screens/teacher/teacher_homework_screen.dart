@@ -6,6 +6,7 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -53,28 +54,36 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final userId = userProvider.userId!;
-      final institutionId = userProvider.institutionId!;
-      final subjects = await _subjectService.getSubjectsByTeacherId(userId);
-      final groups = await _groupService.getGroups(institutionId);
-      final homeworks = await _homeworkService.getHomeworkByTeacherId(userId);
-      if (mounted) {
-        setState(() {
-          _subjects = subjects;
-          _groups = groups;
-          _homeworks = homeworks;
-          if (_selectedSubjectId == null && subjects.isNotEmpty) _selectedSubjectId = subjects.first.id;
-          if (_selectedGroupId == null && groups.isNotEmpty) _selectedGroupId = groups.first.id;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
-      }
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.userId!;
+    final institutionId = userProvider.institutionId!;
+    final subjectsResult = await _subjectService.getSubjectsByTeacherId(userId);
+    if (subjectsResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      MessengerHelper.showError(subjectsResult.errorMessage);
+      return;
+    }
+    final groupsResult = await _groupService.getGroups(institutionId);
+    if (groupsResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      MessengerHelper.showError(groupsResult.errorMessage);
+      return;
+    }
+    final homeworksResult = await _homeworkService.getHomeworkByTeacherId(userId);
+    if (homeworksResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      MessengerHelper.showError(homeworksResult.errorMessage);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _subjects = subjectsResult.data;
+        _groups = groupsResult.data;
+        _homeworks = homeworksResult.data;
+        if (_selectedSubjectId == null && _subjects.isNotEmpty) _selectedSubjectId = _subjects.first.id;
+        if (_selectedGroupId == null && _groups.isNotEmpty) _selectedGroupId = _groups.first.id;
+        _isLoading = false;
+      });
     }
   }
 
@@ -91,9 +100,9 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   }
 
   Future<void> _pickFile() async {
-    final file = await _fileService.pickFile();
-    if (file != null) {
-      setState(() => _selectedFile = file);
+    final result = await _fileService.pickFile();
+    if (result.isSuccess && result.data != null) {
+      setState(() => _selectedFile = result.data);
     }
   }
 
@@ -101,50 +110,46 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     if (_selectedSubjectId == null || _selectedGroupId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите предмет и группу')));
+      MessengerHelper.showError('Выберите предмет и группу');
       return;
     }
     setState(() => _isSaving = true);
-    try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      String? fileUrl;
-      String? fileName;
-      if (_selectedFile != null) {
-        setState(() => _isUploadingFile = true);
-        fileUrl = await _fileService.uploadFile(file: _selectedFile!, folderName: 'homework_files');
-        fileName = _selectedFile!.name;
-        setState(() => _isUploadingFile = false);
-        if (fileUrl == null) throw Exception('Не удалось загрузить файл');
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    String? fileUrl;
+    String? fileName;
+    if (_selectedFile != null) {
+      setState(() => _isUploadingFile = true);
+      final uploadResult = await _fileService.uploadFile(file: _selectedFile!, folderName: 'homework_files');
+      setState(() => _isUploadingFile = false);
+      if (uploadResult.isFailure) {
+        MessengerHelper.showError(uploadResult.errorMessage);
+        if (mounted) setState(() => _isSaving = false);
+        return;
       }
-      await _homeworkService.addHomework(
-        institutionId: userProvider.institutionId!,
-        subjectId: _selectedSubjectId!,
-        groupId: _selectedGroupId!,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
-        dueDate: _dueDate,
-        fileUrl: fileUrl,
-        fileName: fileName,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Домашнее задание добавлено'), backgroundColor: Colors.green));
-      _titleController.clear();
-      _descriptionController.clear();
-      setState(() {
-        _dueDate = null;
-        _selectedFile = null;
-      });
-      await _loadData();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.redAccent));
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+      fileUrl = uploadResult.data;
+      fileName = _selectedFile!.name;
     }
+    final addResult = await _homeworkService.addHomework(
+      institutionId: userProvider.institutionId!,
+      subjectId: _selectedSubjectId!,
+      groupId: _selectedGroupId!,
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+      dueDate: _dueDate,
+      fileUrl: fileUrl,
+      fileName: fileName,
+    );
+    if (!mounted) return;
+    if (addResult.isFailure) {
+      MessengerHelper.showError(addResult.errorMessage);
+      setState(() => _isSaving = false);
+      return;
+    }
+    MessengerHelper.showSuccess('Домашнее задание добавлено');
+    _titleController.clear();
+    _descriptionController.clear();
+    setState(() { _dueDate = null; _selectedFile = null; _isSaving = false; });
+    await _loadData();
   }
 
   Future<void> _confirmDeleteHomework(Homework hw) async {
@@ -164,15 +169,14 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
           ),
     );
     if (confirmed == true) {
-      try {
-        await _homeworkService.deleteHomework(hw.id);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Задание удалено')));
-        _loadData();
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+      final result = await _homeworkService.deleteHomework(hw.id);
+      if (!mounted) return;
+      if (result.isFailure) {
+        MessengerHelper.showError(result.errorMessage);
+        return;
       }
+      MessengerHelper.showSuccess('Задание удалено');
+      _loadData();
     }
   }
 
@@ -197,10 +201,10 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             Future<void> pickFileForEdit() async {
-              final file = await _fileService.pickFile();
-              if (file != null) {
+              final result = await _fileService.pickFile();
+              if (result.isSuccess && result.data != null) {
                 setStateDialog(() {
-                  editNewFile = file;
+                  editNewFile = result.data;
                   isFileDeleted = false;
                 });
               }
@@ -332,39 +336,40 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                             if (!editFormKey.currentState!.validate()) return;
                             if (editSelectedGroupId == null) return;
                             setStateDialog(() => isDialogUploading = true);
-                            try {
-                              String? newFileUrl;
-                              String? newFileName;
-                              if (editNewFile != null) {
-                                newFileUrl = await _fileService.uploadFile(
-                                  file: editNewFile!,
-                                  folderName: 'homework_files',
-                                );
-                                newFileName = editNewFile!.name;
-                                if (newFileUrl == null) throw Exception('Ошибка загрузки файла');
+                            String? newFileUrl;
+                            String? newFileName;
+                            if (editNewFile != null) {
+                              final uploadResult = await _fileService.uploadFile(
+                                file: editNewFile!,
+                                folderName: 'homework_files',
+                              );
+                              if (uploadResult.isFailure) {
+                                setStateDialog(() => isDialogUploading = false);
+                                MessengerHelper.showError(uploadResult.errorMessage);
+                                return;
                               }
-                              await _homeworkService.updateHomework(
-                                id: hw.id,
-                                title: editTitleController.text.trim(),
-                                description: editDescriptionController.text.trim(),
-                                dueDate: editDueDate,
-                                groupId: editSelectedGroupId!,
-                                fileUrl: newFileUrl,
-                                fileName: newFileName,
-                                deleteFile: editNewFile == null && isFileDeleted,
-                              );
-                              if (!mounted) return;
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('ДЗ обновлено'), backgroundColor: Colors.green),
-                              );
-                              _loadData();
-                            } catch (e) {
-                              setStateDialog(() => isDialogUploading = false);
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: colors.error));
+                              newFileUrl = uploadResult.data;
+                              newFileName = editNewFile!.name;
                             }
+                            final updateResult = await _homeworkService.updateHomework(
+                              id: hw.id,
+                              title: editTitleController.text.trim(),
+                              description: editDescriptionController.text.trim(),
+                              dueDate: editDueDate,
+                              groupId: editSelectedGroupId!,
+                              fileUrl: newFileUrl,
+                              fileName: newFileName,
+                              deleteFile: editNewFile == null && isFileDeleted,
+                            );
+                            if (!mounted) return;
+                            if (updateResult.isFailure) {
+                              setStateDialog(() => isDialogUploading = false);
+                              MessengerHelper.showError(updateResult.errorMessage);
+                              return;
+                            }
+                            Navigator.pop(context);
+                            MessengerHelper.showSuccess('ДЗ обновлено');
+                            _loadData();
                           },
                   child:
                       isDialogUploading

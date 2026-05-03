@@ -1,6 +1,7 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/models/schedule.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ScheduleService {
@@ -8,7 +9,7 @@ class ScheduleService {
 
   ScheduleService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
-  Future<List<Schedule>> getScheduleForInstitution(String institutionId) async {
+  Future<AppResult<List<Schedule>>> getScheduleForInstitution(String institutionId) async {
     try {
       final response = await _client
           .from('schedule')
@@ -17,24 +18,28 @@ class ScheduleService {
           .order('weekday', ascending: true)
           .order('start_time', ascending: true);
       final List<dynamic> data = response as List<dynamic>;
-      return data.map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(data.map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке расписания учреждения: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка загрузки расписания: $e');
+      return AppResult.failure('Не удалось загрузить расписание учреждения.');
     }
   }
 
-  Future<Schedule?> getScheduleById(String id) async {
+  Future<AppResult<Schedule?>> getScheduleById(String id) async {
     try {
       final response =
           await _client.from('schedule').select('*, subject:subjects(*), group:groups(*)').eq('id', id).maybeSingle();
-      if (response == null) return null;
-      return Schedule.fromMap(response);
+      if (response == null) return AppResult.success(null);
+      return AppResult.success(Schedule.fromMap(response));
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке записи расписания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при загрузке расписания по id: $e');
+      return AppResult.failure('Не удалось загрузить запись расписания.');
     }
   }
 
-  Future<void> addScheduleEntry({
+  Future<AppResult<void>> addScheduleEntry({
     required String institutionId,
     required String subjectId,
     required String groupId,
@@ -55,27 +60,36 @@ class ScheduleService {
         'start_time': startTime,
         'end_time': endTime,
       });
+      return AppResult.success(null);
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
-        throw Exception('На это время у группы уже есть урок');
+        return AppResult.failure('На это время у группы уже есть урок.');
       }
-      throw Exception('Ошибка базы данных: ${e.message}');
+      return AppResult.failure('Ошибка базы данных при добавлении в расписание: ${e.message}');
     } catch (e) {
-      throw Exception('Неизвестная ошибка: $e');
+      return AppResult.failure('Не удалось добавить запись в расписание.');
     }
   }
 
-  Future<void> deleteScheduleEntry(String id) async {
+  Future<AppResult<void>> deleteScheduleEntry(String id) async {
     try {
       await _client.from('schedule').delete().eq('id', id);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при удалении записи расписания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка удаления записи расписания: $e');
+      return AppResult.failure('Не удалось удалить запись расписания.');
     }
   }
 
-  Future<List<Schedule>> getScheduleForStudent(String studentId, String? groupId, AppDatabase db) async {
+  /// Offline-first: on network failure returns AppResult.success with local data.
+  Future<AppResult<List<Schedule>>> getScheduleForStudent(
+    String studentId,
+    String? groupId,
+    AppDatabase db,
+  ) async {
     if (groupId == null) {
-      throw Exception('ID группы не найден локально');
+      return AppResult.failure('ID группы не найден локально.');
     }
     try {
       final response = await _client
@@ -84,14 +98,15 @@ class ScheduleService {
           .eq('group_id', groupId);
       final networkSchedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
       await db.saveSchedules(networkSchedules);
-      return networkSchedules;
+      return AppResult.success(networkSchedules);
     } catch (e) {
-      print('Нет сети (или ошибка), грузим из локальной БД: $e');
-      return await db.getSchedulesForGroup(groupId);
+      final localData = await db.getSchedulesForGroup(groupId);
+      return AppResult.success(localData);
     }
   }
 
-  Future<List<Schedule>> getScheduleForTeacher(String teacherId, AppDatabase db) async {
+  /// Offline-first: on network failure returns AppResult.success with local data.
+  Future<AppResult<List<Schedule>>> getScheduleForTeacher(String teacherId, AppDatabase db) async {
     try {
       final response = await _client
           .from('schedule')
@@ -109,14 +124,14 @@ class ScheduleService {
         return a.startTime.compareTo(b.startTime);
       });
       await db.saveSchedules(networkSchedules);
-      return networkSchedules;
+      return AppResult.success(networkSchedules);
     } catch (e) {
-      print('Ошибка сети (учитель), грузим из локальной БД: $e');
-      return await db.getSchedulesForTeacher(teacherId);
+      final localData = await db.getSchedulesForTeacher(teacherId);
+      return AppResult.success(localData);
     }
   }
 
-  Future<String?> checkConflict({
+  Future<AppResult<String?>> checkConflict({
     required String institutionId,
     required DateTime date,
     required String startTime,
@@ -138,20 +153,21 @@ class ScheduleService {
         final existingTeacher = lesson['teacher_id'] as String;
         final existingGroup = lesson['group_id'] as String;
         if (existingTeacher == teacherId) {
-          return 'Этот преподаватель уже занят в указанное время!';
+          return AppResult.success('Этот преподаватель уже занят в указанное время!');
         }
         if (existingGroup == groupId) {
-          return 'У этой группы уже есть урок в указанное время!';
+          return AppResult.success('У этой группы уже есть урок в указанное время!');
         }
       }
-      return null;
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при проверке конфликтов расписания: ${e.message}');
     } catch (e) {
-      print('Ошибка при проверке конфликтов: $e');
-      return null;
+      return AppResult.failure('Не удалось проверить конфликты расписания.');
     }
   }
 
-  Future<void> copyScheduleToNextWeek(String institutionId, DateTime startOfCurrentWeek) async {
+  Future<AppResult<void>> copyScheduleToNextWeek(String institutionId, DateTime startOfCurrentWeek) async {
     try {
       final endOfCurrentWeek = startOfCurrentWeek.add(const Duration(days: 6));
       final response = await _client
@@ -161,19 +177,23 @@ class ScheduleService {
           .gte('date', startOfCurrentWeek.toIso8601String())
           .lte('date', endOfCurrentWeek.toIso8601String());
       final List<dynamic> data = response as List<dynamic>;
-      if (data.isEmpty) throw Exception('На этой неделе нет занятий для копирования');
-      final newEntries =
-          data.map((item) {
-            final oldDate = DateTime.parse(item['date']);
-            final newDate = oldDate.add(const Duration(days: 7));
-            final newItem = Map<String, dynamic>.from(item);
-            newItem.remove('id');
-            newItem['date'] = newDate.toIso8601String();
-            return newItem;
-          }).toList();
+      if (data.isEmpty) {
+        return AppResult.failure('На этой неделе нет занятий для копирования.');
+      }
+      final newEntries = data.map((item) {
+        final oldDate = DateTime.parse(item['date']);
+        final newDate = oldDate.add(const Duration(days: 7));
+        final newItem = Map<String, dynamic>.from(item);
+        newItem.remove('id');
+        newItem['date'] = newDate.toIso8601String();
+        return newItem;
+      }).toList();
       await _client.from('schedule').insert(newEntries);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при копировании расписания: ${e.message}');
     } catch (e) {
-      throw Exception('Ошибка при копировании расписания: $e');
+      return AppResult.failure('Не удалось скопировать расписание на следующую неделю.');
     }
   }
 }

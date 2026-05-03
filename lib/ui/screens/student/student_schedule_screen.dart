@@ -41,36 +41,37 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     final groupId = userProvider.groupId;
     final db = Provider.of<AppDatabase>(context, listen: false);
     if (studentId == null) return;
-    try {
-      final list = await _scheduleService.getScheduleForStudent(studentId, groupId, db);
-      list.sort((a, b) {
-        if (a.date == null && b.date != null) return -1;
-        if (a.date != null && b.date == null) return 1;
-        if (a.date != null && b.date != null) {
-          final d = a.date!.compareTo(b.date!);
-          if (d != 0) return d;
-        }
-        final w = a.weekday.compareTo(b.weekday);
-        if (w != 0) return w;
-        return a.startTime.compareTo(b.startTime);
-      });
-      final Map<String, List<Schedule>> grouped = {};
-      for (final s in list) {
-        String header = _getWeekdayName(s.weekday);
-        if (s.date != null) {
-          header += ', ${_formatDate(s.date!)}';
-        }
-        grouped.putIfAbsent(header, () => []).add(s);
-      }
-      if (mounted) {
-        setState(() {
-          _scheduleList = list;
-          _groupedSchedule = grouped;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
+    final result = await _scheduleService.getScheduleForStudent(studentId, groupId, db);
+    if (result.isFailure) {
       if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    final list = result.data;
+    list.sort((a, b) {
+      if (a.date == null && b.date != null) return -1;
+      if (a.date != null && b.date == null) return 1;
+      if (a.date != null && b.date != null) {
+        final d = a.date!.compareTo(b.date!);
+        if (d != 0) return d;
+      }
+      final w = a.weekday.compareTo(b.weekday);
+      if (w != 0) return w;
+      return a.startTime.compareTo(b.startTime);
+    });
+    final Map<String, List<Schedule>> grouped = {};
+    for (final s in list) {
+      String header = _getWeekdayName(s.weekday);
+      if (s.date != null) {
+        header += ', ${_formatDate(s.date!)}';
+      }
+      grouped.putIfAbsent(header, () => []).add(s);
+    }
+    if (mounted) {
+      setState(() {
+        _scheduleList = list;
+        _groupedSchedule = grouped;
+        _isLoading = false;
+      });
     }
   }
 

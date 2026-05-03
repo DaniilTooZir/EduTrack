@@ -7,6 +7,7 @@ import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operato
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -35,15 +36,17 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
     setState(() => _isLoading = true);
-    try {
-      final list = await _scheduleService.getScheduleForInstitution(institutionId);
-      if (mounted)
-        setState(() {
-          _schedules = list;
-          _isLoading = false;
-        });
-    } catch (e) {
+    final result = await _scheduleService.getScheduleForInstitution(institutionId);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
       if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _schedules = result.data;
+        _isLoading = false;
+      });
     }
   }
 

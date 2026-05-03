@@ -9,6 +9,7 @@ import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -77,44 +78,46 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   }
 
   void _loadSubjects() async {
-    try {
-      final subjects = await _subjectService.getSubjectsForInstitution(_institutionId!);
-      setState(() => _subjects = subjects);
-    } catch (e) {
-      debugPrint('Ошибка загрузки предметов: $e');
+    final result = await _subjectService.getSubjectsForInstitution(_institutionId!);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    if (mounted) setState(() => _subjects = result.data);
   }
 
   void _loadGroups() async {
-    try {
-      final groups = await _groupService.getGroups(_institutionId!);
-      setState(() => _groups = groups);
-    } catch (e) {
-      debugPrint('Ошибка загрузки групп: $e');
+    final result = await _groupService.getGroups(_institutionId!);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    if (mounted) setState(() => _groups = result.data);
   }
 
   void _loadTeachers() async {
-    try {
-      final teachers = await _teacherService.getTeachers(_institutionId!);
-      setState(() => _teachers = teachers);
-    } catch (e) {
-      debugPrint('Ошибка загрузки преподавателей: $e');
+    final result = await _teacherService.getTeachers(_institutionId!);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    if (mounted) setState(() => _teachers = result.data);
   }
 
   Future<void> _loadSchedule() async {
     if (_institutionId == null) return;
     setState(() => _isLoading = true);
-    try {
-      final list = await _scheduleService.getScheduleForInstitution(_institutionId!);
-      if (mounted)
-        setState(() {
-          _schedules = list;
-          _isLoading = false;
-        });
-    } catch (e) {
+    final result = await _scheduleService.getScheduleForInstitution(_institutionId!);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
       if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _schedules = result.data;
+        _isLoading = false;
+      });
     }
   }
 
@@ -136,81 +139,78 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   Future<void> _addScheduleEntry() async {
     if (!_formKey.currentState!.validate()) return;
     if (_startTime == null || _endTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите время начала и окончания')));
+      MessengerHelper.showError('Выберите время начала и окончания');
       return;
     }
     if (_timeToMinutes(_endTime!) <= _timeToMinutes(_startTime!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Время окончания должно быть позже времени начала'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      MessengerHelper.showError('Время окончания должно быть позже времени начала');
       return;
     }
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите дату занятия')));
+      MessengerHelper.showError('Выберите дату занятия');
       return;
     }
     setState(() => _isAdding = true);
-    try {
-      final sTime = _formatTimeOfDay(_startTime!);
-      final eTime = _formatTimeOfDay(_endTime!);
-      final conflictError = await _scheduleService.checkConflict(
-        institutionId: _institutionId!,
-        date: _selectedDate!,
-        startTime: sTime,
-        endTime: eTime,
-        teacherId: _selectedTeacherId!,
-        groupId: _selectedGroupId!,
-      );
-      if (conflictError != null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.white),
-                const SizedBox(width: 10),
-                Expanded(child: Text(conflictError)),
-              ],
-            ),
-            backgroundColor: Colors.orange[800],
-          ),
-        );
-        setState(() => _isAdding = false);
-        return;
-      }
 
-      final int targetWeekday = _selectedDate!.weekday;
-      await _scheduleService.addScheduleEntry(
-        institutionId: _institutionId!,
-        subjectId: _selectedSubjectId!,
-        groupId: _selectedGroupId!,
-        teacherId: _selectedTeacherId!,
-        weekday: targetWeekday,
-        date: _selectedDate!,
-        startTime: _formatTimeOfDay(_startTime!),
-        endTime: _formatTimeOfDay(_endTime!),
+    final sTime = _formatTimeOfDay(_startTime!);
+    final eTime = _formatTimeOfDay(_endTime!);
+    final conflictResult = await _scheduleService.checkConflict(
+      institutionId: _institutionId!,
+      date: _selectedDate!,
+      startTime: sTime,
+      endTime: eTime,
+      teacherId: _selectedTeacherId!,
+      groupId: _selectedGroupId!,
+    );
+    if (conflictResult.isFailure) {
+      MessengerHelper.showError(conflictResult.errorMessage);
+      if (mounted) setState(() => _isAdding = false);
+      return;
+    }
+    final conflictError = conflictResult.data;
+    if (conflictError != null) {
+      MessengerHelper.scaffoldMessengerKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(child: Text(conflictError)),
+            ],
+          ),
+          backgroundColor: Colors.orange[800],
+        ),
       );
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Урок добавлен'), backgroundColor: Colors.green));
+      if (mounted) setState(() => _isAdding = false);
+      return;
+    }
+
+    final addResult = await _scheduleService.addScheduleEntry(
+      institutionId: _institutionId!,
+      subjectId: _selectedSubjectId!,
+      groupId: _selectedGroupId!,
+      teacherId: _selectedTeacherId!,
+      weekday: _selectedDate!.weekday,
+      date: _selectedDate!,
+      startTime: sTime,
+      endTime: eTime,
+    );
+    if (addResult.isFailure) {
+      MessengerHelper.showError(addResult.errorMessage);
+      if (mounted) setState(() => _isAdding = false);
+      return;
+    }
+
+    MessengerHelper.showSuccess('Урок добавлен');
+    if (mounted) {
       setState(() {
         _selectedSubjectId = null;
         _selectedGroupId = null;
         _currentConflictError = null;
+        _isAdding = false;
       });
-      _loadSchedule();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при добавлении: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-      );
-    } finally {
-      if (mounted) setState(() => _isAdding = false);
     }
+    await _loadSchedule();
   }
 
   Future<void> _duplicateSchedule() async {
@@ -231,16 +231,14 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     );
     if (confirmed == true) {
       setState(() => _isCloning = true);
-      try {
-        await _scheduleService.copyScheduleToNextWeek(_institutionId!, startOfWeeks);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Расписание успешно скопировано!')));
-        _loadSchedule();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-      } finally {
-        if (mounted) setState(() => _isCloning = false);
+      final result = await _scheduleService.copyScheduleToNextWeek(_institutionId!, startOfWeeks);
+      if (result.isFailure) {
+        MessengerHelper.showError(result.errorMessage);
+      } else {
+        MessengerHelper.showSuccess('Расписание успешно скопировано!');
+        await _loadSchedule();
       }
+      if (mounted) setState(() => _isCloning = false);
     }
   }
 
@@ -262,17 +260,13 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     );
 
     if (confirmed == true) {
-      try {
-        await _scheduleService.deleteScheduleEntry(id);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Запись удалена')));
-        _loadSchedule();
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка удаления: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-        );
+      final result = await _scheduleService.deleteScheduleEntry(id);
+      if (result.isFailure) {
+        MessengerHelper.showError(result.errorMessage);
+        return;
       }
+      MessengerHelper.showSuccess('Запись удалена');
+      await _loadSchedule();
     }
   }
 
@@ -291,25 +285,19 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       return;
     }
     setState(() => _isCheckingConflict = true);
-    try {
-      final conflict = await _scheduleService.checkConflict(
-        institutionId: _institutionId!,
-        date: _selectedDate!,
-        startTime: _formatTimeOfDay(_startTime!),
-        endTime: _formatTimeOfDay(_endTime!),
-        teacherId: _selectedTeacherId!,
-        groupId: _selectedGroupId!,
-      );
-
-      if (mounted) {
-        setState(() {
-          _currentConflictError = conflict;
-          _isCheckingConflict = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Ошибка автопроверки: $e');
-      if (mounted) setState(() => _isCheckingConflict = false);
+    final result = await _scheduleService.checkConflict(
+      institutionId: _institutionId!,
+      date: _selectedDate!,
+      startTime: _formatTimeOfDay(_startTime!),
+      endTime: _formatTimeOfDay(_endTime!),
+      teacherId: _selectedTeacherId!,
+      groupId: _selectedGroupId!,
+    );
+    if (mounted) {
+      setState(() {
+        _currentConflictError = result.isSuccess ? result.data : null;
+        _isCheckingConflict = false;
+      });
     }
   }
 

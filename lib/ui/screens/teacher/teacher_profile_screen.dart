@@ -5,6 +5,7 @@ import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -49,43 +50,42 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   Future<void> _loadTeacherData() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId == null) return;
-    try {
-      final teacher = await _teacherService.getTeacherById(userId);
-      if (teacher != null) {
-        final inst = await _institutionService.getInstitutionById(teacher.institutionId);
-        if (mounted) {
-          setState(() {
-            _teacher = teacher;
-            _institution = inst;
-            _fillControllers();
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
+    final teacherResult = await _teacherService.getTeacherById(userId);
+    if (teacherResult.isFailure || teacherResult.data == null) {
       if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    final teacher = teacherResult.data!;
+    final instResult = await _institutionService.getInstitutionById(teacher.institutionId);
+    if (mounted) {
+      setState(() {
+        _teacher = teacher;
+        _institution = instResult.isSuccess ? instResult.data : null;
+        _fillControllers();
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _updateAvatar() async {
-    final file = await _avatarService.pickImage();
-    if (file == null) return;
+    final fileResult = await _avatarService.pickImage();
+    if (fileResult.isFailure || fileResult.data == null) return;
     setState(() => _isSaving = true);
-    try {
-      final url = await _avatarService.uploadAvatar(file: file, userId: _teacher!.id);
-      if (url != null) {
-        await _teacherService.updateTeacherData(_teacher!.id, {'avatar_url': url});
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Фото профиля обновлено')));
-        _loadTeacherData();
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Theme.of(context).colorScheme.error),
-      );
-    } finally {
+    final uploadResult = await _avatarService.uploadAvatar(file: fileResult.data!, userId: _teacher!.id);
+    if (uploadResult.isFailure) {
       if (mounted) setState(() => _isSaving = false);
+      MessengerHelper.showError(uploadResult.errorMessage);
+      return;
     }
+    final updateResult = await _teacherService.updateTeacherData(_teacher!.id, {'avatar_url': uploadResult.data});
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+    if (updateResult.isFailure) {
+      MessengerHelper.showError(updateResult.errorMessage);
+      return;
+    }
+    MessengerHelper.showSuccess('Фото профиля обновлено');
+    await _loadTeacherData();
   }
 
   void _fillControllers() {
@@ -106,9 +106,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     final confirm = _confirmPasswordController.text.trim();
 
     if (password.isNotEmpty && password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Пароли не совпадают'), backgroundColor: Theme.of(context).colorScheme.error),
-      );
+      MessengerHelper.showError('Пароли не совпадают');
       setState(() => _isSaving = false);
       return;
     }
@@ -126,28 +124,20 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       });
       return;
     }
-    try {
-      await _teacherService.updateTeacherData(_teacher!.id, updatedData);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Профиль обновлён'), backgroundColor: Colors.green));
-        setState(() {
-          _isEditing = false;
-          _passwordController.clear();
-          _confirmPasswordController.clear();
-        });
-        await _loadTeacherData();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: Theme.of(context).colorScheme.error));
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    final result = await _teacherService.updateTeacherData(_teacher!.id, updatedData);
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    MessengerHelper.showSuccess('Профиль обновлён');
+    setState(() {
+      _isEditing = false;
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+    });
+    await _loadTeacherData();
   }
 
   void _resetChanges() {

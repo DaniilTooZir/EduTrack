@@ -7,6 +7,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -33,54 +34,52 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    try {
-      final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
-      if (teacherId == null) return;
-      final group = await _groupService.getGroupByCurator(teacherId);
-      _myGroup = group;
-      if (group != null && group.id != null) {
-        final students = await _studentService.getStudentsByGroupId(group.id!);
-        _students = students;
-      }
-    } catch (e) {
-      debugPrint('Ошибка загрузки моей группы: $e');
-    } finally {
+    final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (teacherId == null) {
       if (mounted) setState(() => _isLoading = false);
+      return;
     }
+    final groupResult = await _groupService.getGroupByCurator(teacherId);
+    if (groupResult.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    _myGroup = groupResult.data;
+    if (_myGroup != null && _myGroup!.id != null) {
+      final studentsResult = await _studentService.getStudentsByGroupId(_myGroup!.id!);
+      if (studentsResult.isSuccess) _students = studentsResult.data;
+    }
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _setHeadman(Student student) async {
     if (_myGroup?.id == null) return;
-    final previousStudents = List<Student>.from(_students); // Бэкап
+    final previousStudents = List<Student>.from(_students);
     setState(() {
-      _students =
-          _students.map((s) {
-            return Student(
-              id: s.id,
-              name: s.name,
-              surname: s.surname,
-              email: s.email,
-              login: s.login,
-              password: s.password,
-              groupId: s.groupId,
-              isHeadman: s.id == student.id,
-              createdAt: s.createdAt,
-              group: s.group,
-              avatarUrl: s.avatarUrl,
-            );
-          }).toList();
+      _students = _students.map((s) {
+        return Student(
+          id: s.id,
+          name: s.name,
+          surname: s.surname,
+          email: s.email,
+          login: s.login,
+          password: s.password,
+          groupId: s.groupId,
+          isHeadman: s.id == student.id,
+          createdAt: s.createdAt,
+          group: s.group,
+          avatarUrl: s.avatarUrl,
+        );
+      }).toList();
     });
-    try {
-      await _studentService.setHeadman(_myGroup!.id!, student.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${student.name} назначен(а) старостой')));
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _students = previousStudents);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.red));
-      }
+    final result = await _studentService.setHeadman(_myGroup!.id!, student.id);
+    if (!mounted) return;
+    if (result.isFailure) {
+      setState(() => _students = previousStudents);
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    MessengerHelper.showSuccess('${student.name} назначен(а) старостой');
   }
 
   @override
@@ -229,38 +228,34 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
 
   Future<void> _openGroupChat() async {
     if (_myGroup == null) return;
-
-    try {
-      final chatId = await ChatService().getOrCreateGroupChat(_myGroup!.id!, _myGroup!.name);
-
-      if (mounted) {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: 'Группа ${_myGroup!.name}')));
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+    final result = await ChatService().getOrCreateGroupChat(_myGroup!.id!, _myGroup!.name);
+    if (!mounted) return;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ChatScreen(chatId: result.data, title: 'Группа ${_myGroup!.name}')),
+    );
   }
 
   Future<void> _openDirectChat(Student student) async {
     final myId = Provider.of<UserProvider>(context, listen: false).userId;
     if (myId == null) return;
-    try {
-      final chatId = await ChatService().getOrCreateDirectChat(
-        myId: myId,
-        myRole: 'teacher',
-        otherId: student.id,
-        otherRole: 'student',
-      );
-      if (mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: '${student.surname} ${student.name}')),
-        );
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+    final result = await ChatService().getOrCreateDirectChat(
+      myId: myId,
+      myRole: 'teacher',
+      otherId: student.id,
+      otherRole: 'student',
+    );
+    if (!mounted) return;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ChatScreen(chatId: result.data, title: '${student.surname} ${student.name}')),
+    );
   }
 
   Widget _buildMyGroupSkeleton() {
