@@ -23,7 +23,6 @@ class ChatPreview {
 
 class ChatService {
   final SupabaseClient _client;
-
   ChatService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
   Future<AppResult<List<Chat>>> getUserChats(String userId) async {
@@ -276,7 +275,6 @@ class ChatService {
     }
   }
 
-  /// Stream — not wrapped in AppResult intentionally.
   Stream<List<Message>> getMessagesStream(String chatId) {
     return _client
         .from('messages')

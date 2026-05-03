@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class StudentService {
   final SupabaseClient _client;
-
   StudentService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
   Future<AppResult<Student?>> getStudentById(String studentId) async {

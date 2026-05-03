@@ -7,7 +7,6 @@ import 'package:file_picker/file_picker.dart';
 class FileService {
   final _supabase = SupabaseConnection.client;
 
-  /// Returns AppResult.success(null) when the user cancelled selection.
   Future<AppResult<PlatformFile?>> pickFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(

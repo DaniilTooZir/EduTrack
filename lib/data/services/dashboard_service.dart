@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DashboardService {
   final SupabaseClient _client;
-
   DashboardService({SupabaseClient? client}) : _client = client ?? Supabase.instance.client;
 
   Future<AppResult<int>> getStudentCount(String institutionId) async {

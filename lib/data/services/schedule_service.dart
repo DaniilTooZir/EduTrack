@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ScheduleService {
   final SupabaseClient _client;
-
   ScheduleService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
   Future<AppResult<List<Schedule>>> getScheduleForInstitution(String institutionId) async {
@@ -82,12 +81,7 @@ class ScheduleService {
     }
   }
 
-  /// Offline-first: on network failure returns AppResult.success with local data.
-  Future<AppResult<List<Schedule>>> getScheduleForStudent(
-    String studentId,
-    String? groupId,
-    AppDatabase db,
-  ) async {
+  Future<AppResult<List<Schedule>>> getScheduleForStudent(String studentId, String? groupId, AppDatabase db) async {
     if (groupId == null) {
       return AppResult.failure('ID группы не найден локально.');
     }
@@ -105,7 +99,6 @@ class ScheduleService {
     }
   }
 
-  /// Offline-first: on network failure returns AppResult.success with local data.
   Future<AppResult<List<Schedule>>> getScheduleForTeacher(String teacherId, AppDatabase db) async {
     try {
       final response = await _client
@@ -180,14 +173,15 @@ class ScheduleService {
       if (data.isEmpty) {
         return AppResult.failure('На этой неделе нет занятий для копирования.');
       }
-      final newEntries = data.map((item) {
-        final oldDate = DateTime.parse(item['date']);
-        final newDate = oldDate.add(const Duration(days: 7));
-        final newItem = Map<String, dynamic>.from(item);
-        newItem.remove('id');
-        newItem['date'] = newDate.toIso8601String();
-        return newItem;
-      }).toList();
+      final newEntries =
+          data.map((item) {
+            final oldDate = DateTime.parse(item['date']);
+            final newDate = oldDate.add(const Duration(days: 7));
+            final newItem = Map<String, dynamic>.from(item);
+            newItem.remove('id');
+            newItem['date'] = newDate.toIso8601String();
+            return newItem;
+          }).toList();
       await _client.from('schedule').insert(newEntries);
       return AppResult.success(null);
     } on PostgrestException catch (e) {

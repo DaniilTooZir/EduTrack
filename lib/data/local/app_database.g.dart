@@ -1381,6 +1381,991 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
   }
 }
 
+class $LocalUsersTable extends LocalUsers
+    with TableInfo<$LocalUsersTable, LocalUser> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalUsersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _surnameMeta = const VerificationMeta(
+    'surname',
+  );
+  @override
+  late final GeneratedColumn<String> surname = GeneratedColumn<String>(
+    'surname',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _loginMeta = const VerificationMeta('login');
+  @override
+  late final GeneratedColumn<String> login = GeneratedColumn<String>(
+    'login',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
+  @override
+  late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
+    'institution_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
+  @override
+  late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
+    'group_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
+  @override
+  late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
+    'avatar_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _institutionNameMeta = const VerificationMeta(
+    'institutionName',
+  );
+  @override
+  late final GeneratedColumn<String> institutionName = GeneratedColumn<String>(
+    'institution_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _groupNameMeta = const VerificationMeta(
+    'groupName',
+  );
+  @override
+  late final GeneratedColumn<String> groupName = GeneratedColumn<String>(
+    'group_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    role,
+    name,
+    surname,
+    email,
+    login,
+    institutionId,
+    groupId,
+    avatarUrl,
+    institutionName,
+    groupName,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_users';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalUser> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
+    if (data.containsKey('surname')) {
+      context.handle(
+        _surnameMeta,
+        surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('login')) {
+      context.handle(
+        _loginMeta,
+        login.isAcceptableOrUnknown(data['login']!, _loginMeta),
+      );
+    }
+    if (data.containsKey('institution_id')) {
+      context.handle(
+        _institutionIdMeta,
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_institutionIdMeta);
+    }
+    if (data.containsKey('group_id')) {
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
+    }
+    if (data.containsKey('avatar_url')) {
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
+    }
+    if (data.containsKey('institution_name')) {
+      context.handle(
+        _institutionNameMeta,
+        institutionName.isAcceptableOrUnknown(
+          data['institution_name']!,
+          _institutionNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('group_name')) {
+      context.handle(
+        _groupNameMeta,
+        groupName.isAcceptableOrUnknown(data['group_name']!, _groupNameMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalUser map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalUser(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      role:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}role'],
+          )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      ),
+      surname: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}surname'],
+      ),
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      ),
+      login: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}login'],
+      ),
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_id'],
+      ),
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
+      institutionName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}institution_name'],
+      ),
+      groupName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_name'],
+      ),
+    );
+  }
+
+  @override
+  $LocalUsersTable createAlias(String alias) {
+    return $LocalUsersTable(attachedDatabase, alias);
+  }
+}
+
+class LocalUser extends DataClass implements Insertable<LocalUser> {
+  final String id;
+  final String role;
+  final String? name;
+  final String? surname;
+  final String? email;
+  final String? login;
+  final String institutionId;
+  final String? groupId;
+  final String? avatarUrl;
+  final String? institutionName;
+  final String? groupName;
+  const LocalUser({
+    required this.id,
+    required this.role,
+    this.name,
+    this.surname,
+    this.email,
+    this.login,
+    required this.institutionId,
+    this.groupId,
+    this.avatarUrl,
+    this.institutionName,
+    this.groupName,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['role'] = Variable<String>(role);
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
+    }
+    if (!nullToAbsent || surname != null) {
+      map['surname'] = Variable<String>(surname);
+    }
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    if (!nullToAbsent || login != null) {
+      map['login'] = Variable<String>(login);
+    }
+    map['institution_id'] = Variable<String>(institutionId);
+    if (!nullToAbsent || groupId != null) {
+      map['group_id'] = Variable<String>(groupId);
+    }
+    if (!nullToAbsent || avatarUrl != null) {
+      map['avatar_url'] = Variable<String>(avatarUrl);
+    }
+    if (!nullToAbsent || institutionName != null) {
+      map['institution_name'] = Variable<String>(institutionName);
+    }
+    if (!nullToAbsent || groupName != null) {
+      map['group_name'] = Variable<String>(groupName);
+    }
+    return map;
+  }
+
+  LocalUsersCompanion toCompanion(bool nullToAbsent) {
+    return LocalUsersCompanion(
+      id: Value(id),
+      role: Value(role),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
+      surname:
+          surname == null && nullToAbsent
+              ? const Value.absent()
+              : Value(surname),
+      email:
+          email == null && nullToAbsent ? const Value.absent() : Value(email),
+      login:
+          login == null && nullToAbsent ? const Value.absent() : Value(login),
+      institutionId: Value(institutionId),
+      groupId:
+          groupId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(groupId),
+      avatarUrl:
+          avatarUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(avatarUrl),
+      institutionName:
+          institutionName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(institutionName),
+      groupName:
+          groupName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(groupName),
+    );
+  }
+
+  factory LocalUser.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalUser(
+      id: serializer.fromJson<String>(json['id']),
+      role: serializer.fromJson<String>(json['role']),
+      name: serializer.fromJson<String?>(json['name']),
+      surname: serializer.fromJson<String?>(json['surname']),
+      email: serializer.fromJson<String?>(json['email']),
+      login: serializer.fromJson<String?>(json['login']),
+      institutionId: serializer.fromJson<String>(json['institutionId']),
+      groupId: serializer.fromJson<String?>(json['groupId']),
+      avatarUrl: serializer.fromJson<String?>(json['avatarUrl']),
+      institutionName: serializer.fromJson<String?>(json['institutionName']),
+      groupName: serializer.fromJson<String?>(json['groupName']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'role': serializer.toJson<String>(role),
+      'name': serializer.toJson<String?>(name),
+      'surname': serializer.toJson<String?>(surname),
+      'email': serializer.toJson<String?>(email),
+      'login': serializer.toJson<String?>(login),
+      'institutionId': serializer.toJson<String>(institutionId),
+      'groupId': serializer.toJson<String?>(groupId),
+      'avatarUrl': serializer.toJson<String?>(avatarUrl),
+      'institutionName': serializer.toJson<String?>(institutionName),
+      'groupName': serializer.toJson<String?>(groupName),
+    };
+  }
+
+  LocalUser copyWith({
+    String? id,
+    String? role,
+    Value<String?> name = const Value.absent(),
+    Value<String?> surname = const Value.absent(),
+    Value<String?> email = const Value.absent(),
+    Value<String?> login = const Value.absent(),
+    String? institutionId,
+    Value<String?> groupId = const Value.absent(),
+    Value<String?> avatarUrl = const Value.absent(),
+    Value<String?> institutionName = const Value.absent(),
+    Value<String?> groupName = const Value.absent(),
+  }) => LocalUser(
+    id: id ?? this.id,
+    role: role ?? this.role,
+    name: name.present ? name.value : this.name,
+    surname: surname.present ? surname.value : this.surname,
+    email: email.present ? email.value : this.email,
+    login: login.present ? login.value : this.login,
+    institutionId: institutionId ?? this.institutionId,
+    groupId: groupId.present ? groupId.value : this.groupId,
+    avatarUrl: avatarUrl.present ? avatarUrl.value : this.avatarUrl,
+    institutionName:
+        institutionName.present ? institutionName.value : this.institutionName,
+    groupName: groupName.present ? groupName.value : this.groupName,
+  );
+  LocalUser copyWithCompanion(LocalUsersCompanion data) {
+    return LocalUser(
+      id: data.id.present ? data.id.value : this.id,
+      role: data.role.present ? data.role.value : this.role,
+      name: data.name.present ? data.name.value : this.name,
+      surname: data.surname.present ? data.surname.value : this.surname,
+      email: data.email.present ? data.email.value : this.email,
+      login: data.login.present ? data.login.value : this.login,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
+      institutionName:
+          data.institutionName.present
+              ? data.institutionName.value
+              : this.institutionName,
+      groupName: data.groupName.present ? data.groupName.value : this.groupName,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalUser(')
+          ..write('id: $id, ')
+          ..write('role: $role, ')
+          ..write('name: $name, ')
+          ..write('surname: $surname, ')
+          ..write('email: $email, ')
+          ..write('login: $login, ')
+          ..write('institutionId: $institutionId, ')
+          ..write('groupId: $groupId, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('institutionName: $institutionName, ')
+          ..write('groupName: $groupName')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    role,
+    name,
+    surname,
+    email,
+    login,
+    institutionId,
+    groupId,
+    avatarUrl,
+    institutionName,
+    groupName,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalUser &&
+          other.id == this.id &&
+          other.role == this.role &&
+          other.name == this.name &&
+          other.surname == this.surname &&
+          other.email == this.email &&
+          other.login == this.login &&
+          other.institutionId == this.institutionId &&
+          other.groupId == this.groupId &&
+          other.avatarUrl == this.avatarUrl &&
+          other.institutionName == this.institutionName &&
+          other.groupName == this.groupName);
+}
+
+class LocalUsersCompanion extends UpdateCompanion<LocalUser> {
+  final Value<String> id;
+  final Value<String> role;
+  final Value<String?> name;
+  final Value<String?> surname;
+  final Value<String?> email;
+  final Value<String?> login;
+  final Value<String> institutionId;
+  final Value<String?> groupId;
+  final Value<String?> avatarUrl;
+  final Value<String?> institutionName;
+  final Value<String?> groupName;
+  final Value<int> rowid;
+  const LocalUsersCompanion({
+    this.id = const Value.absent(),
+    this.role = const Value.absent(),
+    this.name = const Value.absent(),
+    this.surname = const Value.absent(),
+    this.email = const Value.absent(),
+    this.login = const Value.absent(),
+    this.institutionId = const Value.absent(),
+    this.groupId = const Value.absent(),
+    this.avatarUrl = const Value.absent(),
+    this.institutionName = const Value.absent(),
+    this.groupName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalUsersCompanion.insert({
+    required String id,
+    required String role,
+    this.name = const Value.absent(),
+    this.surname = const Value.absent(),
+    this.email = const Value.absent(),
+    this.login = const Value.absent(),
+    required String institutionId,
+    this.groupId = const Value.absent(),
+    this.avatarUrl = const Value.absent(),
+    this.institutionName = const Value.absent(),
+    this.groupName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       role = Value(role),
+       institutionId = Value(institutionId);
+  static Insertable<LocalUser> custom({
+    Expression<String>? id,
+    Expression<String>? role,
+    Expression<String>? name,
+    Expression<String>? surname,
+    Expression<String>? email,
+    Expression<String>? login,
+    Expression<String>? institutionId,
+    Expression<String>? groupId,
+    Expression<String>? avatarUrl,
+    Expression<String>? institutionName,
+    Expression<String>? groupName,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (role != null) 'role': role,
+      if (name != null) 'name': name,
+      if (surname != null) 'surname': surname,
+      if (email != null) 'email': email,
+      if (login != null) 'login': login,
+      if (institutionId != null) 'institution_id': institutionId,
+      if (groupId != null) 'group_id': groupId,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (institutionName != null) 'institution_name': institutionName,
+      if (groupName != null) 'group_name': groupName,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalUsersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? role,
+    Value<String?>? name,
+    Value<String?>? surname,
+    Value<String?>? email,
+    Value<String?>? login,
+    Value<String>? institutionId,
+    Value<String?>? groupId,
+    Value<String?>? avatarUrl,
+    Value<String?>? institutionName,
+    Value<String?>? groupName,
+    Value<int>? rowid,
+  }) {
+    return LocalUsersCompanion(
+      id: id ?? this.id,
+      role: role ?? this.role,
+      name: name ?? this.name,
+      surname: surname ?? this.surname,
+      email: email ?? this.email,
+      login: login ?? this.login,
+      institutionId: institutionId ?? this.institutionId,
+      groupId: groupId ?? this.groupId,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      institutionName: institutionName ?? this.institutionName,
+      groupName: groupName ?? this.groupName,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (surname.present) {
+      map['surname'] = Variable<String>(surname.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (login.present) {
+      map['login'] = Variable<String>(login.value);
+    }
+    if (institutionId.present) {
+      map['institution_id'] = Variable<String>(institutionId.value);
+    }
+    if (groupId.present) {
+      map['group_id'] = Variable<String>(groupId.value);
+    }
+    if (avatarUrl.present) {
+      map['avatar_url'] = Variable<String>(avatarUrl.value);
+    }
+    if (institutionName.present) {
+      map['institution_name'] = Variable<String>(institutionName.value);
+    }
+    if (groupName.present) {
+      map['group_name'] = Variable<String>(groupName.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalUsersCompanion(')
+          ..write('id: $id, ')
+          ..write('role: $role, ')
+          ..write('name: $name, ')
+          ..write('surname: $surname, ')
+          ..write('email: $email, ')
+          ..write('login: $login, ')
+          ..write('institutionId: $institutionId, ')
+          ..write('groupId: $groupId, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('institutionName: $institutionName, ')
+          ..write('groupName: $groupName, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalGradesTable extends LocalGrades
+    with TableInfo<$LocalGradesTable, LocalGrade> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalGradesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lessonIdMeta = const VerificationMeta(
+    'lessonId',
+  );
+  @override
+  late final GeneratedColumn<String> lessonId = GeneratedColumn<String>(
+    'lesson_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _studentIdMeta = const VerificationMeta(
+    'studentId',
+  );
+  @override
+  late final GeneratedColumn<String> studentId = GeneratedColumn<String>(
+    'student_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<int> value = GeneratedColumn<int>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, lessonId, studentId, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_grades';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalGrade> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('lesson_id')) {
+      context.handle(
+        _lessonIdMeta,
+        lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lessonIdMeta);
+    }
+    if (data.containsKey('student_id')) {
+      context.handle(
+        _studentIdMeta,
+        studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_studentIdMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalGrade map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalGrade(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      lessonId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}lesson_id'],
+          )!,
+      studentId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}student_id'],
+          )!,
+      value:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}value'],
+          )!,
+    );
+  }
+
+  @override
+  $LocalGradesTable createAlias(String alias) {
+    return $LocalGradesTable(attachedDatabase, alias);
+  }
+}
+
+class LocalGrade extends DataClass implements Insertable<LocalGrade> {
+  final String id;
+  final String lessonId;
+  final String studentId;
+  final int value;
+  const LocalGrade({
+    required this.id,
+    required this.lessonId,
+    required this.studentId,
+    required this.value,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['lesson_id'] = Variable<String>(lessonId);
+    map['student_id'] = Variable<String>(studentId);
+    map['value'] = Variable<int>(value);
+    return map;
+  }
+
+  LocalGradesCompanion toCompanion(bool nullToAbsent) {
+    return LocalGradesCompanion(
+      id: Value(id),
+      lessonId: Value(lessonId),
+      studentId: Value(studentId),
+      value: Value(value),
+    );
+  }
+
+  factory LocalGrade.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalGrade(
+      id: serializer.fromJson<String>(json['id']),
+      lessonId: serializer.fromJson<String>(json['lessonId']),
+      studentId: serializer.fromJson<String>(json['studentId']),
+      value: serializer.fromJson<int>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'lessonId': serializer.toJson<String>(lessonId),
+      'studentId': serializer.toJson<String>(studentId),
+      'value': serializer.toJson<int>(value),
+    };
+  }
+
+  LocalGrade copyWith({
+    String? id,
+    String? lessonId,
+    String? studentId,
+    int? value,
+  }) => LocalGrade(
+    id: id ?? this.id,
+    lessonId: lessonId ?? this.lessonId,
+    studentId: studentId ?? this.studentId,
+    value: value ?? this.value,
+  );
+  LocalGrade copyWithCompanion(LocalGradesCompanion data) {
+    return LocalGrade(
+      id: data.id.present ? data.id.value : this.id,
+      lessonId: data.lessonId.present ? data.lessonId.value : this.lessonId,
+      studentId: data.studentId.present ? data.studentId.value : this.studentId,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalGrade(')
+          ..write('id: $id, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('studentId: $studentId, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, lessonId, studentId, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalGrade &&
+          other.id == this.id &&
+          other.lessonId == this.lessonId &&
+          other.studentId == this.studentId &&
+          other.value == this.value);
+}
+
+class LocalGradesCompanion extends UpdateCompanion<LocalGrade> {
+  final Value<String> id;
+  final Value<String> lessonId;
+  final Value<String> studentId;
+  final Value<int> value;
+  final Value<int> rowid;
+  const LocalGradesCompanion({
+    this.id = const Value.absent(),
+    this.lessonId = const Value.absent(),
+    this.studentId = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalGradesCompanion.insert({
+    required String id,
+    required String lessonId,
+    required String studentId,
+    required int value,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       lessonId = Value(lessonId),
+       studentId = Value(studentId),
+       value = Value(value);
+  static Insertable<LocalGrade> custom({
+    Expression<String>? id,
+    Expression<String>? lessonId,
+    Expression<String>? studentId,
+    Expression<int>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (lessonId != null) 'lesson_id': lessonId,
+      if (studentId != null) 'student_id': studentId,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalGradesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? lessonId,
+    Value<String>? studentId,
+    Value<int>? value,
+    Value<int>? rowid,
+  }) {
+    return LocalGradesCompanion(
+      id: id ?? this.id,
+      lessonId: lessonId ?? this.lessonId,
+      studentId: studentId ?? this.studentId,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (lessonId.present) {
+      map['lesson_id'] = Variable<String>(lessonId.value);
+    }
+    if (studentId.present) {
+      map['student_id'] = Variable<String>(studentId.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<int>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalGradesCompanion(')
+          ..write('id: $id, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('studentId: $studentId, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1388,6 +2373,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalGroupsTable localGroups = $LocalGroupsTable(this);
   late final $LocalTeachersTable localTeachers = $LocalTeachersTable(this);
   late final $LocalSchedulesTable localSchedules = $LocalSchedulesTable(this);
+  late final $LocalUsersTable localUsers = $LocalUsersTable(this);
+  late final $LocalGradesTable localGrades = $LocalGradesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1397,6 +2384,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localGroups,
     localTeachers,
     localSchedules,
+    localUsers,
+    localGrades,
   ];
 }
 
@@ -2831,6 +3820,517 @@ typedef $$LocalSchedulesTableProcessedTableManager =
       LocalSchedule,
       PrefetchHooks Function({bool subjectId, bool groupId, bool teacherId})
     >;
+typedef $$LocalUsersTableCreateCompanionBuilder =
+    LocalUsersCompanion Function({
+      required String id,
+      required String role,
+      Value<String?> name,
+      Value<String?> surname,
+      Value<String?> email,
+      Value<String?> login,
+      required String institutionId,
+      Value<String?> groupId,
+      Value<String?> avatarUrl,
+      Value<String?> institutionName,
+      Value<String?> groupName,
+      Value<int> rowid,
+    });
+typedef $$LocalUsersTableUpdateCompanionBuilder =
+    LocalUsersCompanion Function({
+      Value<String> id,
+      Value<String> role,
+      Value<String?> name,
+      Value<String?> surname,
+      Value<String?> email,
+      Value<String?> login,
+      Value<String> institutionId,
+      Value<String?> groupId,
+      Value<String?> avatarUrl,
+      Value<String?> institutionName,
+      Value<String?> groupName,
+      Value<int> rowid,
+    });
+
+class $$LocalUsersTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalUsersTable> {
+  $$LocalUsersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get institutionName => $composableBuilder(
+    column: $table.institutionName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get groupName => $composableBuilder(
+    column: $table.groupName,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalUsersTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalUsersTable> {
+  $$LocalUsersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get institutionName => $composableBuilder(
+    column: $table.institutionName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get groupName => $composableBuilder(
+    column: $table.groupName,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalUsersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalUsersTable> {
+  $$LocalUsersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get surname =>
+      $composableBuilder(column: $table.surname, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get login =>
+      $composableBuilder(column: $table.login, builder: (column) => column);
+
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => column);
+
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get institutionName => $composableBuilder(
+    column: $table.institutionName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get groupName =>
+      $composableBuilder(column: $table.groupName, builder: (column) => column);
+}
+
+class $$LocalUsersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalUsersTable,
+          LocalUser,
+          $$LocalUsersTableFilterComposer,
+          $$LocalUsersTableOrderingComposer,
+          $$LocalUsersTableAnnotationComposer,
+          $$LocalUsersTableCreateCompanionBuilder,
+          $$LocalUsersTableUpdateCompanionBuilder,
+          (
+            LocalUser,
+            BaseReferences<_$AppDatabase, $LocalUsersTable, LocalUser>,
+          ),
+          LocalUser,
+          PrefetchHooks Function()
+        > {
+  $$LocalUsersTableTableManager(_$AppDatabase db, $LocalUsersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$LocalUsersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$LocalUsersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalUsersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<String?> name = const Value.absent(),
+                Value<String?> surname = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> login = const Value.absent(),
+                Value<String> institutionId = const Value.absent(),
+                Value<String?> groupId = const Value.absent(),
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<String?> institutionName = const Value.absent(),
+                Value<String?> groupName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalUsersCompanion(
+                id: id,
+                role: role,
+                name: name,
+                surname: surname,
+                email: email,
+                login: login,
+                institutionId: institutionId,
+                groupId: groupId,
+                avatarUrl: avatarUrl,
+                institutionName: institutionName,
+                groupName: groupName,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String role,
+                Value<String?> name = const Value.absent(),
+                Value<String?> surname = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> login = const Value.absent(),
+                required String institutionId,
+                Value<String?> groupId = const Value.absent(),
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<String?> institutionName = const Value.absent(),
+                Value<String?> groupName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalUsersCompanion.insert(
+                id: id,
+                role: role,
+                name: name,
+                surname: surname,
+                email: email,
+                login: login,
+                institutionId: institutionId,
+                groupId: groupId,
+                avatarUrl: avatarUrl,
+                institutionName: institutionName,
+                groupName: groupName,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalUsersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalUsersTable,
+      LocalUser,
+      $$LocalUsersTableFilterComposer,
+      $$LocalUsersTableOrderingComposer,
+      $$LocalUsersTableAnnotationComposer,
+      $$LocalUsersTableCreateCompanionBuilder,
+      $$LocalUsersTableUpdateCompanionBuilder,
+      (LocalUser, BaseReferences<_$AppDatabase, $LocalUsersTable, LocalUser>),
+      LocalUser,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalGradesTableCreateCompanionBuilder =
+    LocalGradesCompanion Function({
+      required String id,
+      required String lessonId,
+      required String studentId,
+      required int value,
+      Value<int> rowid,
+    });
+typedef $$LocalGradesTableUpdateCompanionBuilder =
+    LocalGradesCompanion Function({
+      Value<String> id,
+      Value<String> lessonId,
+      Value<String> studentId,
+      Value<int> value,
+      Value<int> rowid,
+    });
+
+class $$LocalGradesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalGradesTable> {
+  $$LocalGradesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get studentId => $composableBuilder(
+    column: $table.studentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalGradesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalGradesTable> {
+  $$LocalGradesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get studentId => $composableBuilder(
+    column: $table.studentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalGradesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalGradesTable> {
+  $$LocalGradesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get lessonId =>
+      $composableBuilder(column: $table.lessonId, builder: (column) => column);
+
+  GeneratedColumn<String> get studentId =>
+      $composableBuilder(column: $table.studentId, builder: (column) => column);
+
+  GeneratedColumn<int> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$LocalGradesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalGradesTable,
+          LocalGrade,
+          $$LocalGradesTableFilterComposer,
+          $$LocalGradesTableOrderingComposer,
+          $$LocalGradesTableAnnotationComposer,
+          $$LocalGradesTableCreateCompanionBuilder,
+          $$LocalGradesTableUpdateCompanionBuilder,
+          (
+            LocalGrade,
+            BaseReferences<_$AppDatabase, $LocalGradesTable, LocalGrade>,
+          ),
+          LocalGrade,
+          PrefetchHooks Function()
+        > {
+  $$LocalGradesTableTableManager(_$AppDatabase db, $LocalGradesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$LocalGradesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$LocalGradesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$LocalGradesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> lessonId = const Value.absent(),
+                Value<String> studentId = const Value.absent(),
+                Value<int> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalGradesCompanion(
+                id: id,
+                lessonId: lessonId,
+                studentId: studentId,
+                value: value,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String lessonId,
+                required String studentId,
+                required int value,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalGradesCompanion.insert(
+                id: id,
+                lessonId: lessonId,
+                studentId: studentId,
+                value: value,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalGradesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalGradesTable,
+      LocalGrade,
+      $$LocalGradesTableFilterComposer,
+      $$LocalGradesTableOrderingComposer,
+      $$LocalGradesTableAnnotationComposer,
+      $$LocalGradesTableCreateCompanionBuilder,
+      $$LocalGradesTableUpdateCompanionBuilder,
+      (
+        LocalGrade,
+        BaseReferences<_$AppDatabase, $LocalGradesTable, LocalGrade>,
+      ),
+      LocalGrade,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2843,4 +4343,8 @@ class $AppDatabaseManager {
       $$LocalTeachersTableTableManager(_db, _db.localTeachers);
   $$LocalSchedulesTableTableManager get localSchedules =>
       $$LocalSchedulesTableTableManager(_db, _db.localSchedules);
+  $$LocalUsersTableTableManager get localUsers =>
+      $$LocalUsersTableTableManager(_db, _db.localUsers);
+  $$LocalGradesTableTableManager get localGrades =>
+      $$LocalGradesTableTableManager(_db, _db.localGrades);
 }

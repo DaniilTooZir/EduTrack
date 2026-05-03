@@ -1,4 +1,3 @@
-import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -123,8 +122,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             icon: const Icon(Icons.logout),
             tooltip: 'Выйти',
             onPressed: () async {
-              await SessionService.clearSession();
-              userProvider.clearUser();
+              await userProvider.clearUser();
               if (context.mounted) context.go(AppRoutes.welcome);
             },
           ),

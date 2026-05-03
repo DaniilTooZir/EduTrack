@@ -1,9 +1,15 @@
+import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class GradeService {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+  final AppDatabase _db;
+
+  GradeService({required AppDatabase db, SupabaseClient? client})
+      : _db = db,
+        _supabase = client ?? Supabase.instance.client;
 
   Future<AppResult<bool>> addOrUpdateGrade(Grade grade) async {
     try {
@@ -35,10 +41,16 @@ class GradeService {
           .select()
           .eq('student_id', studentId)
           .order('lessons_id', ascending: false);
-      return AppResult.success((response as List).map((map) => Grade.fromMap(map)).toList());
+      final grades = (response as List).map((map) => Grade.fromMap(map)).toList();
+      await _db.saveGrades(grades);
+      return AppResult.success(grades);
     } on PostgrestException catch (e) {
+      final cached = await _db.getGradesByStudent(studentId);
+      if (cached.isNotEmpty) return AppResult.success(cached);
       return AppResult.failure('Ошибка при получении оценок студента: ${e.message}');
     } catch (e) {
+      final cached = await _db.getGradesByStudent(studentId);
+      if (cached.isNotEmpty) return AppResult.success(cached);
       return AppResult.failure('Не удалось загрузить оценки студента.');
     }
   }
@@ -46,10 +58,16 @@ class GradeService {
   Future<AppResult<List<Grade>>> getGradesByLesson(String lessonId) async {
     try {
       final response = await _supabase.from('grade').select().eq('lessons_id', lessonId);
-      return AppResult.success((response as List).map((map) => Grade.fromMap(map)).toList());
+      final grades = (response as List).map((map) => Grade.fromMap(map)).toList();
+      await _db.saveGrades(grades);
+      return AppResult.success(grades);
     } on PostgrestException catch (e) {
+      final cached = await _db.getGradesByLesson(lessonId);
+      if (cached.isNotEmpty) return AppResult.success(cached);
       return AppResult.failure('Ошибка при получении оценок урока: ${e.message}');
     } catch (e) {
+      final cached = await _db.getGradesByLesson(lessonId);
+      if (cached.isNotEmpty) return AppResult.success(cached);
       return AppResult.failure('Не удалось загрузить оценки урока.');
     }
   }

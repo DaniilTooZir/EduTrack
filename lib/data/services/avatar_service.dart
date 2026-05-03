@@ -9,7 +9,6 @@ class AvatarService {
   final _picker = ImagePicker();
   final _supabase = SupabaseConnection.client;
 
-  /// Returns AppResult.success(null) when the user cancelled selection.
   Future<AppResult<File?>> pickImage() async {
     try {
       final XFile? image = await _picker.pickImage(

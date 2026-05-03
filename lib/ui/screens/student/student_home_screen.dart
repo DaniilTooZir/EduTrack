@@ -1,6 +1,5 @@
 import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
-import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
@@ -144,11 +143,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             icon: const Icon(Icons.logout),
             tooltip: 'Выйти',
             onPressed: () async {
-              await SessionService.clearSession();
-              if (context.mounted) {
-                Provider.of<UserProvider>(context, listen: false).clearUser();
-                context.go(AppRoutes.welcome);
-              }
+              await Provider.of<UserProvider>(context, listen: false).clearUser();
+              if (context.mounted) context.go(AppRoutes.welcome);
             },
           ),
         ],

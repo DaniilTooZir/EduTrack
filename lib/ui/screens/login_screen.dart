@@ -33,21 +33,16 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
-
     final login = _loginController.text.trim();
     final password = _passwordController.text.trim();
-
     final result = await AuthService.login(login, password);
-
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
       if (mounted) setState(() => _isLoading = false);
       return;
     }
-
     final authResult = result.data;
     if (!mounted) return;
-
     if (authResult == null) {
       setState(() {
         _errorMessage = 'Неверный логин или пароль.';
@@ -55,20 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
       });
       return;
     }
-
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    userProvider.setUser(
-      userId: authResult.userId,
-      role: authResult.role,
-      institutionId: authResult.institutionId,
-      groupId: authResult.groupId,
-      name: authResult.name,
-      email: authResult.email,
-      avatar: authResult.avatarUrl,
-      instName: authResult.institutionName,
-      groupName: authResult.groupName,
-    );
-
+    await userProvider.setUser(authResult);
+    if (!mounted) return;
     switch (authResult.role) {
       case 'admin':
         context.go(AppRoutes.adminHome);
@@ -86,7 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
         context.go(AppRoutes.welcome);
         break;
     }
-
     if (mounted) setState(() => _isLoading = false);
   }
 

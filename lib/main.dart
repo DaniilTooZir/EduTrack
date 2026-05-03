@@ -1,7 +1,6 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/notification_service.dart';
-import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -19,9 +18,9 @@ void main() async {
     await SupabaseConnection.initializeSupabase();
     await NotificationService().init();
 
-    final userProvider = UserProvider();
-    final themeProvider = ThemeProvider();
     final appDatabase = AppDatabase();
+    final userProvider = UserProvider(appDatabase: appDatabase);
+    final themeProvider = ThemeProvider();
 
     await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
 

@@ -1,3 +1,4 @@
+import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/models/grade.dart';
@@ -19,7 +20,7 @@ class TeacherGradeScreen extends StatefulWidget {
 
 class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
   late Lesson lesson;
-  final _gradeService = GradeService();
+  late final GradeService _gradeService;
   final _studentService = StudentService();
   List<Student> _students = [];
   final Map<String, int?> _grades = {};
@@ -29,6 +30,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
       final extra = GoRouterState.of(context).extra;
       if (extra is Lesson) {
         lesson = extra;

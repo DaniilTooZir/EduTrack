@@ -25,19 +25,14 @@ class AuthResult {
 }
 
 class AuthService {
-  /// Returns AppResult.success(null) when credentials are wrong,
-  /// AppResult.failure(...) when an exception occurred.
   static Future<AppResult<AuthResult?>> login(String login, String password) async {
     try {
       var result = await _checkUser(table: 'education_heads', role: 'admin', login: login, password: password);
       if (result != null) return AppResult.success(result);
-
       result = await _checkUser(table: 'teachers', role: 'teacher', login: login, password: password);
       if (result != null) return AppResult.success(result);
-
       result = await _checkUser(table: 'students', role: 'student', login: login, password: password);
       if (result != null) return AppResult.success(result);
-
       result = await _checkUser(
         table: 'schedule_operators',
         role: 'schedule_operator',
@@ -45,7 +40,6 @@ class AuthService {
         password: password,
       );
       if (result != null) return AppResult.success(result);
-
       return AppResult.success(null);
     } catch (e) {
       return AppResult.failure('Ошибка при выполнении авторизации. Проверьте соединение.');

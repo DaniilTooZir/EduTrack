@@ -12,11 +12,9 @@ class InstitutionModerationService {
           .from('institution_requests')
           .select()
           .eq('status', 'pending');
-
       if (pendingRequests.isEmpty) {
         return AppResult.success(null);
       }
-
       for (final request in pendingRequests) {
         await _processSingleRequest(request);
       }
@@ -35,7 +33,6 @@ class InstitutionModerationService {
       if (existingAdmin.isEmpty) {
         final login = _generateLogin(request['head_name'], request['head_surname']);
         final password = _generatePassword();
-
         final institutionInsert =
             await SupabaseConnection.client
                 .from('institutions')
@@ -43,7 +40,6 @@ class InstitutionModerationService {
                 .select('id')
                 .single();
         final institutionId = institutionInsert['id'];
-
         await SupabaseConnection.client.from('education_heads').insert({
           'name': request['head_name'],
           'surname': request['head_surname'],
@@ -53,7 +49,6 @@ class InstitutionModerationService {
           'institution_id': institutionId,
           'phone': request['phone'],
         });
-
         await _updateRequestStatus(request['id'], 'approved');
       } else {
         await _updateRequestStatus(request['id'], 'rejected');

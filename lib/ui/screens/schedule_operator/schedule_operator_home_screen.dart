@@ -1,5 +1,4 @@
 import 'package:edu_track/data/services/schedule_service.dart';
-import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
@@ -90,8 +89,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             icon: const Icon(Icons.logout),
             tooltip: 'Выйти',
             onPressed: () async {
-              await SessionService.clearSession();
-              userProvider.clearUser();
+              await userProvider.clearUser();
               if (context.mounted) context.go(AppRoutes.welcome);
             },
           ),
