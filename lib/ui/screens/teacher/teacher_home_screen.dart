@@ -1,3 +1,4 @@
+import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -8,6 +9,7 @@ import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_my_group_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_journal_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
@@ -28,6 +30,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   bool _isLoading = true;
   bool _hasError = false;
   List<Subject> _subjects = [];
+  String? _journalGroupId;
+  String? _journalSubjectId;
   final List<String> _titles = [
     'Главная',
     'Домашние задания',
@@ -36,15 +40,25 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     'Профиль',
     'Проверка ДЗ',
     'Моя группа',
+    'Сообщения',
+    'Журнал успеваемости',
   ];
 
   Future<void> _loadData() async {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
-    if (mounted) setState(() { _isLoading = true; _hasError = false; });
+    if (mounted)
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
     final result = await SubjectService().getSubjectsByTeacherId(teacherId);
     if (result.isFailure) {
-      if (mounted) setState(() { _isLoading = false; _hasError = true; });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
       return;
     }
     if (mounted) {
@@ -63,6 +77,25 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
   void _refreshDashboard() {
     _loadData();
+  }
+
+  Future<void> _openJournalSelector() async {
+    Navigator.pop(context);
+    final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (teacherId == null) return;
+    final result = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => _JournalSelectorSheet(teacherId: teacherId),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _journalGroupId = result['groupId'];
+        _journalSubjectId = result['subjectId'];
+        _selectedIndex = 8;
+      });
+    }
   }
 
   void _navigateToTab(int index) {
@@ -104,6 +137,18 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         break;
       case 6:
         bodyContent = const TeacherMyGroupScreen();
+        break;
+      case 7:
+        bodyContent = const ChatListScreen();
+        break;
+      case 8:
+        bodyContent = (_journalGroupId != null && _journalSubjectId != null)
+            ? TeacherJournalScreen(
+                key: ValueKey('$_journalGroupId|$_journalSubjectId'),
+                groupId: _journalGroupId!,
+                subjectId: _journalSubjectId!,
+              )
+            : const SizedBox.shrink();
         break;
       default:
         bodyContent = const SizedBox.shrink();
@@ -153,13 +198,22 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             _buildDrawerItem(Icons.checklist_rtl_rounded, 'Проверка ДЗ', 5, colors),
             _buildDrawerItem(Icons.supervised_user_circle_rounded, 'Моя группа', 6, colors),
             ListTile(
-              leading: Icon(Icons.message_rounded, color: colors.onSurfaceVariant),
-              title: Text('Сообщения', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.normal)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatListScreen()));
-              },
+              leading: Icon(
+                Icons.table_chart_rounded,
+                color: _selectedIndex == 8 ? colors.primary : colors.onSurfaceVariant,
+              ),
+              title: Text(
+                'Журнал успеваемости',
+                style: TextStyle(
+                  color: _selectedIndex == 8 ? colors.primary : colors.onSurface,
+                  fontWeight: _selectedIndex == 8 ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              selected: _selectedIndex == 8,
+              selectedTileColor: colors.primaryContainer.withValues(alpha: 0.3),
+              onTap: _openJournalSelector,
             ),
+            _buildDrawerItem(Icons.message_rounded, 'Сообщения', 7, colors),
             _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2, colors),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
@@ -205,7 +259,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 
   Widget _buildDashboard(ColorScheme colors) {
-    final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     return RefreshIndicator(
       onRefresh: () async {
         _refreshDashboard();
@@ -416,6 +469,188 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               child: Skeleton(height: 80, width: double.infinity, borderRadius: 16),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SchedulePair {
+  final String groupId;
+  final String groupName;
+  final String subjectId;
+  final String subjectName;
+
+  const _SchedulePair({
+    required this.groupId,
+    required this.groupName,
+    required this.subjectId,
+    required this.subjectName,
+  });
+}
+
+class _JournalSelectorSheet extends StatefulWidget {
+  final String teacherId;
+  const _JournalSelectorSheet({required this.teacherId});
+
+  @override
+  State<_JournalSelectorSheet> createState() => _JournalSelectorSheetState();
+}
+
+class _JournalSelectorSheetState extends State<_JournalSelectorSheet> {
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<_SchedulePair> _pairs = [];
+  List<({String id, String name})> _subjects = [];
+  List<({String id, String name})> _filteredGroups = [];
+  String? _selectedSubjectId;
+  String? _selectedGroupId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPairs();
+  }
+
+  Future<void> _loadPairs() async {
+    try {
+      final response = await SupabaseConnection.client
+          .from('schedule')
+          .select('group_id, subject_id, group:groups(id, name), subject:subjects(id, name)')
+          .eq('teacher_id', widget.teacherId);
+      final seen = <String>{};
+      final pairs = <_SchedulePair>[];
+      for (final item in response as List) {
+        final groupId = item['group_id']?.toString() ?? '';
+        final subjectId = item['subject_id']?.toString() ?? '';
+        final key = '$groupId|$subjectId';
+        if (groupId.isEmpty || subjectId.isEmpty || !seen.add(key)) continue;
+        final groupData = item['group'] as Map<String, dynamic>?;
+        final subjectData = item['subject'] as Map<String, dynamic>?;
+        pairs.add(
+          _SchedulePair(
+            groupId: groupId,
+            groupName: groupData?['name'] as String? ?? groupId,
+            subjectId: subjectId,
+            subjectName: subjectData?['name'] as String? ?? subjectId,
+          ),
+        );
+      }
+
+      final uniqueSubjects = <String, ({String id, String name})>{};
+      for (final p in pairs) {
+        uniqueSubjects[p.subjectId] = (id: p.subjectId, name: p.subjectName);
+      }
+
+      setState(() {
+        _pairs = pairs;
+        _subjects = uniqueSubjects.values.toList()..sort((a, b) => a.name.compareTo(b.name));
+        _isLoading = false;
+      });
+    } catch (_) {
+      setState(() {
+        _errorMessage = 'Не удалось загрузить данные расписания';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _onSubjectChanged(String? subjectId) {
+    final seen = <String>{};
+    setState(() {
+      _selectedSubjectId = subjectId;
+      _selectedGroupId = null;
+      _filteredGroups =
+          _pairs
+              .where((p) => p.subjectId == subjectId)
+              .map((p) => (id: p.groupId, name: p.groupName))
+              .where((g) => seen.add(g.id))
+              .toList()
+            ..sort((a, b) => a.name.compareTo(b.name));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Журнал успеваемости',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface),
+          ),
+          const SizedBox(height: 6),
+          Text('Выберите предмет и группу', style: TextStyle(color: colors.onSurfaceVariant)),
+          const SizedBox(height: 24),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_errorMessage != null)
+            Center(child: Text(_errorMessage!, style: TextStyle(color: colors.error)))
+          else if (_subjects.isEmpty)
+            Center(child: Text('Нет доступного расписания', style: TextStyle(color: colors.onSurfaceVariant)))
+          else ...[
+            InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'Предмет',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedSubjectId,
+                  isDense: true,
+                  isExpanded: true,
+                  items: _subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                  onChanged: _onSubjectChanged,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'Группа',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedGroupId,
+                  isDense: true,
+                  isExpanded: true,
+                  items: _filteredGroups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
+                  onChanged: _selectedSubjectId == null ? null : (val) => setState(() => _selectedGroupId = val),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed:
+                    _selectedGroupId != null && _selectedSubjectId != null
+                        ? () =>
+                            Navigator.of(context).pop({'groupId': _selectedGroupId!, 'subjectId': _selectedSubjectId!})
+                        : null,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Открыть журнал', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -32,7 +32,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _completedHomework = 0;
   int _pendingHomework = 0;
   final HomeworkService _homeworkService = HomeworkService();
-  final List<String> _titles = ['Главная', 'Домашние задания', 'Уроки', 'Расписание', 'Профиль'];
+  final List<String> _titles = ['Главная', 'Домашние задания', 'Уроки', 'Расписание', 'Профиль', 'Сообщения'];
 
   @override
   void initState() {
@@ -126,6 +126,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       case 4:
         body = const StudentProfileScreen();
         break;
+      case 5:
+        body = const ChatListScreen();
+        break;
       default:
         body = const SizedBox.shrink();
     }
@@ -173,14 +176,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1, colors),
             _buildDrawerItem(Icons.menu_book_rounded, 'Уроки', 2, colors),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
-            ListTile(
-              leading: Icon(Icons.message_rounded, color: colors.onSurfaceVariant),
-              title: Text('Сообщения', style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.normal)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatListScreen()));
-              },
-            ),
+            _buildDrawerItem(Icons.message_rounded, 'Сообщения', 5, colors),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
             const Divider(),
             ListTile(
