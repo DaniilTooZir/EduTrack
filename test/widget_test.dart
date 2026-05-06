@@ -1,19 +1,17 @@
+import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:edu_track/ui/screens/login_screen.dart';
-import 'package:edu_track/providers/user_provider.dart';
 
 void main() {
   group('Widget-тесты: Экран авторизации (LoginScreen)', () {
     Widget createLoginScreen() {
+      final appDatabase = AppDatabase();
       return MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => UserProvider()),
-        ],
-        child: const MaterialApp(
-          home: LoginScreen(),
-        ),
+        providers: [ChangeNotifierProvider(create: (_) => UserProvider(appDatabase: appDatabase))],
+        child: const MaterialApp(home: LoginScreen()),
       );
     }
 
@@ -30,16 +28,10 @@ void main() {
       await tester.pumpWidget(createLoginScreen());
       final textFieldFinder = find.byType(TextField);
       expect(textFieldFinder, findsNWidgets(2));
-      final loginField = find.ancestor(
-        of: find.text('Логин'),
-        matching: find.byType(TextField),
-      ).first;
+      final loginField = find.ancestor(of: find.text('Логин'), matching: find.byType(TextField)).first;
       await tester.enterText(loginField, 'teacher_ivanov');
       expect(find.text('teacher_ivanov'), findsOneWidget);
-      final passwordField = find.ancestor(
-        of: find.text('Пароль'),
-        matching: find.byType(TextField),
-      ).first;
+      final passwordField = find.ancestor(of: find.text('Пароль'), matching: find.byType(TextField)).first;
       await tester.enterText(passwordField, '123456');
       expect(find.text('123456'), findsOneWidget);
     });
