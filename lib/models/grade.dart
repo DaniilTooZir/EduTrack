@@ -32,4 +32,10 @@ class Grade {
       value: value ?? this.value,
     );
   }
+
+  static double calculateGPA(List<Grade> grades) {
+    if (grades.isEmpty) return 0.0;
+    final sum = grades.fold<int>(0, (acc, g) => acc + g.value);
+    return sum / grades.length;
+  }
 }

@@ -7,6 +7,7 @@ import 'package:edu_track/ui/screens/chat_list_screen.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
 import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
+import 'package:edu_track/ui/screens/student/student_analytics_screen.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
 import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -32,7 +33,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _completedHomework = 0;
   int _pendingHomework = 0;
   final HomeworkService _homeworkService = HomeworkService();
-  final List<String> _titles = ['Главная', 'Домашние задания', 'Уроки', 'Расписание', 'Профиль', 'Сообщения'];
+  final List<String> _titles = ['Главная', 'Домашние задания', 'Уроки', 'Расписание', 'Профиль', 'Сообщения', 'Аналитика'];
 
   @override
   void initState() {
@@ -129,6 +130,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       case 5:
         body = const ChatListScreen();
         break;
+      case 6:
+        body = const StudentAnalyticsScreen();
+        break;
       default:
         body = const SizedBox.shrink();
     }
@@ -177,6 +181,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             _buildDrawerItem(Icons.menu_book_rounded, 'Уроки', 2, colors),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
             _buildDrawerItem(Icons.message_rounded, 'Сообщения', 5, colors),
+            _buildDrawerItem(Icons.bar_chart_rounded, 'Аналитика', 6, colors),
             _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
             const Divider(),
             ListTile(
@@ -278,6 +283,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   _buildQuickActionCard(Icons.assignment, 'Мои задания', () => _onItemTapped(1), colors),
                   _buildQuickActionCard(Icons.calendar_month, 'Расписание', () => _onItemTapped(3), colors),
                   _buildQuickActionCard(Icons.menu_book, 'Уроки', () => _onItemTapped(2), colors),
+                  _buildQuickActionCard(Icons.bar_chart_rounded, 'Аналитика', () => _onItemTapped(6), colors),
                   _buildQuickActionCard(Icons.forum, 'Чат группы', () => _openGroupChat(context), colors),
                 ],
               ),

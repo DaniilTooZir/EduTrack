@@ -32,6 +32,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   List<Subject> _subjects = [];
   String? _journalGroupId;
   String? _journalSubjectId;
+  VoidCallback? _journalRefreshCallback;
   final List<String> _titles = [
     'Главная',
     'Домашние задания',
@@ -81,6 +82,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
   Future<void> _openJournalSelector() async {
     Navigator.pop(context);
+    await _showJournalSelectorSheet(switchToTab: true);
+  }
+
+  Future<void> _showJournalSelectorSheet({bool switchToTab = false}) async {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
     final result = await showModalBottomSheet<Map<String, String>>(
@@ -93,7 +98,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       setState(() {
         _journalGroupId = result['groupId'];
         _journalSubjectId = result['subjectId'];
-        _selectedIndex = 8;
+        if (switchToTab) _selectedIndex = 8;
       });
     }
   }
@@ -147,6 +152,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 key: ValueKey('$_journalGroupId|$_journalSubjectId'),
                 groupId: _journalGroupId!,
                 subjectId: _journalSubjectId!,
+                onReady: (fn) => _journalRefreshCallback = fn,
               )
             : const SizedBox.shrink();
         break;
@@ -160,9 +166,38 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         elevation: 0,
         title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
+        leadingWidth: _selectedIndex == 8 ? 196 : 56,
+        leading: _selectedIndex == 8
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _showJournalSelectorSheet,
+                    icon: const Icon(Icons.swap_horiz_rounded, size: 18, color: Colors.white),
+                    label: const Text(
+                      'Сменить предмет',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              )
+            : null,
         actions: [
           if (_selectedIndex == 0)
             IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _refreshDashboard),
+          if (_selectedIndex == 8 && _journalRefreshCallback != null)
+            IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _journalRefreshCallback),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Выйти',

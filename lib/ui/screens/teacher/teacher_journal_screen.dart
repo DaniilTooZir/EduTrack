@@ -26,8 +26,9 @@ Color _gradeColor(int value, ColorScheme colors) => switch (value) {
 class TeacherJournalScreen extends StatefulWidget {
   final String groupId;
   final String subjectId;
+  final void Function(VoidCallback loadJournal)? onReady;
 
-  const TeacherJournalScreen({super.key, required this.groupId, required this.subjectId});
+  const TeacherJournalScreen({super.key, required this.groupId, required this.subjectId, this.onReady});
 
   @override
   State<TeacherJournalScreen> createState() => _TeacherJournalScreenState();
@@ -50,6 +51,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
+      widget.onReady?.call(_loadJournal);
       _loadJournal();
     });
   }
@@ -166,30 +168,18 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: colors.primary,
-        foregroundColor: colors.onPrimary,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text('Журнал успеваемости', style: TextStyle(fontWeight: FontWeight.w600)),
-        actions: [
-          if (!_isLoading) IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _loadJournal),
-        ],
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
-        child:
-            _isLoading
-                ? _buildSkeleton()
-                : _errorMessage != null
-                ? _buildError(colors)
-                : (_lessons.isEmpty || _students.isEmpty)
-                ? _buildEmpty(colors)
-                : _buildJournal(colors),
-      ),
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+      child:
+          _isLoading
+              ? _buildSkeleton()
+              : _errorMessage != null
+              ? _buildError(colors)
+              : (_lessons.isEmpty || _students.isEmpty)
+              ? _buildEmpty(colors)
+              : _buildJournal(colors),
     );
   }
 
