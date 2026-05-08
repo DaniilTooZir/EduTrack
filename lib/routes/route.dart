@@ -1,5 +1,6 @@
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
+import 'package:edu_track/ui/screens/admin/academic_periods_screen.dart';
 import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
 import 'package:edu_track/ui/screens/admin/admin_home_screen.dart';
 import 'package:edu_track/ui/screens/check_request_status_screen.dart';
@@ -64,6 +65,7 @@ class AppNavigation {
         GoRoute(path: AppRoutes.institutionRequest, builder: (context, state) => const InstitutionRequestScreen()),
         GoRoute(path: AppRoutes.checkStatus, builder: (context, state) => const CheckRequestStatusScreen()),
         GoRoute(path: AppRoutes.adminHome, builder: (context, state) => const AdminHomeScreen()),
+        GoRoute(path: AppRoutes.adminPeriods, builder: (context, state) => const AcademicPeriodsScreen()),
         GoRoute(path: AppRoutes.teacherHome, builder: (context, state) => const TeacherHomeScreen()),
         GoRoute(path: AppRoutes.studentHome, builder: (context, state) => const StudentHomeScreen()),
         GoRoute(path: AppRoutes.scheduleOperatorHome, builder: (context, state) => const ScheduleOperatorHomeScreen()),

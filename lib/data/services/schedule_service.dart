@@ -81,16 +81,24 @@ class ScheduleService {
     }
   }
 
-  Future<AppResult<List<Schedule>>> getScheduleForStudent(String studentId, String? groupId, AppDatabase db) async {
+  Future<AppResult<List<Schedule>>> getScheduleForStudent(
+    String studentId,
+    String? groupId,
+    AppDatabase db, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     if (groupId == null) {
       return AppResult.failure('ID группы не найден локально.');
     }
     try {
-      final response = await _client
+      var query = _client
           .from('schedule')
           .select('*, subject:subjects(*), teacher:teachers(*), group:groups(*)')
           .eq('group_id', groupId);
-      final networkSchedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+      if (startDate != null) query = query.gte('date', startDate.toIso8601String());
+      if (endDate != null) query = query.lte('date', endDate.toIso8601String());
+      final networkSchedules = (await query as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
       await db.saveSchedules(networkSchedules);
       return AppResult.success(networkSchedules);
     } catch (e) {
@@ -99,12 +107,20 @@ class ScheduleService {
     }
   }
 
-  Future<AppResult<List<Schedule>>> getScheduleForTeacher(String teacherId, AppDatabase db) async {
+  Future<AppResult<List<Schedule>>> getScheduleForTeacher(
+    String teacherId,
+    AppDatabase db, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
-      final response = await _client
+      var query = _client
           .from('schedule')
           .select('*, subject:subjects(*), group:groups(*)')
           .eq('teacher_id', teacherId);
+      if (startDate != null) query = query.gte('date', startDate.toIso8601String());
+      if (endDate != null) query = query.lte('date', endDate.toIso8601String());
+      final response = await query;
       final networkSchedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
       networkSchedules.sort((a, b) {
         if (a.date != null && b.date != null) {

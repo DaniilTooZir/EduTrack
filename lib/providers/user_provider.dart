@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/academic_period_service.dart';
 import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/data/services/realtime_listener.dart';
 import 'package:edu_track/data/services/session_service.dart';
+import 'package:edu_track/models/academic_period.dart';
 import 'package:flutter/foundation.dart';
 
 class UserProvider with ChangeNotifier {
@@ -21,6 +25,9 @@ class UserProvider with ChangeNotifier {
   String? _institutionName;
   String? _groupName;
 
+  List<AcademicPeriod> _periods = [];
+  AcademicPeriod? _selectedPeriod;
+
   bool _isInitialized = false;
   final _realtimeListener = RealtimeListener();
 
@@ -33,6 +40,8 @@ class UserProvider with ChangeNotifier {
   String? get avatarUrl => _avatarUrl;
   String? get institutionName => _institutionName;
   String? get groupName => _groupName;
+  List<AcademicPeriod> get periods => _periods;
+  AcademicPeriod? get selectedPeriod => _selectedPeriod;
   bool get isInitialized => _isInitialized;
 
   Future<void> setUser(AuthResult auth) async {
@@ -49,6 +58,7 @@ class UserProvider with ChangeNotifier {
     await _appDatabase.saveUserProfile(auth);
     _setupRealtime();
     notifyListeners();
+    unawaited(loadPeriods());
   }
 
   Future<void> loadSession() async {
@@ -69,6 +79,7 @@ class UserProvider with ChangeNotifier {
     } finally {
       _isInitialized = true;
       notifyListeners();
+      loadPeriods();
     }
   }
 
@@ -126,6 +137,25 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  Future<void> loadPeriods() async {
+    if (_institutionId == null) return;
+    final result = await AcademicPeriodService().getPeriods(_institutionId!);
+    if (result.isFailure) return;
+    _periods = result.data;
+    if (_periods.isEmpty) {
+      _selectedPeriod = null;
+    } else {
+      final matching = _periods.where((p) => p.isCurrent());
+      _selectedPeriod = matching.isNotEmpty ? matching.first : _periods.last;
+    }
+    notifyListeners();
+  }
+
+  void setSelectedPeriod(AcademicPeriod period) {
+    _selectedPeriod = period;
+    notifyListeners();
+  }
+
   Future<void> clearUser() async {
     _realtimeListener.stopListening();
     _userId = null;
@@ -137,6 +167,8 @@ class UserProvider with ChangeNotifier {
     _avatarUrl = null;
     _institutionName = null;
     _groupName = null;
+    _periods = [];
+    _selectedPeriod = null;
     await Future.wait([SessionService.clearSession(), _appDatabase.clearAll()]);
     notifyListeners();
   }

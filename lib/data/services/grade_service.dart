@@ -77,14 +77,22 @@ class GradeService {
     }
   }
 
-  Future<AppResult<Map<String, dynamic>>> getJournalData({required String groupId, required String subjectId}) async {
+  Future<AppResult<Map<String, dynamic>>> getJournalData({
+    required String groupId,
+    required String subjectId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
+      var scheduleQuery = _supabase
+          .from('schedule')
+          .select('id, date, weekday, start_time')
+          .eq('group_id', groupId)
+          .eq('subject_id', subjectId);
+      if (startDate != null) scheduleQuery = scheduleQuery.gte('date', startDate.toIso8601String());
+      if (endDate != null) scheduleQuery = scheduleQuery.lte('date', endDate.toIso8601String());
       final step1 = await Future.wait([
-        _supabase
-            .from('schedule')
-            .select('id, date, weekday, start_time')
-            .eq('group_id', groupId)
-            .eq('subject_id', subjectId),
+        scheduleQuery,
         _supabase.from('students').select().eq('group_id', groupId).order('surname', ascending: true),
       ]);
       final scheduleRaw = step1[0] as List;
@@ -136,20 +144,18 @@ class GradeService {
     }
   }
 
-  Future<AppResult<List<SubjectAnalytics>>> getStudentAnalytics(String studentId) async {
+  Future<AppResult<List<SubjectAnalytics>>> getStudentAnalytics(
+    String studentId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
-      final gradesRaw = await _supabase
-          .from('grade')
-          .select()
-          .eq('student_id', studentId);
+      final gradesRaw = await _supabase.from('grade').select().eq('student_id', studentId);
       final grades = (gradesRaw as List).map((g) => Grade.fromMap(g as Map<String, dynamic>)).toList();
       if (grades.isEmpty) return AppResult.success([]);
 
       final lessonIds = grades.map((g) => g.lessonId).toSet().toList();
-      final lessonsRaw = await _supabase
-          .from('lessons')
-          .select('id, schedule_id')
-          .inFilter('id', lessonIds);
+      final lessonsRaw = await _supabase.from('lessons').select('id, schedule_id').inFilter('id', lessonIds);
       final lessonScheduleMap = <String, String>{};
       for (final l in lessonsRaw as List) {
         lessonScheduleMap[l['id'].toString()] = l['schedule_id'].toString();
@@ -185,11 +191,28 @@ class GradeService {
         if (date != null) lessonDateMap[entry.key] = date;
       }
 
-      final analytics = subjectsById.values
-          .map((subject) => SubjectAnalytics.fromGrades(subject, grades, lessonSubjectMap, lessonDateMap: lessonDateMap))
-          .toList()
-        ..sort((a, b) => a.subject.name.compareTo(b.subject.name));
-
+      final filteredGrades =
+          (startDate == null && endDate == null)
+              ? grades
+              : grades.where((g) {
+                final date = lessonDateMap[g.lessonId];
+                if (date == null) return true;
+                if (startDate != null && date.isBefore(startDate)) return false;
+                if (endDate != null && date.isAfter(endDate)) return false;
+                return true;
+              }).toList();
+      final analytics =
+          subjectsById.values
+              .map(
+                (subject) => SubjectAnalytics.fromGrades(
+                  subject,
+                  filteredGrades,
+                  lessonSubjectMap,
+                  lessonDateMap: lessonDateMap,
+                ),
+              )
+              .toList()
+            ..sort((a, b) => a.subject.name.compareTo(b.subject.name));
       return AppResult.success(analytics);
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при загрузке аналитики: ${e.message}');

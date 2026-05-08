@@ -8,6 +8,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
@@ -150,6 +151,17 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       MessengerHelper.showError('Выберите дату занятия');
       return;
     }
+    final periods = Provider.of<UserProvider>(context, listen: false).periods;
+    if (periods.isNotEmpty) {
+      final inPeriod = periods.any((p) => !_selectedDate!.isBefore(p.startDate) && !_selectedDate!.isAfter(p.endDate));
+      if (!inPeriod) {
+        MessengerHelper.showError(
+          'Выбранная дата не входит ни в один учебный период. '
+          'Создайте период в настройках или измените дату.',
+        );
+        return;
+      }
+    }
     setState(() => _isAdding = true);
 
     final sTime = _formatTimeOfDay(_startTime!);
@@ -216,7 +228,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   Future<void> _duplicateSchedule() async {
     final now = DateTime.now();
     final startOfWeeks = now.subtract(Duration(days: now.weekday - 1));
-    final mondayFormatted = "${startOfWeeks.day}.${startOfWeeks.month}";
+    final mondayFormatted = '${startOfWeeks.day}.${startOfWeeks.month}';
     final confirmed = await showDialog<bool>(
       context: context,
       builder:
@@ -258,7 +270,6 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
             ],
           ),
     );
-
     if (confirmed == true) {
       final result = await _scheduleService.deleteScheduleEntry(id);
       if (result.isFailure) {
@@ -355,8 +366,8 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         ),
       );
 
-  Widget _buildScheduleList(ColorScheme colors, ThemeData theme) {
-    final schedules = List<Schedule>.from(_schedules)..sort((a, b) {
+  Widget _buildScheduleList(List<Schedule> source, ColorScheme colors, ThemeData theme) {
+    final schedules = List<Schedule>.from(source)..sort((a, b) {
       if (a.date != null && b.date != null) {
         final d = a.date!.compareTo(b.date!);
         if (d != 0) return d;
@@ -450,6 +461,18 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final selectedPeriod = Provider.of<UserProvider>(context).selectedPeriod;
+    final displayedSchedules =
+        selectedPeriod == null
+            ? _schedules
+            : _schedules
+                .where(
+                  (s) =>
+                      s.date != null &&
+                      !s.date!.isBefore(selectedPeriod.startDate) &&
+                      !s.date!.isAfter(selectedPeriod.endDate),
+                )
+                .toList();
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
@@ -502,7 +525,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                     border: OutlineInputBorder(),
                                     isDense: true,
                                   ),
-                                  value: _selectedSubjectId,
+                                  initialValue: _selectedSubjectId,
                                   isExpanded: true,
                                   items:
                                       _subjects
@@ -528,7 +551,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                     border: OutlineInputBorder(),
                                     isDense: true,
                                   ),
-                                  value: _selectedGroupId,
+                                  initialValue: _selectedGroupId,
                                   isExpanded: true,
                                   items:
                                       _groups
@@ -555,7 +578,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
-                            value: _selectedTeacherId,
+                            initialValue: _selectedTeacherId,
                             isExpanded: true,
                             items:
                                 _teachers
@@ -581,7 +604,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                 decoration: BoxDecoration(
                                   color:
                                       _isCheckingConflict
-                                          ? colors.surfaceVariant.withOpacity(0.5)
+                                          ? colors.surfaceContainerHighest.withOpacity(0.5)
                                           : colors.errorContainer.withOpacity(0.8),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: _isCheckingConflict ? colors.outline : colors.error),
@@ -646,33 +669,45 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                       'Расписание занятий',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary),
                     ),
-                    if (!_isCloning)
-                      IconButton.filledTonal(
-                        onPressed: _duplicateSchedule,
-                        icon: const Icon(Icons.copy_all, size: 20),
-                        tooltip: 'Копировать неделю',
-                      )
-                    else
-                      const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const PeriodDropdown(),
+                        if (!_isCloning)
+                          IconButton.filledTonal(
+                            onPressed: _duplicateSchedule,
+                            icon: const Icon(Icons.copy_all, size: 20),
+                            tooltip: 'Копировать неделю',
+                          )
+                        else
+                          const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadSchedule,
-                    child: _isLoading
-                        ? _buildScheduleListSkeleton()
-                        : _schedules.isEmpty
-                        ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                              height: 300,
-                              child: Center(child: Text('Расписание пустое', style: TextStyle(color: colors.onSurfaceVariant))),
-                            ),
-                          ],
-                        )
-                        : _buildScheduleList(colors, theme),
+                    child:
+                        _isLoading
+                            ? _buildScheduleListSkeleton()
+                            : displayedSchedules.isEmpty
+                            ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                    child: Text(
+                                      _schedules.isEmpty ? 'Расписание пустое' : 'Нет занятий в выбранном периоде',
+                                      style: TextStyle(color: colors.onSurfaceVariant),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                            : _buildScheduleList(displayedSchedules, colors, theme),
                   ),
                 ),
               ],

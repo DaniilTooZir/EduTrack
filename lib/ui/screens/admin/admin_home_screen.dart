@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/dashboard_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
+import 'package:edu_track/ui/screens/admin/academic_periods_screen.dart';
 import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
 import 'package:edu_track/ui/screens/admin/admin_profile_screen.dart';
 import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
@@ -23,7 +24,15 @@ class AdminHomeScreen extends StatefulWidget {
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _selectedIndex = 0;
-  final List<String> _titles = ['Главная', 'Пользователи', 'Добавить пользователя', 'Предметы', 'Группы', 'Профиль'];
+  final List<String> _titles = [
+    'Главная',
+    'Пользователи',
+    'Добавить пользователя',
+    'Предметы',
+    'Группы',
+    'Учебные периоды',
+    'Профиль',
+  ];
   final DashboardService _dashboardService = DashboardService();
   bool _isLoading = true;
   Map<String, int> _stats = {'students': 0, 'teachers': 0, 'groups': 0, 'subjects': 0};
@@ -108,6 +117,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         bodyContent = const GroupAdminScreen();
         break;
       case 5:
+        bodyContent = const AcademicPeriodsScreen();
+        break;
+      case 6:
         bodyContent = const AdminProfileScreen();
         break;
       default:
@@ -161,7 +173,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             _buildDrawerItem(Icons.person_add_alt_1_rounded, 'Добавить пользователя', 2, colors),
             _buildDrawerItem(Icons.menu_book_rounded, 'Предметы', 3, colors),
             _buildDrawerItem(Icons.groups_rounded, 'Группы', 4, colors),
-            _buildDrawerItem(Icons.person_rounded, 'Профиль', 5, colors),
+            _buildDrawerItem(Icons.calendar_month_rounded, 'Учебные периоды', 5, colors),
+            _buildDrawerItem(Icons.person_rounded, 'Профиль', 6, colors),
             const Divider(),
             ListTile(
               leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
@@ -261,10 +274,22 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     spacing: 16,
                     runSpacing: 16,
                     children: [
-                      _statCard('Преподаватели', (_stats['teachers'] ?? 0).toString(), Icons.school, Colors.orange, colors),
+                      _statCard(
+                        'Преподаватели',
+                        (_stats['teachers'] ?? 0).toString(),
+                        Icons.school,
+                        Colors.orange,
+                        colors,
+                      ),
                       _statCard('Студенты', (_stats['students'] ?? 0).toString(), Icons.people, Colors.blue, colors),
                       _statCard('Группы', (_stats['groups'] ?? 0).toString(), Icons.groups, Colors.green, colors),
-                      _statCard('Предметы', (_stats['subjects'] ?? 0).toString(), Icons.menu_book, Colors.purple, colors),
+                      _statCard(
+                        'Предметы',
+                        (_stats['subjects'] ?? 0).toString(),
+                        Icons.menu_book,
+                        Colors.purple,
+                        colors,
+                      ),
                     ],
                   ),
                 const SizedBox(height: 32),
@@ -301,11 +326,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       runSpacing: 16,
       children: List.generate(
         4,
-        (_) => const SizedBox(
-          width: 160,
-          height: 88,
-          child: Skeleton(height: 88, width: 160, borderRadius: 16),
-        ),
+        (_) => const SizedBox(width: 160, height: 88, child: Skeleton(height: 88, width: 160, borderRadius: 16)),
       ),
     );
   }

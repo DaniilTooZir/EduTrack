@@ -6,12 +6,13 @@ import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/chat_list_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_journal_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_lesson_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_my_group_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
-import 'package:edu_track/ui/screens/teacher/teacher_journal_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
@@ -147,14 +148,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         bodyContent = const ChatListScreen();
         break;
       case 8:
-        bodyContent = (_journalGroupId != null && _journalSubjectId != null)
-            ? TeacherJournalScreen(
-                key: ValueKey('$_journalGroupId|$_journalSubjectId'),
-                groupId: _journalGroupId!,
-                subjectId: _journalSubjectId!,
-                onReady: (fn) => _journalRefreshCallback = fn,
-              )
-            : const SizedBox.shrink();
+        bodyContent =
+            (_journalGroupId != null && _journalSubjectId != null)
+                ? TeacherJournalScreen(
+                  key: ValueKey('$_journalGroupId|$_journalSubjectId'),
+                  groupId: _journalGroupId!,
+                  subjectId: _journalSubjectId!,
+                  onReady: (fn) => _journalRefreshCallback = fn,
+                )
+                : const SizedBox.shrink();
         break;
       default:
         bodyContent = const SizedBox.shrink();
@@ -167,33 +169,31 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
         leadingWidth: _selectedIndex == 8 ? 196 : 56,
-        leading: _selectedIndex == 8
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Builder(
-                    builder: (ctx) => IconButton(
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+        leading:
+            _selectedIndex == 8
+                ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Builder(
+                      builder:
+                          (ctx) =>
+                              IconButton(icon: const Icon(Icons.menu), onPressed: () => Scaffold.of(ctx).openDrawer()),
                     ),
-                  ),
-                  TextButton.icon(
-                    onPressed: _showJournalSelectorSheet,
-                    icon: const Icon(Icons.swap_horiz_rounded, size: 18, color: Colors.white),
-                    label: const Text(
-                      'Сменить предмет',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    TextButton.icon(
+                      onPressed: _showJournalSelectorSheet,
+                      icon: const Icon(Icons.swap_horiz_rounded, size: 18, color: Colors.white),
+                      label: const Text('Сменить предмет', style: TextStyle(color: Colors.white, fontSize: 12)),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                ],
-              )
-            : null,
+                  ],
+                )
+                : null,
         actions: [
+          const PeriodDropdown(),
           if (_selectedIndex == 0)
             IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _refreshDashboard),
           if (_selectedIndex == 8 && _journalRefreshCallback != null)

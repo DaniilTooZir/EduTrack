@@ -1,18 +1,19 @@
 import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
-import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/chat_list_screen.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
+import 'package:edu_track/ui/screens/student/student_analytics_screen.dart';
 import 'package:edu_track/ui/screens/student/student_homework_screen.dart';
 import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
-import 'package:edu_track/ui/screens/student/student_analytics_screen.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
 import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +34,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _completedHomework = 0;
   int _pendingHomework = 0;
   final HomeworkService _homeworkService = HomeworkService();
-  final List<String> _titles = ['Главная', 'Домашние задания', 'Уроки', 'Расписание', 'Профиль', 'Сообщения', 'Аналитика'];
+  final List<String> _titles = [
+    'Главная',
+    'Домашние задания',
+    'Уроки',
+    'Расписание',
+    'Профиль',
+    'Сообщения',
+    'Аналитика',
+  ];
 
   @override
   void initState() {
@@ -68,12 +77,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
     final homeworksResult = await _homeworkService.getHomeworksByStudentGroup(studentId);
     if (homeworksResult.isFailure) {
-      if (mounted) setState(() { _dashboardError = homeworksResult.errorMessage; _isDashboardLoading = false; });
+      if (mounted)
+        setState(() {
+          _dashboardError = homeworksResult.errorMessage;
+          _isDashboardLoading = false;
+        });
       return;
     }
     final statusesResult = await _homeworkService.getHomeworkStatusesForStudent(studentId);
     if (statusesResult.isFailure) {
-      if (mounted) setState(() { _dashboardError = statusesResult.errorMessage; _isDashboardLoading = false; });
+      if (mounted)
+        setState(() {
+          _dashboardError = statusesResult.errorMessage;
+          _isDashboardLoading = false;
+        });
       return;
     }
     final homeworks = homeworksResult.data;
@@ -83,8 +100,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     int pending = 0;
     for (final hw in homeworks) {
       final status = statusMap[hw.id];
-      if (status != null && status.isCompleted) completed++;
-      else pending++;
+      if (status != null && status.isCompleted)
+        completed++;
+      else
+        pending++;
     }
     if (mounted) {
       setState(() {
@@ -144,6 +163,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
+          const PeriodDropdown(),
           if (_selectedIndex == 0)
             IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _loadDashboardData),
           IconButton(
@@ -424,9 +444,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       return;
     }
     if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatResult.data, title: 'Группа $groupName')),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatResult.data, title: 'Группа $groupName')));
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/grade_service.dart';
+import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -19,27 +20,56 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   bool _isLoading = true;
   String? _error;
   List<SubjectAnalytics> _analytics = [];
+  AcademicPeriod? _loadedPeriod;
 
   @override
   void initState() {
     super.initState();
     _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
-    _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final period = Provider.of<UserProvider>(context).selectedPeriod;
+    if (period != _loadedPeriod) {
+      _loadedPeriod = period;
+      _load();
+    }
   }
 
   Future<void> _load() async {
-    if (!_isLoading) setState(() { _isLoading = true; _error = null; });
-    final studentId = Provider.of<UserProvider>(context, listen: false).userId;
+    if (!_isLoading)
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    final provider = Provider.of<UserProvider>(context, listen: false);
+    final studentId = provider.userId;
+    final period = provider.selectedPeriod;
     if (studentId == null) {
-      setState(() { _error = 'Не удалось получить ID студента'; _isLoading = false; });
+      setState(() {
+        _error = 'Не удалось получить ID студента';
+        _isLoading = false;
+      });
       return;
     }
-    final result = await _gradeService.getStudentAnalytics(studentId);
+    final result = await _gradeService.getStudentAnalytics(
+      studentId,
+      startDate: period?.startDate,
+      endDate: period?.endDate,
+    );
     if (!mounted) return;
     if (result.isFailure) {
-      setState(() { _error = result.errorMessage; _isLoading = false; });
+      setState(() {
+        _error = result.errorMessage;
+        _isLoading = false;
+      });
     } else {
-      setState(() { _analytics = result.data; _isLoading = false; });
+      setState(() {
+        _analytics = result.data;
+        _isLoading = false;
+      });
     }
   }
 
@@ -51,9 +81,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-
     if (_error != null) {
       return Center(
         child: Column(
@@ -68,7 +96,6 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
         ),
       );
     }
-
     if (_analytics.isEmpty) {
       return Center(
         child: Column(
@@ -81,10 +108,8 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
         ),
       );
     }
-
     final gpa = _overallGpa();
     final gpaColor = _gradeColor(gpa);
-
     return Column(
       children: [
         _buildGpaHeader(gpa, gpaColor, colors),
@@ -115,19 +140,14 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: gpaColor.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        boxShadow: [BoxShadow(color: gpaColor.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Общий средний балл',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 14),
-              ),
+              Text('Общий средний балл', style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 14)),
               const SizedBox(height: 4),
               Text(
                 gpa.toStringAsFixed(2),
@@ -150,11 +170,14 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   String _subjectWord(int n) {
     if (n % 100 >= 11 && n % 100 <= 14) return 'предметам';
     switch (n % 10) {
-      case 1: return 'предмету';
+      case 1:
+        return 'предмету';
       case 2:
       case 3:
-      case 4: return 'предметам';
-      default: return 'предметам';
+      case 4:
+        return 'предметам';
+      default:
+        return 'предметам';
     }
   }
 }
@@ -178,7 +201,6 @@ class _SubjectAnalyticsCard extends StatelessWidget {
     final progress = (avg / 5.0).clamp(0.0, 1.0);
     final barColor = _gradeColor(avg);
     final avgText = avg == 0.0 ? '—' : avg.toStringAsFixed(1);
-
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 12),
@@ -190,15 +212,9 @@ class _SubjectAnalyticsCard extends StatelessWidget {
         leading: Container(
           width: 56,
           height: 56,
-          decoration: BoxDecoration(
-            color: barColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: BoxDecoration(color: barColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
           child: Center(
-            child: Text(
-              avgText,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: barColor),
-            ),
+            child: Text(avgText, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: barColor)),
           ),
         ),
         title: Text(
@@ -211,10 +227,7 @@ class _SubjectAnalyticsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(
-              'Оценок: ${analytics.grades.length}',
-              style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
-            ),
+            Text('Оценок: ${analytics.grades.length}', style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
             const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -244,16 +257,11 @@ class _GradeLineChart extends StatelessWidget {
   final Color barColor;
   final ColorScheme colors;
 
-  const _GradeLineChart({
-    required this.analytics,
-    required this.barColor,
-    required this.colors,
-  });
+  const _GradeLineChart({required this.analytics, required this.barColor, required this.colors});
 
   @override
   Widget build(BuildContext context) {
     final series = analytics.gradeSeries;
-
     if (series.length < 2) {
       return SizedBox(
         height: 72,
@@ -268,11 +276,7 @@ class _GradeLineChart extends StatelessWidget {
         ),
       );
     }
-
-    final spots = series.asMap().entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value.value.toDouble()))
-        .toList();
-
+    final spots = series.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.value.toDouble())).toList();
     return SizedBox(
       height: 200,
       child: Padding(
@@ -290,16 +294,11 @@ class _GradeLineChart extends StatelessWidget {
                 barWidth: 2.5,
                 isStrokeCapRound: true,
                 dotData: FlDotData(
-                  getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                    radius: 4,
-                    color: barColor,
-                    strokeWidth: 2,
-                    strokeColor: Colors.white,
-                  ),
+                  getDotPainter:
+                      (spot, percent, bar, index) =>
+                          FlDotCirclePainter(radius: 4, color: barColor, strokeWidth: 2, strokeColor: Colors.white),
                 ),
-                belowBarData: BarAreaData(
-                  color: barColor.withValues(alpha: 0.08),
-                ),
+                belowBarData: BarAreaData(color: barColor.withValues(alpha: 0.08)),
               ),
             ],
             titlesData: FlTitlesData(
@@ -334,10 +333,7 @@ class _GradeLineChart extends StatelessWidget {
                     if (value != intVal.toDouble() || intVal < 2 || intVal > 5) {
                       return const SizedBox.shrink();
                     }
-                    return Text(
-                      '$intVal',
-                      style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
-                    );
+                    return Text('$intVal', style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant));
                   },
                 ),
               ),
@@ -345,10 +341,8 @@ class _GradeLineChart extends StatelessWidget {
             gridData: FlGridData(
               drawVerticalLine: false,
               horizontalInterval: 1,
-              getDrawingHorizontalLine: (value) => FlLine(
-                color: colors.outline.withValues(alpha: 0.15),
-                strokeWidth: 1,
-              ),
+              getDrawingHorizontalLine:
+                  (value) => FlLine(color: colors.outline.withValues(alpha: 0.15), strokeWidth: 1),
             ),
             borderData: FlBorderData(show: false),
           ),

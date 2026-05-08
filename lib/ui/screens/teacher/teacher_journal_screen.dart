@@ -1,10 +1,12 @@
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/data/services/lesson_attendance_service.dart';
+import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/lesson_attendance.dart';
 import 'package:edu_track/models/student.dart';
+import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
@@ -35,25 +37,32 @@ class TeacherJournalScreen extends StatefulWidget {
 }
 
 class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
-  late final GradeService _gradeService;
+  late GradeService _gradeService;
   final _attendanceService = AttendanceService();
 
   bool _isLoading = true;
+  bool _gradeServiceReady = false;
   String? _errorMessage;
   List<Lesson> _lessons = [];
   List<Student> _students = [];
   Map<String, Grade> _gradeMap = {};
   Map<String, LessonAttendance> _attendanceMap = {};
   Map<String, DateTime?> _lessonDateMap = {};
+  AcademicPeriod? _loadedPeriod;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_gradeServiceReady) {
       _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
+      _gradeServiceReady = true;
       widget.onReady?.call(_loadJournal);
+    }
+    final period = Provider.of<UserProvider>(context).selectedPeriod;
+    if (period != _loadedPeriod) {
+      _loadedPeriod = period;
       _loadJournal();
-    });
+    }
   }
 
   Future<void> _loadJournal() async {
@@ -62,7 +71,13 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
-    final result = await _gradeService.getJournalData(groupId: widget.groupId, subjectId: widget.subjectId);
+    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
+    final result = await _gradeService.getJournalData(
+      groupId: widget.groupId,
+      subjectId: widget.subjectId,
+      startDate: period?.startDate,
+      endDate: period?.endDate,
+    );
     if (!mounted) return;
     if (result.isFailure) {
       setState(() {
