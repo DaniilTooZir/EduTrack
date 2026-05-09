@@ -4,6 +4,8 @@ import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/academic_period_service.dart';
 import 'package:edu_track/data/services/auth_service.dart';
+import 'package:edu_track/data/services/homework_service.dart';
+import 'package:edu_track/data/services/notification_service.dart';
 import 'package:edu_track/data/services/realtime_listener.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/models/academic_period.dart';
@@ -59,6 +61,7 @@ class UserProvider with ChangeNotifier {
     _setupRealtime();
     notifyListeners();
     unawaited(loadPeriods());
+    unawaited(_scheduleHomeworkReminders());
   }
 
   Future<void> loadSession() async {
@@ -79,7 +82,8 @@ class UserProvider with ChangeNotifier {
     } finally {
       _isInitialized = true;
       notifyListeners();
-      loadPeriods();
+      unawaited(loadPeriods());
+      unawaited(_scheduleHomeworkReminders());
     }
   }
 
@@ -132,8 +136,31 @@ class UserProvider with ChangeNotifier {
 
   void _setupRealtime() {
     _realtimeListener.stopListening();
-    if (_userId != null && _role == 'student' && _groupId != null) {
+    if (_role == 'student' && _userId != null && _groupId != null) {
       _realtimeListener.startListening(_userId!, _groupId!);
+    } else if (_role == 'teacher' && _institutionId != null && _userId != null) {
+      _realtimeListener.startListeningAsTeacher(_institutionId!, _userId!);
+    }
+  }
+
+  Future<void> _scheduleHomeworkReminders() async {
+    if (_role != 'student' || _userId == null) return;
+    final result = await HomeworkService().getHomeworksByStudentGroup(_userId!);
+    if (result.isFailure) return;
+    final notificationService = NotificationService();
+    await notificationService.cancelAllScheduled();
+    final now = DateTime.now();
+    for (final hw in result.data) {
+      if (hw.dueDate == null) continue;
+      final reminderTime = hw.dueDate!.subtract(const Duration(hours: 24));
+      if (!reminderTime.isAfter(now)) continue;
+      unawaited(
+        notificationService.scheduleDeadlineReminder(
+          id: hw.id.hashCode.abs(),
+          homeworkTitle: hw.title,
+          dueDate: hw.dueDate!,
+        ),
+      );
     }
   }
 

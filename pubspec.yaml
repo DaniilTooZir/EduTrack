@@ -55,6 +55,8 @@ dependencies:
   path: ^1.9.0
 
   flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  flutter_timezone: ^1.0.4
 
   connectivity_plus: ^6.0.0
   shimmer: ^3.0.0

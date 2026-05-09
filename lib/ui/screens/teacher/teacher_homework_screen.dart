@@ -148,7 +148,11 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
     MessengerHelper.showSuccess('Домашнее задание добавлено');
     _titleController.clear();
     _descriptionController.clear();
-    setState(() { _dueDate = null; _selectedFile = null; _isSaving = false; });
+    setState(() {
+      _dueDate = null;
+      _selectedFile = null;
+      _isSaving = false;
+    });
     await _loadData();
   }
 
