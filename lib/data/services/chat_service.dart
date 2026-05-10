@@ -10,14 +10,15 @@ class ChatPreview {
   final String? avatarUrl;
   final String? lastMessage;
   final DateTime? lastMessageTime;
-  final bool isRead;
+  final int unreadCount;
+  bool get isRead => unreadCount == 0;
   ChatPreview({
     required this.chat,
     required this.title,
     this.avatarUrl,
     this.lastMessage,
     this.lastMessageTime,
-    this.isRead = true,
+    this.unreadCount = 0,
   });
 }
 
@@ -173,9 +174,14 @@ class ChatService {
 
   Future<AppResult<String>> getOrCreateGroupChat(String groupId, String groupName) async {
     try {
-      final existingChat = await _client.from('chats').select('id').eq('group_id', groupId).maybeSingle();
+      final existingChat = await _client.from('chats').select('id, name').eq('group_id', groupId).maybeSingle();
       if (existingChat != null) {
-        return AppResult.success(existingChat['id'] as String);
+        final chatId = existingChat['id'] as String;
+        if (existingChat['name'] != groupName) {
+          await _client.from('chats').update({'name': groupName}).eq('id', chatId);
+        }
+        await _syncGroupMembers(chatId, groupId);
+        return AppResult.success(chatId);
       }
       final newChatResponse =
           await _client
@@ -201,43 +207,86 @@ class ChatService {
   Future<void> _syncGroupMembers(String chatId, String groupId) async {
     final students = await _client.from('students').select('id').eq('group_id', groupId);
     final group = await _client.from('groups').select('curator_id').eq('id', groupId).single();
-    final List<Map<String, dynamic>> membersToAdd = [];
+    final expected = <String, String>{};
     for (final s in students) {
-      membersToAdd.add({'chat_id': chatId, 'user_id': s['id'], 'user_role': 'student'});
+      expected[s['id'] as String] = 'student';
     }
     if (group['curator_id'] != null) {
-      membersToAdd.add({'chat_id': chatId, 'user_id': group['curator_id'], 'user_role': 'teacher'});
+      expected[group['curator_id'] as String] = 'teacher';
     }
-    if (membersToAdd.isNotEmpty) {
-      await _client.from('chat_members').insert(membersToAdd);
+    final existingResponse = await _client.from('chat_members').select('user_id').eq('chat_id', chatId);
+    final existingIds = (existingResponse as List).map((e) => e['user_id'] as String).toSet();
+    final toAdd =
+        expected.entries
+            .where((e) => !existingIds.contains(e.key))
+            .map((e) => {'chat_id': chatId, 'user_id': e.key, 'user_role': e.value})
+            .toList();
+    if (toAdd.isNotEmpty) {
+      await _client.from('chat_members').insert(toAdd);
+    }
+    final toRemove = existingIds.where((id) => !expected.containsKey(id)).toList();
+    if (toRemove.isNotEmpty) {
+      await _client.from('chat_members').delete().eq('chat_id', chatId).inFilter('user_id', toRemove);
     }
   }
 
   Future<AppResult<List<ChatPreview>>> getEnrichedUserChats(String userId) async {
     try {
       final response = await _client.from('chat_members').select('chat:chats(*)').eq('user_id', userId);
-      final List<dynamic> data = response as List<dynamic>;
-      final List<Chat> chats = data.map((e) => Chat.fromMap(e['chat'] as Map<String, dynamic>)).toList();
+      final List<Chat> chats =
+          (response as List<dynamic>).map((e) => Chat.fromMap(e['chat'] as Map<String, dynamic>)).toList();
+      if (chats.isEmpty) return AppResult.success([]);
+      final chatIds = chats.map((c) => c.id).toList();
+      final directChatIds = chats.where((c) => c.type == 'direct').map((c) => c.id).toList();
+      final unreadFuture = _client
+          .from('messages')
+          .select('chat_id')
+          .inFilter('chat_id', chatIds)
+          .eq('is_read', false)
+          .neq('sender_id', userId);
+      final lastMessagesFuture = Future.wait<Map<String, dynamic>?>(
+        chats.map(
+          (chat) =>
+              _client
+                  .from('messages')
+                  .select()
+                  .eq('chat_id', chat.id)
+                  .order('created_at', ascending: false)
+                  .limit(1)
+                  .maybeSingle(),
+        ),
+      );
+      final interlocutorMembersFuture =
+          directChatIds.isEmpty
+              ? Future.value(<dynamic>[])
+              : _client
+                  .from('chat_members')
+                  .select('chat_id, user_id, user_role')
+                  .inFilter('chat_id', directChatIds)
+                  .neq('user_id', userId);
+      final unreadData = await unreadFuture;
+      final lastMessages = await lastMessagesFuture;
+      final interlocutorMembers = await interlocutorMembersFuture;
+      final unreadCounts = <String, int>{};
+      for (final msg in unreadData as List<dynamic>) {
+        final cid = msg['chat_id'] as String;
+        unreadCounts[cid] = (unreadCounts[cid] ?? 0) + 1;
+      }
+      final interlocutorDetails = await Future.wait<Map<String, String?>>(
+        interlocutorMembers.map((m) => getUserDetails(m['user_id'] as String, m['user_role'] as String)),
+      );
+      final interlocutorMap = <String, Map<String, String?>>{};
+      for (int i = 0; i < interlocutorMembers.length; i++) {
+        interlocutorMap[interlocutorMembers[i]['chat_id'] as String] = interlocutorDetails[i];
+      }
       final List<ChatPreview> previews = [];
-      for (final chat in chats) {
-        final msgRes =
-            await _client
-                .from('messages')
-                .select()
-                .eq('chat_id', chat.id)
-                .order('created_at', ascending: false)
-                .limit(1)
-                .maybeSingle();
-        String? lastText;
-        DateTime? lastTime;
-        bool isRead = true;
-        if (msgRes != null) {
-          lastText = msgRes['content'] ?? (msgRes['file_url'] != null ? '📎 Файл' : '');
-          lastTime = DateTime.tryParse(msgRes['created_at'].toString());
-          if (msgRes['sender_id'] != userId) {
-            isRead = msgRes['is_read'] == true;
-          }
-        }
+      for (int i = 0; i < chats.length; i++) {
+        final chat = chats[i];
+        final msgRes = lastMessages[i];
+        final String? lastText =
+            msgRes == null ? null : msgRes['content'] ?? (msgRes['file_url'] != null ? '📎 Файл' : '');
+        final DateTime? lastTime = msgRes == null ? null : DateTime.tryParse(msgRes['created_at'].toString());
+        final int unreadCount = unreadCounts[chat.id] ?? 0;
         if (chat.type == 'group') {
           previews.add(
             ChatPreview(
@@ -245,11 +294,11 @@ class ChatService {
               title: chat.name ?? 'Группа',
               lastMessage: lastText,
               lastMessageTime: lastTime,
-              isRead: isRead,
+              unreadCount: unreadCount,
             ),
           );
         } else {
-          final interlocutor = await getChatInterlocutor(chat.id, userId);
+          final interlocutor = interlocutorMap[chat.id] ?? {'name': 'Неизвестный', 'avatar': null};
           previews.add(
             ChatPreview(
               chat: chat,
@@ -257,7 +306,7 @@ class ChatService {
               avatarUrl: interlocutor['avatar'],
               lastMessage: lastText,
               lastMessageTime: lastTime,
-              isRead: isRead,
+              unreadCount: unreadCount,
             ),
           );
         }

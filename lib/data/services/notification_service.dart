@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -11,7 +12,11 @@ class NotificationService {
   NotificationService._internal();
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
+  bool get _notificationsSupported => !kIsWeb && !Platform.isWindows;
+
   Future<void> init() async {
+    if (!_notificationsSupported) return;
+
     // Инициализация timezone
     tz_data.initializeTimeZones();
     final localTzName = await FlutterTimezone.getLocalTimezone();
@@ -37,6 +42,7 @@ class NotificationService {
 
   // Мгновенное уведомление
   Future<void> showNotification({required int id, required String title, required String body}) async {
+    if (!_notificationsSupported) return;
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'edu_track_channel',
       'EduTrack Notifications',
@@ -50,6 +56,7 @@ class NotificationService {
 
   // Отменяет все ещё не показанные запланированные уведомления
   Future<void> cancelAllScheduled() async {
+    if (!_notificationsSupported) return;
     await flutterLocalNotificationsPlugin.cancelAll();
   }
 
@@ -59,6 +66,7 @@ class NotificationService {
     required String homeworkTitle,
     required DateTime dueDate,
   }) async {
+    if (!_notificationsSupported) return;
     final reminderTime = dueDate.subtract(const Duration(hours: 24));
     if (!reminderTime.isAfter(DateTime.now())) return;
     final scheduled = tz.TZDateTime.from(reminderTime, tz.local);
