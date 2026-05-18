@@ -1,23 +1,24 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
+
 import 'package:edu_track/data/database/clean_http_client.dart';
 import 'package:edu_track/utils/app_config.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Класс для инициализации и доступа к Supabase
 class SupabaseConnection {
-  // Инициализация Supabase с использованием переменных окружения
+  static bool _initialized = false;
+
   static Future<void> initializeSupabase() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.contains(ConnectivityResult.none)) {
-      throw Exception('Отсутствует интернет-соединение. Проверьте сеть и перезапустите приложение.');
-    }
+    if (_initialized) return;
+
+    await _checkInternetConnection();
 
     final url = AppConfig.supabaseUrl;
     final anonKey = AppConfig.supabaseAnonKey;
-    // Проверка на наличие ключей
     if (url.isEmpty || anonKey.isEmpty) {
-      throw Exception('Ошибка конфигурации: Ключи доступа не найдены в .env файле.');
+      throw Exception('Ошибка конфигурации: ключи доступа не найдены в .env файле.');
     }
+
     try {
       await Supabase.initialize(
         url: url,
@@ -25,12 +26,22 @@ class SupabaseConnection {
         httpClient: CleanHttpClient(),
         headers: {'X-Supabase-Client-Platform-Version': AppConfig.supabaseClientVersion},
       );
-      print('--- Supabase успешно инициализирован ---');
     } catch (e) {
-      throw Exception('не удалось подключиться к серверу Supabase: $e');
+      throw Exception('Не удалось подключиться к серверу. Проверьте соединение и попробуйте снова.');
+    }
+
+    _initialized = true;
+  }
+
+  static Future<void> _checkInternetConnection() async {
+    try {
+      await http.head(Uri.parse('https://supabase.com')).timeout(const Duration(seconds: 5));
+    } on TimeoutException {
+      throw Exception('Превышено время ожидания подключения. Проверьте интернет-соединение.');
+    } catch (_) {
+      throw Exception('Отсутствует интернет-соединение. Проверьте сеть и попробуйте снова.');
     }
   }
 
-  // Геттер для получения текущего экземпляра клиента Supabase
   static SupabaseClient get client => Supabase.instance.client;
 }
