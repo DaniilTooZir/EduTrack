@@ -31,6 +31,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
   bool _isGroupsLoading = true;
   bool _isSubmitting = false;
   bool _isPasswordVisible = false;
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   final _groupService = GroupService();
 
   @override
@@ -69,6 +70,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
   Future<void> _addUser() async {
     FocusScope.of(context).unfocus();
+    setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedRole == 'student' && _selectedGroup == null) {
@@ -135,6 +137,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
     setState(() {
       _selectedRole = null;
       _selectedGroup = null;
+      _autovalidateMode = AutovalidateMode.disabled;
     });
   }
 
@@ -158,7 +161,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
                   child: Form(
                     key: _formKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    autovalidateMode: _autovalidateMode,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -240,7 +243,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: _selectedRole,
+                          initialValue: _selectedRole,
                           decoration: const InputDecoration(
                             labelText: 'Роль',
                             prefixIcon: Icon(Icons.group),
@@ -261,7 +264,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                         if (_selectedRole == 'student') ...[
                           const SizedBox(height: 16),
                           DropdownButtonFormField<Group>(
-                            value: _selectedGroup,
+                            initialValue: _selectedGroup,
                             decoration: const InputDecoration(
                               labelText: 'Группа',
                               prefixIcon: Icon(Icons.group_work),

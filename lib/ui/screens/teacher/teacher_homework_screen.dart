@@ -38,6 +38,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime? _dueDate;
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
 
   @override
   void initState() {
@@ -108,6 +109,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
 
   Future<void> _addHomework() async {
     FocusScope.of(context).unfocus();
+    setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
     if (!_formKey.currentState!.validate()) return;
     if (_selectedSubjectId == null || _selectedGroupId == null) {
       MessengerHelper.showError('Выберите предмет и группу');
@@ -152,6 +154,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
       _dueDate = null;
       _selectedFile = null;
       _isSaving = false;
+      _autovalidateMode = AutovalidateMode.disabled;
     });
     await _loadData();
   }
@@ -503,7 +506,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           padding: const EdgeInsets.all(16),
                           child: Form(
                             key: _formKey,
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            autovalidateMode: _autovalidateMode,
                             child: Column(
                               children: [
                                 DropdownButtonFormField<String>(

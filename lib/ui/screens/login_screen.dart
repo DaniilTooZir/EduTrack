@@ -23,9 +23,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   String? _errorMessage;
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
 
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
+    setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -123,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.all(24),
                         child: Form(
                           key: _formKey,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          autovalidateMode: _autovalidateMode,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [

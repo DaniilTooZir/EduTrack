@@ -27,6 +27,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
   bool _isLoading = true;
   bool _isAdding = false;
   String? _selectedCuratorId;
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   final _groupNameRegex = RegExp(r'^[a-zA-Zа-яА-ЯёЁ0-9-]+$');
   final _groupNameAllowList = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9-]');
 
@@ -78,6 +79,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
 
   Future<void> _addGroup() async {
     FocusScope.of(context).unfocus();
+    setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isAdding = true);
 
@@ -106,6 +108,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
       setState(() {
         _selectedCuratorId = null;
         _isAdding = false;
+        _autovalidateMode = AutovalidateMode.disabled;
       });
     }
     await _loadData();
@@ -146,7 +149,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: editCuratorId,
+                        initialValue: editCuratorId,
                         decoration: const InputDecoration(labelText: 'Куратор', border: OutlineInputBorder()),
                         items: [
                           const DropdownMenuItem(child: Text('Без куратора')),
@@ -237,7 +240,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Form(
                       key: _formKey,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      autovalidateMode: _autovalidateMode,
                       child: Column(
                         children: [
                           Row(
@@ -286,7 +289,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            value: _selectedCuratorId,
+                            initialValue: _selectedCuratorId,
                             decoration: const InputDecoration(
                               labelText: 'Назначить куратора',
                               border: OutlineInputBorder(),
@@ -317,76 +320,79 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadData,
-                    child: _isLoading
-                        ? _buildListSkeleton()
-                        : _groups.isEmpty
-                        ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                              height: 300,
-                              child: Center(child: Text('Группы не найдены', style: TextStyle(color: colors.onSurfaceVariant))),
-                            ),
-                          ],
-                        )
-                        : ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _groups.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final group = _groups[index];
-                            return Card(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                elevation: 3,
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: colors.primaryContainer,
-                                    child: Text(
-                                      group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
-                                      style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    group.name,
-                                    style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
-                                  ),
-                                  subtitle: Text(
-                                    'Куратор: ${_getTeacherName(group.curatorId)}',
-                                    style: TextStyle(color: colors.onSurfaceVariant),
-                                  ),
-                                  trailing: PopupMenuButton<String>(
-                                    onSelected: (value) {
-                                      if (value == 'edit') _editGroup(group);
-                                      if (value == 'delete') _deleteGroup(group);
-                                    },
-                                    itemBuilder:
-                                        (BuildContext context) => [
-                                          const PopupMenuItem(
-                                            value: 'edit',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.edit, color: Colors.blue),
-                                                SizedBox(width: 8),
-                                                Text('Изменить'),
-                                              ],
-                                            ),
-                                          ),
-                                          const PopupMenuItem(
-                                            value: 'delete',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.delete, color: Colors.red),
-                                                SizedBox(width: 8),
-                                                Text('Удалить'),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                    child:
+                        _isLoading
+                            ? _buildListSkeleton()
+                            : _groups.isEmpty
+                            ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height: 300,
+                                  child: Center(
+                                    child: Text('Группы не найдены', style: TextStyle(color: colors.onSurfaceVariant)),
                                   ),
                                 ),
-                              );
-                            },
-                          ),
+                              ],
+                            )
+                            : ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: _groups.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final group = _groups[index];
+                                return Card(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  elevation: 3,
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: colors.primaryContainer,
+                                      child: Text(
+                                        group.name.isNotEmpty ? group.name[0].toUpperCase() : '?',
+                                        style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      group.name,
+                                      style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
+                                    ),
+                                    subtitle: Text(
+                                      'Куратор: ${_getTeacherName(group.curatorId)}',
+                                      style: TextStyle(color: colors.onSurfaceVariant),
+                                    ),
+                                    trailing: PopupMenuButton<String>(
+                                      onSelected: (value) {
+                                        if (value == 'edit') _editGroup(group);
+                                        if (value == 'delete') _deleteGroup(group);
+                                      },
+                                      itemBuilder:
+                                          (BuildContext context) => [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, color: Colors.blue),
+                                                  SizedBox(width: 8),
+                                                  Text('Изменить'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.delete, color: Colors.red),
+                                                  SizedBox(width: 8),
+                                                  Text('Удалить'),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                   ),
                 ),
               ],

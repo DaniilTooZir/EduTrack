@@ -33,6 +33,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   String? _institutionId;
   final _formKey = GlobalKey<FormState>();
 
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   String? _currentConflictError;
   bool _isCheckingConflict = false;
   bool _isCloning = false;
@@ -138,6 +139,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   }
 
   Future<void> _addScheduleEntry() async {
+    setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
     if (!_formKey.currentState!.validate()) return;
     if (_startTime == null || _endTime == null) {
       MessengerHelper.showError('Выберите время начала и окончания');
@@ -220,6 +222,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         _selectedGroupId = null;
         _currentConflictError = null;
         _isAdding = false;
+        _autovalidateMode = AutovalidateMode.disabled;
       });
     }
     await _loadSchedule();
@@ -488,7 +491,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                     padding: const EdgeInsets.all(16),
                     child: Form(
                       key: _formKey,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      autovalidateMode: _autovalidateMode,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

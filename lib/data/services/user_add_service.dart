@@ -21,6 +21,8 @@ class UserAddService {
   }
 
   Future<AppResult<void>> _insertUser(String table, Map<String, dynamic> data, String userTypeRu) async {
+    final checkResult = await _checkLoginEmailUnique(data['login'] as String, data['email'] as String);
+    if (checkResult.isFailure) return checkResult;
     try {
       await _client.from(table).insert(data).select().single();
       return AppResult.success(null);
@@ -31,6 +33,23 @@ class UserAddService {
       return AppResult.failure('Ошибка базы данных при добавлении $userTypeRu: ${e.message}');
     } catch (e) {
       return AppResult.failure('Не удалось добавить $userTypeRu.');
+    }
+  }
+
+  Future<AppResult<void>> _checkLoginEmailUnique(String login, String email) async {
+    const tables = ['education_heads', 'teachers', 'students', 'schedule_operators'];
+    try {
+      for (final table in tables) {
+        final byLogin = await _client.from(table).select('id').eq('login', login).maybeSingle();
+        if (byLogin != null) return AppResult.failure('Логин "$login" уже занят.');
+        final byEmail = await _client.from(table).select('id').eq('email', email).maybeSingle();
+        if (byEmail != null) return AppResult.failure('Email "$email" уже используется.');
+      }
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка проверки уникальности: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось проверить уникальность логина и email.');
     }
   }
 }

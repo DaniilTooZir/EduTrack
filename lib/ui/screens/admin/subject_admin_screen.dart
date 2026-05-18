@@ -24,6 +24,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
   String? _institutionId;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   final _subjectNameAllowList = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s\-\.\(\)]');
 
   @override
@@ -59,6 +60,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
 
   Future<void> _addSubject() async {
     FocusScope.of(context).unfocus();
+    setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
     if (!_formKey.currentState!.validate()) return;
     if (_institutionId == null) return;
     setState(() => _isAdding = true);
@@ -70,7 +72,11 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
     }
     MessengerHelper.showSuccess('Предмет успешно добавлен');
     _nameController.clear();
-    if (mounted) setState(() => _isAdding = false);
+    if (mounted)
+      setState(() {
+        _isAdding = false;
+        _autovalidateMode = AutovalidateMode.disabled;
+      });
     await _loadData();
   }
 
@@ -174,7 +180,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Form(
                       key: _formKey,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      autovalidateMode: _autovalidateMode,
                       child: Column(
                         children: [
                           TextFormField(
@@ -222,72 +228,78 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadData,
-                    child: _isLoading
-                        ? _buildListSkeleton()
-                        : _subjects.isEmpty
-                        ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                              height: 300,
-                              child: Center(child: Text('Список предметов пуст', style: TextStyle(color: colors.onSurfaceVariant))),
-                            ),
-                          ],
-                        )
-                        : ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _subjects.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final subject = _subjects[index];
-                            return Card(
-                                elevation: 3,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: colors.primaryContainer,
+                    child:
+                        _isLoading
+                            ? _buildListSkeleton()
+                            : _subjects.isEmpty
+                            ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height: 300,
+                                  child: Center(
                                     child: Text(
-                                      subject.name.isNotEmpty ? subject.name[0].toUpperCase() : '?',
-                                      style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
+                                      'Список предметов пуст',
+                                      style: TextStyle(color: colors.onSurfaceVariant),
                                     ),
                                   ),
-                                  title: Text(
-                                    subject.name,
-                                    style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
-                                  ),
-                                  trailing: PopupMenuButton<String>(
-                                    onSelected: (value) {
-                                      if (value == 'edit') _editSubject(subject);
-                                      if (value == 'delete') _deleteSubject(subject);
-                                    },
-                                    itemBuilder:
-                                        (context) => [
-                                          const PopupMenuItem(
-                                            value: 'edit',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.edit, color: Colors.blue),
-                                                SizedBox(width: 8),
-                                                Text('Изменить'),
-                                              ],
-                                            ),
-                                          ),
-                                          const PopupMenuItem(
-                                            value: 'delete',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.delete, color: Colors.red),
-                                                SizedBox(width: 8),
-                                                Text('Удалить'),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                  ),
                                 ),
-                              );
-                            },
-                          ),
+                              ],
+                            )
+                            : ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: _subjects.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final subject = _subjects[index];
+                                return Card(
+                                  elevation: 3,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: colors.primaryContainer,
+                                      child: Text(
+                                        subject.name.isNotEmpty ? subject.name[0].toUpperCase() : '?',
+                                        style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      subject.name,
+                                      style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
+                                    ),
+                                    trailing: PopupMenuButton<String>(
+                                      onSelected: (value) {
+                                        if (value == 'edit') _editSubject(subject);
+                                        if (value == 'delete') _deleteSubject(subject);
+                                      },
+                                      itemBuilder:
+                                          (context) => [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, color: Colors.blue),
+                                                  SizedBox(width: 8),
+                                                  Text('Изменить'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.delete, color: Colors.red),
+                                                  SizedBox(width: 8),
+                                                  Text('Удалить'),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                   ),
                 ),
               ],
