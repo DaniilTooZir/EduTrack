@@ -407,6 +407,8 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
     final hw = widget.homework;
     final status = widget.status;
     final hasContent = status?.fileUrl != null || status?.studentComment != null;
+    final isReturnedForRevision =
+        !_isDone && hasContent && (status?.teacherComment?.isNotEmpty ?? false);
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.5,
@@ -544,16 +546,25 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                     Text(
                       _isDone
                           ? 'Ваш ответ (Завершено)'
+                          : isReturnedForRevision
+                          ? 'Ваш ответ (На доработку)'
                           : hasContent
                           ? 'Ваш ответ (На проверке)'
                           : 'Ваше решение',
                       style: TextStyle(
-                        color: _isDone ? Colors.green : hasContent ? Colors.orange : colors.primary,
+                        color: _isDone
+                            ? Colors.green
+                            : isReturnedForRevision
+                            ? colors.error
+                            : hasContent
+                            ? Colors.orange
+                            : colors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
                     const SizedBox(height: 16),
+                    // ── Завершено / На проверке / На доработку ──────────────
                     if (_isDone || hasContent) ...[
                       if (status?.teacherComment != null && status!.teacherComment!.isNotEmpty) ...[
                         Container(
@@ -588,6 +599,14 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           ),
                         ),
                       ],
+                      if (isReturnedForRevision)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'Ваш предыдущий ответ:',
+                            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
+                          ),
+                        ),
                       if (status?.studentComment != null && status!.studentComment!.isNotEmpty)
                         Container(
                           width: double.infinity,
@@ -624,21 +643,118 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             ),
                           ),
                         ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _isSubmitting ? null : _cancelSubmission,
-                          icon: const Icon(Icons.undo),
-                          label: const Text('Отменить сдачу'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: colors.error,
-                            side: BorderSide(color: colors.error),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                      // ── Форма пересдачи (только когда вернули на доработку) ──
+                      if (isReturnedForRevision) ...[
+                        const Divider(height: 32),
+                        Text(
+                          'Новый ответ:',
+                          style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _commentController,
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            hintText: 'Напишите исправленный комментарий...',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: colors.surfaceContainerHighest.withOpacity(0.3),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: _pickFile,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: colors.outline),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.upload_file, color: colors.primary),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Прикрепить файл (необязательно)',
+                                  style: TextStyle(color: colors.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (_selectedFiles.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          ..._selectedFiles.map(
+                            (file) => Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: colors.surfaceContainerHighest.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: colors.outline.withOpacity(0.2)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.insert_drive_file_outlined, size: 20, color: colors.primary),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      file.name,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.close, size: 20, color: colors.error),
+                                    onPressed: () => setState(() => _selectedFiles.remove(file)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _isSubmitting ? null : _submitWork,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colors.primary,
+                              foregroundColor: colors.onPrimary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: _isSubmitting
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.send),
+                            label: const Text('Сдать повторно'),
+                          ),
+                        ),
+                      ],
+                      // ── Кнопка отмены (на проверке и завершённые) ───────────
+                      if (!isReturnedForRevision) ...[
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _isSubmitting ? null : _cancelSubmission,
+                            icon: const Icon(Icons.undo),
+                            label: const Text('Отменить сдачу'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colors.error,
+                              side: BorderSide(color: colors.error),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                      ],
                     ] else ...[
+                    // ── Первичная сдача ──────────────────────────────────────
                       TextField(
                         controller: _commentController,
                         maxLines: 4,
@@ -721,14 +837,13 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          icon:
-                              _isSubmitting
-                                  ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
-                                  )
-                                  : const Icon(Icons.send),
+                          icon: _isSubmitting
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
+                                )
+                              : const Icon(Icons.send),
                           label: const Text('Сдать работу'),
                         ),
                       ),

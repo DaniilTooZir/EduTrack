@@ -10,6 +10,7 @@ class RealtimeListener {
   RealtimeChannel? _gradesChannel;
   RealtimeChannel? _homeworkChannel;
   RealtimeChannel? _homeworkSubmissionsChannel;
+  RealtimeChannel? _homeworkStatusChannel;
   RealtimeChannel? _scheduleChannel;
   RealtimeChannel? _chatChannel;
   Set<String> _userChatIds = {};
@@ -19,6 +20,7 @@ class RealtimeListener {
     stopListening();
     _listenToGrades(studentId);
     _listenToHomework(groupId);
+    _listenToHomeworkStatusForStudent(studentId);
     _listenToScheduleChanges(groupId: groupId);
     unawaited(_listenToChatMessages(studentId));
   }
@@ -43,6 +45,10 @@ class RealtimeListener {
     if (_homeworkSubmissionsChannel != null) {
       _client.removeChannel(_homeworkSubmissionsChannel!);
       _homeworkSubmissionsChannel = null;
+    }
+    if (_homeworkStatusChannel != null) {
+      _client.removeChannel(_homeworkStatusChannel!);
+      _homeworkStatusChannel = null;
     }
     if (_scheduleChannel != null) {
       _client.removeChannel(_scheduleChannel!);
@@ -189,15 +195,55 @@ class RealtimeListener {
                 if (eventType != PostgresChangeEvent.insert && eventType != PostgresChangeEvent.update) {
                   return;
                 }
-                final isCompleted = payload.newRecord['is_completed'];
-                if (isCompleted != true) return;
-                final studentId = payload.newRecord['student_id'] ?? 'неизвестен';
+                final newRecord = payload.newRecord;
+                final hasContent =
+                    (newRecord['student_comment'] as String?)?.isNotEmpty == true ||
+                    newRecord['file_url'] != null;
+                if (!hasContent) return;
                 final isResubmission = eventType == PostgresChangeEvent.update;
                 _notificationService.showNotification(
                   id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-                  title: isResubmission ? 'Решение обновлено' : 'Студент сдал домашнее задание',
-                  body: 'Студент: $studentId',
+                  title: isResubmission ? 'Студент обновил решение' : 'Студент сдал домашнее задание',
+                  body: 'Новый ответ ожидает проверки',
                 );
+              },
+            )
+            .subscribe();
+  }
+
+  void _listenToHomeworkStatusForStudent(String studentId) {
+    _homeworkStatusChannel =
+        _client
+            .channel('public:homework_status:student:$studentId')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.update,
+              schema: 'public',
+              table: 'homework_status',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'student_id',
+                value: studentId,
+              ),
+              callback: (payload) {
+                final newRecord = payload.newRecord;
+                final isCompleted = newRecord['is_completed'] == true;
+                final teacherComment = newRecord['teacher_comment'] as String?;
+
+                if (isCompleted) {
+                  _notificationService.showNotification(
+                    id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                    title: 'Работа принята!',
+                    body: teacherComment?.isNotEmpty == true
+                        ? teacherComment!
+                        : 'Преподаватель принял вашу работу',
+                  );
+                } else if (teacherComment?.isNotEmpty == true) {
+                  _notificationService.showNotification(
+                    id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                    title: 'Работа возвращена на доработку',
+                    body: teacherComment!,
+                  );
+                }
               },
             )
             .subscribe();
