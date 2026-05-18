@@ -406,6 +406,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
     final colors = theme.colorScheme;
     final hw = widget.homework;
     final status = widget.status;
+    final hasContent = status?.fileUrl != null || status?.studentComment != null;
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.5,
@@ -541,15 +542,19 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                     ],
                     const Divider(height: 40),
                     Text(
-                      _isDone ? 'Ваш ответ (Сдано)' : 'Ваше решение',
+                      _isDone
+                          ? 'Ваш ответ (Завершено)'
+                          : hasContent
+                          ? 'Ваш ответ (На проверке)'
+                          : 'Ваше решение',
                       style: TextStyle(
-                        color: _isDone ? Colors.green : colors.primary,
+                        color: _isDone ? Colors.green : hasContent ? Colors.orange : colors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    if (_isDone) ...[
+                    if (_isDone || hasContent) ...[
                       if (status?.teacherComment != null && status!.teacherComment!.isNotEmpty) ...[
                         Container(
                           width: double.infinity,

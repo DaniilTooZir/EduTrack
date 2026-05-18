@@ -462,7 +462,6 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final isCompleted = widget.status?.isCompleted ?? false;
     final hasAnswer = widget.status?.studentComment != null || widget.status?.fileUrl != null;
     return AlertDialog(
       title: Text('${widget.student.surname} ${widget.student.name}'),
@@ -534,7 +533,7 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
           label: const Text('Принять'),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
         ),
-        if (isCompleted)
+        if (hasAnswer)
           TextButton.icon(
             onPressed: () {
               widget.onUpdate(false, _feedbackController.text.trim());

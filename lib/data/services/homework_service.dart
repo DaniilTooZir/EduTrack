@@ -218,7 +218,7 @@ class HomeworkService {
       final data = {
         'homework_id': homeworkId,
         'student_id': studentId,
-        'is_completed': true,
+        'is_completed': false,
         'updated_at': DateTime.now().toIso8601String(),
         'student_comment': comment,
         'file_url': fileUrl,
