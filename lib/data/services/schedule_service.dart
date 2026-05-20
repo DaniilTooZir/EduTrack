@@ -176,30 +176,66 @@ class ScheduleService {
     }
   }
 
-  Future<AppResult<void>> copyScheduleToNextWeek(String institutionId, DateTime startOfCurrentWeek) async {
+  Future<AppResult<({int copied, int skipped})>> copyScheduleToNextWeek(
+    String institutionId,
+    DateTime startOfCurrentWeek,
+  ) async {
     try {
       final endOfCurrentWeek = startOfCurrentWeek.add(const Duration(days: 6));
-      final response = await _client
+      final startOfNextWeek = startOfCurrentWeek.add(const Duration(days: 7));
+      final endOfNextWeek = startOfCurrentWeek.add(const Duration(days: 13));
+
+      final currentData = await _client
           .from('schedule')
           .select()
           .eq('institution_id', institutionId)
           .gte('date', startOfCurrentWeek.toIso8601String())
           .lte('date', endOfCurrentWeek.toIso8601String());
-      final List<dynamic> data = response as List<dynamic>;
-      if (data.isEmpty) {
+      final List<Map<String, dynamic>> source = (currentData as List).cast<Map<String, dynamic>>();
+      if (source.isEmpty) {
         return AppResult.failure('На этой неделе нет занятий для копирования.');
       }
-      final newEntries =
-          data.map((item) {
-            final oldDate = DateTime.parse(item['date']);
-            final newDate = oldDate.add(const Duration(days: 7));
-            final newItem = Map<String, dynamic>.from(item);
-            newItem.remove('id');
-            newItem['date'] = newDate.toIso8601String();
-            return newItem;
-          }).toList();
-      await _client.from('schedule').insert(newEntries);
-      return AppResult.success(null);
+
+      final nextWeekData = await _client
+          .from('schedule')
+          .select('group_id, teacher_id, date, start_time, end_time')
+          .eq('institution_id', institutionId)
+          .gte('date', startOfNextWeek.toIso8601String())
+          .lte('date', endOfNextWeek.toIso8601String());
+      final List<Map<String, dynamic>> existing = (nextWeekData as List).cast<Map<String, dynamic>>();
+      final toInsert = <Map<String, dynamic>>[];
+      int skipped = 0;
+      for (final item in source) {
+        final oldDate = DateTime.parse(item['date'] as String);
+        final newDate = oldDate.add(const Duration(days: 7));
+        final startTime = item['start_time'] as String;
+        final endTime = item['end_time'] as String;
+        final teacherId = item['teacher_id'] as String;
+        final groupId = item['group_id'] as String;
+
+        final hasConflict = existing.any((e) {
+          final eDate = DateTime.parse(e['date'] as String);
+          if (eDate.year != newDate.year || eDate.month != newDate.month || eDate.day != newDate.day) {
+            return false;
+          }
+          final eStart = e['start_time'] as String;
+          final eEnd = e['end_time'] as String;
+          if (eStart.compareTo(endTime) >= 0 || eEnd.compareTo(startTime) <= 0) return false;
+          return e['teacher_id'] == teacherId || e['group_id'] == groupId;
+        });
+        if (hasConflict) {
+          skipped++;
+        } else {
+          final newItem = Map<String, dynamic>.from(item);
+          newItem.remove('id');
+          newItem['date'] = newDate.toIso8601String();
+          toInsert.add(newItem);
+        }
+      }
+      if (toInsert.isNotEmpty) {
+        await _client.from('schedule').insert(toInsert);
+      }
+      return AppResult.success((copied: toInsert.length, skipped: skipped));
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при копировании расписания: ${e.message}');
     } catch (e) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
@@ -36,6 +38,8 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   String? _currentConflictError;
   bool _isCheckingConflict = false;
+  bool _conflictChecked = false;
+  Timer? _conflictDebounceTimer;
   bool _isCloning = false;
 
   DateTime? _selectedDate;
@@ -79,31 +83,40 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     }
   }
 
+  @override
+  void dispose() {
+    _conflictDebounceTimer?.cancel();
+    super.dispose();
+  }
+
   void _loadSubjects() async {
     final result = await _subjectService.getSubjectsForInstitution(_institutionId!);
+    if (!mounted) return;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
       return;
     }
-    if (mounted) setState(() => _subjects = result.data);
+    setState(() => _subjects = result.data);
   }
 
   void _loadGroups() async {
     final result = await _groupService.getGroups(_institutionId!);
+    if (!mounted) return;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
       return;
     }
-    if (mounted) setState(() => _groups = result.data);
+    setState(() => _groups = result.data);
   }
 
   void _loadTeachers() async {
     final result = await _teacherService.getTeachers(_institutionId!);
+    if (!mounted) return;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
       return;
     }
-    if (mounted) setState(() => _teachers = result.data);
+    setState(() => _teachers = result.data);
   }
 
   Future<void> _loadSchedule() async {
@@ -168,35 +181,32 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
 
     final sTime = _formatTimeOfDay(_startTime!);
     final eTime = _formatTimeOfDay(_endTime!);
-    final conflictResult = await _scheduleService.checkConflict(
-      institutionId: _institutionId!,
-      date: _selectedDate!,
-      startTime: sTime,
-      endTime: eTime,
-      teacherId: _selectedTeacherId!,
-      groupId: _selectedGroupId!,
-    );
-    if (conflictResult.isFailure) {
-      MessengerHelper.showError(conflictResult.errorMessage);
-      if (mounted) setState(() => _isAdding = false);
-      return;
-    }
-    final conflictError = conflictResult.data;
-    if (conflictError != null) {
-      MessengerHelper.scaffoldMessengerKey.currentState?.showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(child: Text(conflictError)),
-            ],
-          ),
-          backgroundColor: Colors.orange[800],
-        ),
+
+    if (!_conflictChecked) {
+      final conflictResult = await _scheduleService.checkConflict(
+        institutionId: _institutionId!,
+        date: _selectedDate!,
+        startTime: sTime,
+        endTime: eTime,
+        teacherId: _selectedTeacherId!,
+        groupId: _selectedGroupId!,
       );
-      if (mounted) setState(() => _isAdding = false);
-      return;
+      if (conflictResult.isFailure) {
+        MessengerHelper.showError(conflictResult.errorMessage);
+        if (mounted) setState(() => _isAdding = false);
+        return;
+      }
+      final conflictError = conflictResult.data;
+      if (conflictError != null) {
+        MessengerHelper.showWarning(conflictError);
+        if (mounted) {
+          setState(() {
+            _currentConflictError = conflictError;
+            _isAdding = false;
+          });
+        }
+        return;
+      }
     }
 
     final addResult = await _scheduleService.addScheduleEntry(
@@ -221,6 +231,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         _selectedSubjectId = null;
         _selectedGroupId = null;
         _currentConflictError = null;
+        _conflictChecked = false;
         _isAdding = false;
         _autovalidateMode = AutovalidateMode.disabled;
       });
@@ -250,7 +261,12 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       if (result.isFailure) {
         MessengerHelper.showError(result.errorMessage);
       } else {
-        MessengerHelper.showSuccess('Расписание успешно скопировано!');
+        final (:copied, :skipped) = result.data;
+        if (skipped > 0) {
+          MessengerHelper.showWarning('Скопировано $copied занятий. Пропущено $skipped (конфликт времени).');
+        } else {
+          MessengerHelper.showSuccess('Расписание скопировано ($copied занятий).');
+        }
         await _loadSchedule();
       }
       if (mounted) setState(() => _isCloning = false);
@@ -284,6 +300,11 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     }
   }
 
+  void _scheduleConflictValidation() {
+    _conflictDebounceTimer?.cancel();
+    _conflictDebounceTimer = Timer(const Duration(milliseconds: 400), _validateConflict);
+  }
+
   Future<void> _validateConflict() async {
     if (_selectedDate == null ||
         _startTime == null ||
@@ -291,14 +312,23 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         _selectedTeacherId == null ||
         _selectedGroupId == null ||
         _institutionId == null) {
-      setState(() => _currentConflictError = null);
+      setState(() {
+        _currentConflictError = null;
+        _conflictChecked = false;
+      });
       return;
     }
     if (_timeToMinutes(_endTime!) <= _timeToMinutes(_startTime!)) {
-      setState(() => _currentConflictError = 'Конец не может быть раньше начала');
+      setState(() {
+        _currentConflictError = 'Конец не может быть раньше начала';
+        _conflictChecked = false;
+      });
       return;
     }
-    setState(() => _isCheckingConflict = true);
+    setState(() {
+      _isCheckingConflict = true;
+      _conflictChecked = false;
+    });
     final result = await _scheduleService.checkConflict(
       institutionId: _institutionId!,
       date: _selectedDate!,
@@ -311,6 +341,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       setState(() {
         _currentConflictError = result.isSuccess ? result.data : null;
         _isCheckingConflict = false;
+        _conflictChecked = result.isSuccess;
       });
     }
   }
@@ -325,7 +356,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       );
       if (picked != null) {
         setState(() => _selectedDate = picked);
-        _validateConflict();
+        _scheduleConflictValidation();
       }
     },
     child: InputDecorator(
@@ -353,7 +384,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
           );
           if (picked != null) {
             onTimePicked(picked);
-            _validateConflict();
+            _scheduleConflictValidation();
           }
         },
         child: InputDecorator(
@@ -539,10 +570,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                             ),
                                           )
                                           .toList(),
-                                  onChanged: (val) {
-                                    setState(() => _selectedSubjectId = val);
-                                    _validateConflict();
-                                  },
+                                  onChanged: (val) => setState(() => _selectedSubjectId = val),
                                   validator: (val) => val == null ? 'Предмет?' : null,
                                 ),
                               ),
@@ -567,7 +595,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                           .toList(),
                                   onChanged: (val) {
                                     setState(() => _selectedGroupId = val);
-                                    _validateConflict();
+                                    _scheduleConflictValidation();
                                   },
                                   validator: (val) => val == null ? 'Группа?' : null,
                                 ),
@@ -594,7 +622,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                     .toList(),
                             onChanged: (val) {
                               setState(() => _selectedTeacherId = val);
-                              _validateConflict();
+                              _scheduleConflictValidation();
                             },
                             validator: (val) => val == null ? 'Преподаватель?' : null,
                           ),
@@ -607,8 +635,8 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                 decoration: BoxDecoration(
                                   color:
                                       _isCheckingConflict
-                                          ? colors.surfaceContainerHighest.withOpacity(0.5)
-                                          : colors.errorContainer.withOpacity(0.8),
+                                          ? colors.surfaceContainerHighest.withValues(alpha: 0.5)
+                                          : colors.errorContainer.withValues(alpha: 0.8),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: _isCheckingConflict ? colors.outline : colors.error),
                                 ),
