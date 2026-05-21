@@ -54,6 +54,9 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   List<Group> _groups = [];
   List<Teacher> _teachers = [];
 
+  String? _filterGroupId;
+  String? _filterTeacherId;
+
   static const List<String> _weekdays = [
     'Понедельник',
     'Вторник',
@@ -230,6 +233,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       setState(() {
         _selectedSubjectId = null;
         _selectedGroupId = null;
+        _selectedTeacherId = null;
         _currentConflictError = null;
         _conflictChecked = false;
         _isAdding = false;
@@ -240,37 +244,51 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   }
 
   Future<void> _duplicateSchedule() async {
-    final now = DateTime.now();
-    final startOfWeeks = now.subtract(Duration(days: now.weekday - 1));
-    final mondayFormatted = '${startOfWeeks.day}.${startOfWeeks.month}';
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Выберите любой день недели-источника',
+    );
+    if (picked == null || !mounted) return;
+
+    final startOfSource = picked.subtract(Duration(days: picked.weekday - 1));
+    final endOfSource = startOfSource.add(const Duration(days: 6));
+    final startOfTarget = startOfSource.add(const Duration(days: 7));
+    final endOfTarget = startOfSource.add(const Duration(days: 13));
+
+    String fmt(DateTime d) => '${d.day}.${d.month}';
+    final sourceRange = '${fmt(startOfSource)}–${fmt(endOfSource)}';
+    final targetRange = '${fmt(startOfTarget)}–${fmt(endOfTarget)}';
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Копирование недели'),
-            content: Text('Скопировать все занятия с текущей недели (начиная с $mondayFormatted) на следующую?'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Да, копировать')),
-            ],
-          ),
+      builder: (ctx) => AlertDialog(
+        title: const Text('Копирование недели'),
+        content: Text('Скопировать занятия с $sourceRange на $targetRange?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Да, копировать')),
+        ],
+      ),
     );
-    if (confirmed == true) {
-      setState(() => _isCloning = true);
-      final result = await _scheduleService.copyScheduleToNextWeek(_institutionId!, startOfWeeks);
-      if (result.isFailure) {
-        MessengerHelper.showError(result.errorMessage);
+    if (confirmed != true) return;
+
+    setState(() => _isCloning = true);
+    final result = await _scheduleService.copyScheduleToNextWeek(_institutionId!, startOfSource);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+    } else {
+      final (:copied, :skipped) = result.data;
+      if (skipped > 0) {
+        MessengerHelper.showWarning('Скопировано $copied занятий. Пропущено $skipped (конфликт времени).');
       } else {
-        final (:copied, :skipped) = result.data;
-        if (skipped > 0) {
-          MessengerHelper.showWarning('Скопировано $copied занятий. Пропущено $skipped (конфликт времени).');
-        } else {
-          MessengerHelper.showSuccess('Расписание скопировано ($copied занятий).');
-        }
-        await _loadSchedule();
+        MessengerHelper.showSuccess('Расписание скопировано ($copied занятий).');
       }
-      if (mounted) setState(() => _isCloning = false);
+      await _loadSchedule();
     }
+    if (mounted) setState(() => _isCloning = false);
   }
 
   Future<void> _deleteScheduleEntry(String id) async {
@@ -298,6 +316,21 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       MessengerHelper.showSuccess('Запись удалена');
       await _loadSchedule();
     }
+  }
+
+  Future<void> _showEditDialog(Schedule lesson) async {
+    final updated = await showDialog<bool>(
+      context: context,
+      builder: (_) => _EditLessonDialog(
+        lesson: lesson,
+        subjects: _subjects,
+        groups: _groups,
+        teachers: _teachers,
+        institutionId: _institutionId!,
+        scheduleService: _scheduleService,
+      ),
+    );
+    if (updated == true) await _loadSchedule();
   }
 
   void _scheduleConflictValidation() {
@@ -471,10 +504,20 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                               DataCell(Text(subjectName)),
                               DataCell(SizedBox(width: 100, child: Text(teacherName, overflow: TextOverflow.ellipsis))),
                               DataCell(
-                                IconButton(
-                                  icon: Icon(Icons.delete, color: colors.error, size: 20),
-                                  onPressed: () => _deleteScheduleEntry(s.id),
-                                  tooltip: 'Удалить',
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit_outlined, color: colors.primary, size: 20),
+                                      onPressed: () => _showEditDialog(s),
+                                      tooltip: 'Редактировать',
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete, color: colors.error, size: 20),
+                                      onPressed: () => _deleteScheduleEntry(s.id),
+                                      tooltip: 'Удалить',
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -496,17 +539,22 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final selectedPeriod = Provider.of<UserProvider>(context).selectedPeriod;
-    final displayedSchedules =
-        selectedPeriod == null
-            ? _schedules
-            : _schedules
-                .where(
-                  (s) =>
-                      s.date != null &&
-                      !s.date!.isBefore(selectedPeriod.startDate) &&
-                      !s.date!.isAfter(selectedPeriod.endDate),
-                )
-                .toList();
+    var displayedSchedules = selectedPeriod == null
+        ? _schedules
+        : _schedules
+            .where(
+              (s) =>
+                  s.date != null &&
+                  !s.date!.isBefore(selectedPeriod.startDate) &&
+                  !s.date!.isAfter(selectedPeriod.endDate),
+            )
+            .toList();
+    if (_filterGroupId != null) {
+      displayedSchedules = displayedSchedules.where((s) => s.groupId == _filterGroupId).toList();
+    }
+    if (_filterTeacherId != null) {
+      displayedSchedules = displayedSchedules.where((s) => s.teacherId == _filterTeacherId).toList();
+    }
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
@@ -717,6 +765,61 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                   ],
                 ),
                 const SizedBox(height: 8),
+                if (_groups.isNotEmpty || _teachers.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        if (_groups.isNotEmpty)
+                          Expanded(
+                            child: DropdownButtonFormField<String?>(
+                              decoration: const InputDecoration(
+                                labelText: 'Группа',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                              initialValue: _filterGroupId,
+                              isExpanded: true,
+                              items: [
+                                const DropdownMenuItem(child: Text('Все группы')),
+                                ..._groups.map(
+                                  (g) => DropdownMenuItem(
+                                    value: g.id,
+                                    child: Text(g.name, overflow: TextOverflow.ellipsis),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (val) => setState(() => _filterGroupId = val),
+                            ),
+                          ),
+                        if (_groups.isNotEmpty && _teachers.isNotEmpty) const SizedBox(width: 12),
+                        if (_teachers.isNotEmpty)
+                          Expanded(
+                            child: DropdownButtonFormField<String?>(
+                              decoration: const InputDecoration(
+                                labelText: 'Преподаватель',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                              initialValue: _filterTeacherId,
+                              isExpanded: true,
+                              items: [
+                                const DropdownMenuItem(child: Text('Все преп.')),
+                                ..._teachers.map(
+                                  (t) => DropdownMenuItem(
+                                    value: t.id,
+                                    child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (val) => setState(() => _filterTeacherId = val),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadSchedule,
@@ -731,7 +834,11 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                   height: 300,
                                   child: Center(
                                     child: Text(
-                                      _schedules.isEmpty ? 'Расписание пустое' : 'Нет занятий в выбранном периоде',
+                                      _schedules.isEmpty
+                                          ? 'Расписание пустое'
+                                          : (_filterGroupId != null || _filterTeacherId != null)
+                                              ? 'Нет занятий по выбранным фильтрам'
+                                              : 'Нет занятий в выбранном периоде',
                                       style: TextStyle(color: colors.onSurfaceVariant),
                                     ),
                                   ),
@@ -793,6 +900,367 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
               ),
             ),
           ),
+    );
+  }
+}
+
+class _EditLessonDialog extends StatefulWidget {
+  final Schedule lesson;
+  final List<Subject> subjects;
+  final List<Group> groups;
+  final List<Teacher> teachers;
+  final String institutionId;
+  final ScheduleService scheduleService;
+
+  const _EditLessonDialog({
+    required this.lesson,
+    required this.subjects,
+    required this.groups,
+    required this.teachers,
+    required this.institutionId,
+    required this.scheduleService,
+  });
+
+  @override
+  State<_EditLessonDialog> createState() => _EditLessonDialogState();
+}
+
+class _EditLessonDialogState extends State<_EditLessonDialog> {
+  late DateTime _date;
+  late TimeOfDay _startTime;
+  late TimeOfDay _endTime;
+  late String _subjectId;
+  late String _groupId;
+  late String _teacherId;
+
+  String? _conflictError;
+  bool _isCheckingConflict = false;
+  bool _conflictChecked = false;
+  bool _isSaving = false;
+  Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    final l = widget.lesson;
+    _date = l.date ?? DateTime.now();
+    _startTime = _parseTime(l.startTime);
+    _endTime = _parseTime(l.endTime);
+    _subjectId = l.subjectId;
+    _groupId = l.groupId;
+    _teacherId = l.teacherId;
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  TimeOfDay _parseTime(String time) {
+    final parts = time.split(':');
+    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+  }
+
+  String _formatTimeOfDay(TimeOfDay t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00';
+
+  int _timeToMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+
+  void _scheduleConflictValidation() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 400), _validateConflict);
+  }
+
+  Future<void> _validateConflict() async {
+    if (_timeToMinutes(_endTime) <= _timeToMinutes(_startTime)) {
+      setState(() {
+        _conflictError = 'Конец не может быть раньше начала';
+        _conflictChecked = false;
+      });
+      return;
+    }
+    setState(() {
+      _isCheckingConflict = true;
+      _conflictChecked = false;
+    });
+    final result = await widget.scheduleService.checkConflict(
+      institutionId: widget.institutionId,
+      date: _date,
+      startTime: _formatTimeOfDay(_startTime),
+      endTime: _formatTimeOfDay(_endTime),
+      teacherId: _teacherId,
+      groupId: _groupId,
+      excludeId: widget.lesson.id,
+    );
+    if (mounted) {
+      setState(() {
+        _conflictError = result.isSuccess ? result.data : null;
+        _isCheckingConflict = false;
+        _conflictChecked = result.isSuccess;
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    if (_timeToMinutes(_endTime) <= _timeToMinutes(_startTime)) {
+      MessengerHelper.showError('Время окончания должно быть позже времени начала');
+      return;
+    }
+    setState(() => _isSaving = true);
+
+    final startTime = _formatTimeOfDay(_startTime);
+    final endTime = _formatTimeOfDay(_endTime);
+
+    if (!_conflictChecked) {
+      final conflictResult = await widget.scheduleService.checkConflict(
+        institutionId: widget.institutionId,
+        date: _date,
+        startTime: startTime,
+        endTime: endTime,
+        teacherId: _teacherId,
+        groupId: _groupId,
+        excludeId: widget.lesson.id,
+      );
+      if (!mounted) return;
+      if (conflictResult.isFailure) {
+        MessengerHelper.showError(conflictResult.errorMessage);
+        setState(() => _isSaving = false);
+        return;
+      }
+      final conflict = conflictResult.data;
+      if (conflict != null) {
+        MessengerHelper.showWarning(conflict);
+        setState(() {
+          _conflictError = conflict;
+          _isSaving = false;
+        });
+        return;
+      }
+    }
+
+    final result = await widget.scheduleService.updateScheduleEntry(
+      id: widget.lesson.id,
+      subjectId: _subjectId,
+      groupId: _groupId,
+      teacherId: _teacherId,
+      date: _date,
+      weekday: _date.weekday,
+      startTime: startTime,
+      endTime: endTime,
+    );
+    if (!mounted) return;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      setState(() => _isSaving = false);
+      return;
+    }
+    MessengerHelper.showSuccess('Урок обновлён');
+    Navigator.pop(context, true);
+  }
+
+  Widget _buildTimePicker(String label, TimeOfDay time, ValueChanged<TimeOfDay> onPicked) {
+    final colors = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: time,
+          helpText: label.toUpperCase(),
+        );
+        if (picked != null) {
+          onPicked(picked);
+          _scheduleConflictValidation();
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          suffixIcon: Icon(Icons.access_time, color: colors.primary),
+        ),
+        child: Text(time.format(context)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return AlertDialog(
+      title: const Text('Редактировать урок'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _date,
+                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (picked != null && mounted) {
+                    setState(() => _date = picked);
+                    _scheduleConflictValidation();
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Дата',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_month, color: colors.primary),
+                  ),
+                  child: Text(
+                    '${_date.day.toString().padLeft(2, '0')}.${_date.month.toString().padLeft(2, '0')}.${_date.year}',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTimePicker(
+                      'Начало', _startTime, (t) => setState(() => _startTime = t),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTimePicker(
+                      'Конец', _endTime, (t) => setState(() => _endTime = t),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Предмет',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                initialValue: _subjectId,
+                isExpanded: true,
+                items: widget.subjects
+                    .map((s) => DropdownMenuItem(
+                          value: s.id,
+                          child: Text(s.name, overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _subjectId = val);
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Группа',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                initialValue: _groupId,
+                isExpanded: true,
+                items: widget.groups
+                    .map((g) => DropdownMenuItem(
+                          value: g.id,
+                          child: Text(g.name, overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _groupId = val);
+                    _scheduleConflictValidation();
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Преподаватель',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                initialValue: _teacherId,
+                isExpanded: true,
+                items: widget.teachers
+                    .map((t) => DropdownMenuItem(
+                          value: t.id,
+                          child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _teacherId = val);
+                    _scheduleConflictValidation();
+                  }
+                },
+              ),
+              if (_isCheckingConflict || _conflictError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _isCheckingConflict
+                          ? colors.surfaceContainerHighest.withValues(alpha: 0.5)
+                          : colors.errorContainer.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _isCheckingConflict ? colors.outline : colors.error,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        _isCheckingConflict
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _isCheckingConflict ? 'Проверка наложений...' : _conflictError!,
+                            style: TextStyle(
+                              color: _isCheckingConflict
+                                  ? colors.onSurfaceVariant
+                                  : colors.onErrorContainer,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.pop(context, false),
+          child: const Text('Отмена'),
+        ),
+        FilledButton(
+          onPressed: (_isSaving || _conflictError != null || _isCheckingConflict) ? null : _save,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Сохранить'),
+        ),
+      ],
     );
   }
 }

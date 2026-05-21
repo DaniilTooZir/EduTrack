@@ -147,17 +147,21 @@ class ScheduleService {
     required String endTime,
     required String teacherId,
     required String groupId,
+    String? excludeId,
   }) async {
     try {
       final dateStr = date.toIso8601String();
-      final response = await _client
+      var query = _client
           .from('schedule')
           .select('group_id, teacher_id, start_time, end_time')
           .eq('institution_id', institutionId)
           .eq('date', dateStr)
           .lt('start_time', endTime)
           .gt('end_time', startTime);
-      final List<dynamic> conflicts = response as List<dynamic>;
+      if (excludeId != null) {
+        query = query.neq('id', excludeId);
+      }
+      final List<dynamic> conflicts = await query as List<dynamic>;
       for (final lesson in conflicts) {
         final existingTeacher = lesson['teacher_id'] as String;
         final existingGroup = lesson['group_id'] as String;
@@ -240,6 +244,34 @@ class ScheduleService {
       return AppResult.failure('Ошибка при копировании расписания: ${e.message}');
     } catch (e) {
       return AppResult.failure('Не удалось скопировать расписание на следующую неделю.');
+    }
+  }
+
+  Future<AppResult<void>> updateScheduleEntry({
+    required String id,
+    required String subjectId,
+    required String groupId,
+    required String teacherId,
+    required DateTime date,
+    required int weekday,
+    required String startTime,
+    required String endTime,
+  }) async {
+    try {
+      await _client.from('schedule').update({
+        'subject_id': subjectId,
+        'group_id': groupId,
+        'teacher_id': teacherId,
+        'date': date.toIso8601String(),
+        'weekday': weekday,
+        'start_time': startTime,
+        'end_time': endTime,
+      }).eq('id', id);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при обновлении записи расписания: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось обновить запись расписания.');
     }
   }
 }
