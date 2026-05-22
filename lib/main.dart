@@ -41,6 +41,21 @@ class _AppInitializerState extends State<AppInitializer> {
     }
 
     await SupabaseConnection.initializeSupabase();
+    return _finishInit();
+  }
+
+  Future<_AppData> _initializeOffline() async {
+    try {
+      await dotenv.load();
+    } catch (_) {
+      throw Exception('Файл конфигурации .env не найден. Обратитесь к разработчику.');
+    }
+
+    await SupabaseConnection.initializeSupabaseOffline();
+    return _finishInit();
+  }
+
+  Future<_AppData> _finishInit() async {
     await NotificationService().init();
 
     final db = AppDatabase();
@@ -56,6 +71,10 @@ class _AppInitializerState extends State<AppInitializer> {
     _initFuture = _initialize();
   });
 
+  void _enterOffline() => setState(() {
+    _initFuture = _initializeOffline();
+  });
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_AppData>(
@@ -68,7 +87,9 @@ class _AppInitializerState extends State<AppInitializer> {
           );
         }
         if (snapshot.hasError) {
-          return _ErrorApp(error: snapshot.error.toString().replaceAll('Exception: ', ''), onRetry: _retry);
+          final isNoInternet = snapshot.error is NoInternetException;
+          final error = snapshot.error.toString().replaceAll('Exception: ', '');
+          return _ErrorApp(error: error, onRetry: _retry, onOffline: isNoInternet ? _enterOffline : null);
         }
         final data = snapshot.data!;
         return MultiProvider(
@@ -87,8 +108,9 @@ class _AppInitializerState extends State<AppInitializer> {
 class _ErrorApp extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
+  final VoidCallback? onOffline;
 
-  const _ErrorApp({required this.error, required this.onRetry});
+  const _ErrorApp({required this.error, required this.onRetry, this.onOffline});
 
   @override
   Widget build(BuildContext context) {
@@ -101,13 +123,35 @@ class _ErrorApp extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 80),
+                Icon(
+                  onOffline != null ? Icons.wifi_off : Icons.error_outline,
+                  color: onOffline != null ? Colors.orange : Colors.red,
+                  size: 80,
+                ),
                 const SizedBox(height: 20),
-                const Text('Ошибка запуска приложения', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(
+                  onOffline != null ? 'Нет подключения к интернету' : 'Ошибка запуска приложения',
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 12),
                 Text(error, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 30),
                 ElevatedButton(onPressed: onRetry, child: const Text('Попробовать снова')),
+                if (onOffline != null) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: onOffline,
+                    icon: const Icon(Icons.offline_bolt_outlined),
+                    label: const Text('Войти офлайн'),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Доступны только ранее загруженные данные',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                ],
               ],
             ),
           ),

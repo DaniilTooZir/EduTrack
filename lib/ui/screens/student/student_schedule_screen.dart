@@ -114,22 +114,22 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
           child: RefreshIndicator(
             onRefresh: _loadSchedule,
             child: ListView(
-            padding: const EdgeInsets.all(16),
-            children:
-                _groupedSchedule.entries.map((entry) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        entry.key,
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
-                      ),
-                      const SizedBox(height: 10),
-                      ...entry.value.map((s) => _buildScheduleCard(s, colors)),
-                      const SizedBox(height: 20),
-                    ],
-                  );
-                }).toList(),
+              padding: const EdgeInsets.all(16),
+              children:
+                  _groupedSchedule.entries.map((entry) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.key,
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+                        ),
+                        const SizedBox(height: 10),
+                        ...entry.value.map((s) => _buildScheduleCard(s, colors)),
+                        const SizedBox(height: 20),
+                      ],
+                    );
+                  }).toList(),
             ),
           ),
         ),

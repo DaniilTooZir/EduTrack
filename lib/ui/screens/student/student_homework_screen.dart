@@ -147,7 +147,11 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.assignment_turned_in_outlined, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.3)),
+                    Icon(
+                      Icons.assignment_turned_in_outlined,
+                      size: 64,
+                      color: colors.onSurfaceVariant.withValues(alpha: 0.3),
+                    ),
                     const SizedBox(height: 16),
                     Text('В этой категории пусто', style: TextStyle(color: colors.onSurfaceVariant)),
                   ],
@@ -166,74 +170,74 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          itemCount: list.length,
-          itemBuilder: (context, index) {
-            final hw = list[index];
-            final status = _statuses[hw.id];
-            final isDone = status?.isCompleted ?? false;
-            IconData statusIcon = Icons.priority_high;
-            Color statusColor = colors.onSurfaceVariant;
-            if (isDone) {
-              statusIcon = Icons.check_circle;
-              statusColor = Colors.green;
-            } else if (status?.fileUrl != null || status?.studentComment != null) {
-              statusIcon = Icons.access_time_filled;
-              statusColor = Colors.orange;
-            }
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: colors.surface,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => _openHomeworkSheet(hw),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-                        child: Icon(statusIcon, color: statusColor, size: 24),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              hw.title,
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              hw.subject?.name ?? 'Предмет',
-                              style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w500),
-                            ),
-                            const SizedBox(height: 4),
-                            if (hw.dueDate != null)
-                              Text(
-                                'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
-                                style: TextStyle(
-                                  color:
-                                      hw.dueDate!.isBefore(DateTime.now()) && !isDone
-                                          ? colors.error
-                                          : colors.onSurfaceVariant,
-                                  fontSize: 12,
-                                ),
-                              ),
-                          ],
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final hw = list[index];
+              final status = _statuses[hw.id];
+              final isDone = status?.isCompleted ?? false;
+              IconData statusIcon = Icons.priority_high;
+              Color statusColor = colors.onSurfaceVariant;
+              if (isDone) {
+                statusIcon = Icons.check_circle;
+                statusColor = Colors.green;
+              } else if (status?.fileUrl != null || status?.studentComment != null) {
+                statusIcon = Icons.access_time_filled;
+                statusColor = Colors.orange;
+              }
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                color: colors.surface,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _openHomeworkSheet(hw),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+                          child: Icon(statusIcon, color: statusColor, size: 24),
                         ),
-                      ),
-                      Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                hw.title,
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                hw.subject?.name ?? 'Предмет',
+                                style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 4),
+                              if (hw.dueDate != null)
+                                Text(
+                                  'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
+                                  style: TextStyle(
+                                    color:
+                                        hw.dueDate!.isBefore(DateTime.now()) && !isDone
+                                            ? colors.error
+                                            : colors.onSurfaceVariant,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -407,8 +411,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
     final hw = widget.homework;
     final status = widget.status;
     final hasContent = status?.fileUrl != null || status?.studentComment != null;
-    final isReturnedForRevision =
-        !_isDone && hasContent && (status?.teacherComment?.isNotEmpty ?? false);
+    final isReturnedForRevision = !_isDone && hasContent && (status?.teacherComment?.isNotEmpty ?? false);
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.5,
@@ -552,13 +555,14 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           ? 'Ваш ответ (На проверке)'
                           : 'Ваше решение',
                       style: TextStyle(
-                        color: _isDone
-                            ? Colors.green
-                            : isReturnedForRevision
-                            ? colors.error
-                            : hasContent
-                            ? Colors.orange
-                            : colors.primary,
+                        color:
+                            _isDone
+                                ? Colors.green
+                                : isReturnedForRevision
+                                ? colors.error
+                                : hasContent
+                                ? Colors.orange
+                                : colors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
@@ -725,13 +729,14 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            icon: _isSubmitting
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.send),
+                            icon:
+                                _isSubmitting
+                                    ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
+                                    )
+                                    : const Icon(Icons.send),
                             label: const Text('Сдать повторно'),
                           ),
                         ),
@@ -754,7 +759,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                         ),
                       ],
                     ] else ...[
-                    // ── Первичная сдача ──────────────────────────────────────
+                      // ── Первичная сдача ──────────────────────────────────────
                       TextField(
                         controller: _commentController,
                         maxLines: 4,
@@ -837,13 +842,14 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          icon: _isSubmitting
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
-                                )
-                              : const Icon(Icons.send),
+                          icon:
+                              _isSubmitting
+                                  ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(color: colors.onPrimary, strokeWidth: 2),
+                                  )
+                                  : const Icon(Icons.send),
                           label: const Text('Сдать работу'),
                         ),
                       ),

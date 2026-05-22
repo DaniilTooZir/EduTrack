@@ -197,8 +197,7 @@ class RealtimeListener {
                 }
                 final newRecord = payload.newRecord;
                 final hasContent =
-                    (newRecord['student_comment'] as String?)?.isNotEmpty == true ||
-                    newRecord['file_url'] != null;
+                    (newRecord['student_comment'] as String?)?.isNotEmpty == true || newRecord['file_url'] != null;
                 if (!hasContent) return;
                 final isResubmission = eventType == PostgresChangeEvent.update;
                 _notificationService.showNotification(
@@ -219,11 +218,7 @@ class RealtimeListener {
               event: PostgresChangeEvent.update,
               schema: 'public',
               table: 'homework_status',
-              filter: PostgresChangeFilter(
-                type: PostgresChangeFilterType.eq,
-                column: 'student_id',
-                value: studentId,
-              ),
+              filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'student_id', value: studentId),
               callback: (payload) {
                 final newRecord = payload.newRecord;
                 final isCompleted = newRecord['is_completed'] == true;
@@ -233,9 +228,7 @@ class RealtimeListener {
                   _notificationService.showNotification(
                     id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
                     title: 'Работа принята!',
-                    body: teacherComment?.isNotEmpty == true
-                        ? teacherComment!
-                        : 'Преподаватель принял вашу работу',
+                    body: teacherComment?.isNotEmpty == true ? teacherComment! : 'Преподаватель принял вашу работу',
                   );
                 } else if (teacherComment?.isNotEmpty == true) {
                   _notificationService.showNotification(

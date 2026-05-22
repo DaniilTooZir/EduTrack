@@ -258,15 +258,18 @@ class ScheduleService {
     required String endTime,
   }) async {
     try {
-      await _client.from('schedule').update({
-        'subject_id': subjectId,
-        'group_id': groupId,
-        'teacher_id': teacherId,
-        'date': date.toIso8601String(),
-        'weekday': weekday,
-        'start_time': startTime,
-        'end_time': endTime,
-      }).eq('id', id);
+      await _client
+          .from('schedule')
+          .update({
+            'subject_id': subjectId,
+            'group_id': groupId,
+            'teacher_id': teacherId,
+            'date': date.toIso8601String(),
+            'weekday': weekday,
+            'start_time': startTime,
+            'end_time': endTime,
+          })
+          .eq('id', id);
       return AppResult.success(null);
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при обновлении записи расписания: ${e.message}');

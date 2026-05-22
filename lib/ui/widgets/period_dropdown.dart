@@ -13,7 +13,6 @@ class PeriodDropdown extends StatelessWidget {
         final periods = provider.periods;
         final selected = provider.selectedPeriod;
         if (periods.isEmpty) return const SizedBox.shrink();
-
         return PopupMenuButton<AcademicPeriod>(
           tooltip: 'Учебный период',
           offset: const Offset(0, 48),
@@ -39,32 +38,31 @@ class PeriodDropdown extends StatelessWidget {
           onSelected: (period) {
             Provider.of<UserProvider>(context, listen: false).setSelectedPeriod(period);
           },
-          itemBuilder: (context) => periods.map((period) {
-            final isSelected = selected?.id == period.id;
-            final isCurrent = period.isCurrent();
-            return PopupMenuItem<AcademicPeriod>(
-              value: period,
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 24,
-                    child: isSelected ? const Icon(Icons.check, size: 18) : null,
-                  ),
-                  Expanded(child: Text(period.name)),
-                  if (isCurrent)
-                    Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
+          itemBuilder:
+              (context) =>
+                  periods.map((period) {
+                    final isSelected = selected?.id == period.id;
+                    final isCurrent = period.isCurrent();
+                    return PopupMenuItem<AcademicPeriod>(
+                      value: period,
+                      child: Row(
+                        children: [
+                          SizedBox(width: 24, child: isSelected ? const Icon(Icons.check, size: 18) : null),
+                          Expanded(child: Text(period.name)),
+                          if (isCurrent)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('сейчас', style: TextStyle(fontSize: 10, color: Colors.green)),
+                            ),
+                        ],
                       ),
-                      child: const Text('сейчас', style: TextStyle(fontSize: 10, color: Colors.green)),
-                    ),
-                ],
-              ),
-            );
-          }).toList(),
+                    );
+                  }).toList(),
         );
       },
     );

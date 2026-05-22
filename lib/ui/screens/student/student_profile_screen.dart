@@ -302,7 +302,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     if (mounted) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ChatScreen(chatId: result.data, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),
+          builder:
+              (_) => ChatScreen(chatId: result.data, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),
         ),
       );
     }

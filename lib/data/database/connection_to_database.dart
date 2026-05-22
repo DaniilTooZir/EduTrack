@@ -5,14 +5,30 @@ import 'package:edu_track/utils/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class NoInternetException implements Exception {
+  const NoInternetException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
 class SupabaseConnection {
   static bool _initialized = false;
 
   static Future<void> initializeSupabase() async {
     if (_initialized) return;
-
     await _checkInternetConnection();
+    await _initClient();
+    _initialized = true;
+  }
 
+  static Future<void> initializeSupabaseOffline() async {
+    if (_initialized) return;
+    await _initClient();
+    _initialized = true;
+  }
+
+  static Future<void> _initClient() async {
     final url = AppConfig.supabaseUrl;
     final anonKey = AppConfig.supabaseAnonKey;
     if (url.isEmpty || anonKey.isEmpty) {
@@ -27,19 +43,17 @@ class SupabaseConnection {
         headers: {'X-Supabase-Client-Platform-Version': AppConfig.supabaseClientVersion},
       );
     } catch (e) {
-      throw Exception('Не удалось подключиться к серверу. Проверьте соединение и попробуйте снова.');
+      throw Exception('Не удалось инициализировать клиент. Проверьте конфигурацию приложения.');
     }
-
-    _initialized = true;
   }
 
   static Future<void> _checkInternetConnection() async {
     try {
       await http.head(Uri.parse('https://supabase.com')).timeout(const Duration(seconds: 5));
     } on TimeoutException {
-      throw Exception('Превышено время ожидания подключения. Проверьте интернет-соединение.');
+      throw const NoInternetException('Превышено время ожидания подключения. Проверьте интернет-соединение.');
     } catch (_) {
-      throw Exception('Отсутствует интернет-соединение. Проверьте сеть и попробуйте снова.');
+      throw const NoInternetException('Отсутствует интернет-соединение. Проверьте сеть и попробуйте снова.');
     }
   }
 

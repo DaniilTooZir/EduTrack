@@ -55,11 +55,12 @@ class AuthService {
     final client = SupabaseConnection.client;
     Map<String, dynamic>? data;
     if (role == 'student') {
-      final response = await client
-          .from(table)
-          .select('*, groups(name, institution_id, institutions(name))')
-          .eq('login', login)
-          .maybeSingle();
+      final response =
+          await client
+              .from(table)
+              .select('*, groups(name, institution_id, institutions(name))')
+              .eq('login', login)
+              .maybeSingle();
       data = response;
     } else {
       final response = await client.from(table).select('*, institutions(name)').eq('login', login).maybeSingle();

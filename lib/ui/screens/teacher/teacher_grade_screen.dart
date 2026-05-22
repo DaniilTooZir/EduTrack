@@ -103,69 +103,69 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                         child: RefreshIndicator(
                           onRefresh: _loadData,
                           child: ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _students.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final student = _students[index];
-                            return Card(
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              color: colors.surface,
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: colors.primaryContainer,
-                                  child: Text(
-                                    student.name[0],
-                                    style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _students.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final student = _students[index];
+                              return Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                color: colors.surface,
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: colors.primaryContainer,
+                                    child: Text(
+                                      student.name[0],
+                                      style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
+                                    ),
                                   ),
-                                ),
-                                title: Text(
-                                  '${student.surname} ${student.name}',
-                                  style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
-                                ),
-                                trailing: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: colors.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(8),
+                                  title: Text(
+                                    '${student.surname} ${student.name}',
+                                    style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
                                   ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<int>(
-                                      value: _grades[student.id],
-                                      dropdownColor: colors.surface,
-                                      icon: Icon(Icons.arrow_drop_down, color: colors.primary),
-                                      items:
-                                          [2, 3, 4, 5]
-                                              .map(
-                                                (grade) => DropdownMenuItem(
-                                                  value: grade,
-                                                  child: Text(
-                                                    grade.toString(),
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color:
-                                                          grade >= 4
-                                                              ? Colors.green
-                                                              : (grade == 3 ? Colors.orange : Colors.red),
+                                  trailing: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: colors.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<int>(
+                                        value: _grades[student.id],
+                                        dropdownColor: colors.surface,
+                                        icon: Icon(Icons.arrow_drop_down, color: colors.primary),
+                                        items:
+                                            [2, 3, 4, 5]
+                                                .map(
+                                                  (grade) => DropdownMenuItem(
+                                                    value: grade,
+                                                    child: Text(
+                                                      grade.toString(),
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        color:
+                                                            grade >= 4
+                                                                ? Colors.green
+                                                                : (grade == 3 ? Colors.orange : Colors.red),
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              )
-                                              .toList(),
-                                      hint: Text('—', style: TextStyle(color: colors.onSurfaceVariant)),
-                                      onChanged: (val) {
-                                        setState(() {
-                                          _grades[student.id] = val;
-                                        });
-                                      },
+                                                )
+                                                .toList(),
+                                        hint: Text('—', style: TextStyle(color: colors.onSurfaceVariant)),
+                                        onChanged: (val) {
+                                          setState(() {
+                                            _grades[student.id] = val;
+                                          });
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       Container(

@@ -214,26 +214,29 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
                     ? _buildLoadingSkeleton()
                     : RefreshIndicator(
                       onRefresh: _loadComments,
-                      child: _comments.isEmpty
-                      ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.5,
-                            child: Center(child: Text('Нет комментариев', style: TextStyle(color: colors.onSurfaceVariant))),
-                          ),
-                        ],
-                      )
-                      : ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        reverse: true,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        itemCount: _comments.length,
-                        itemBuilder: (context, index) {
-                          final comment = _comments[index];
-                          return _buildCommentBubble(comment, colors);
-                        },
-                      ),
+                      child:
+                          _comments.isEmpty
+                              ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(
+                                    height: MediaQuery.of(context).size.height * 0.5,
+                                    child: Center(
+                                      child: Text('Нет комментариев', style: TextStyle(color: colors.onSurfaceVariant)),
+                                    ),
+                                  ),
+                                ],
+                              )
+                              : ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                reverse: true,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                itemCount: _comments.length,
+                                itemBuilder: (context, index) {
+                                  final comment = _comments[index];
+                                  return _buildCommentBubble(comment, colors);
+                                },
+                              ),
                     ),
           ),
           Divider(height: 1, color: colors.outlineVariant),
@@ -326,14 +329,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
   }
 
   Widget _buildLoadingSkeleton() {
-    const bubbles = [
-      (true, 180.0),
-      (false, 140.0),
-      (true, 220.0),
-      (false, 110.0),
-      (true, 160.0),
-      (false, 200.0),
-    ];
+    const bubbles = [(true, 180.0), (false, 140.0), (true, 220.0), (false, 110.0), (true, 160.0), (false, 200.0)];
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 12),
       children:

@@ -264,14 +264,15 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Копирование недели'),
-        content: Text('Скопировать занятия с $sourceRange на $targetRange?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Да, копировать')),
-        ],
-      ),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Копирование недели'),
+            content: Text('Скопировать занятия с $sourceRange на $targetRange?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Да, копировать')),
+            ],
+          ),
     );
     if (confirmed != true) return;
 
@@ -321,14 +322,15 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   Future<void> _showEditDialog(Schedule lesson) async {
     final updated = await showDialog<bool>(
       context: context,
-      builder: (_) => _EditLessonDialog(
-        lesson: lesson,
-        subjects: _subjects,
-        groups: _groups,
-        teachers: _teachers,
-        institutionId: _institutionId!,
-        scheduleService: _scheduleService,
-      ),
+      builder:
+          (_) => _EditLessonDialog(
+            lesson: lesson,
+            subjects: _subjects,
+            groups: _groups,
+            teachers: _teachers,
+            institutionId: _institutionId!,
+            scheduleService: _scheduleService,
+          ),
     );
     if (updated == true) await _loadSchedule();
   }
@@ -539,16 +541,17 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final selectedPeriod = Provider.of<UserProvider>(context).selectedPeriod;
-    var displayedSchedules = selectedPeriod == null
-        ? _schedules
-        : _schedules
-            .where(
-              (s) =>
-                  s.date != null &&
-                  !s.date!.isBefore(selectedPeriod.startDate) &&
-                  !s.date!.isAfter(selectedPeriod.endDate),
-            )
-            .toList();
+    var displayedSchedules =
+        selectedPeriod == null
+            ? _schedules
+            : _schedules
+                .where(
+                  (s) =>
+                      s.date != null &&
+                      !s.date!.isBefore(selectedPeriod.startDate) &&
+                      !s.date!.isAfter(selectedPeriod.endDate),
+                )
+                .toList();
     if (_filterGroupId != null) {
       displayedSchedules = displayedSchedules.where((s) => s.groupId == _filterGroupId).toList();
     }
@@ -837,8 +840,8 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                       _schedules.isEmpty
                                           ? 'Расписание пустое'
                                           : (_filterGroupId != null || _filterTeacherId != null)
-                                              ? 'Нет занятий по выбранным фильтрам'
-                                              : 'Нет занятий в выбранном периоде',
+                                          ? 'Нет занятий по выбранным фильтрам'
+                                          : 'Нет занятий в выбранном периоде',
                                       style: TextStyle(color: colors.onSurfaceVariant),
                                     ),
                                   ),
@@ -1063,11 +1066,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
     final colors = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () async {
-        final picked = await showTimePicker(
-          context: context,
-          initialTime: time,
-          helpText: label.toUpperCase(),
-        );
+        final picked = await showTimePicker(context: context, initialTime: time, helpText: label.toUpperCase());
         if (picked != null) {
           onPicked(picked);
           _scheduleConflictValidation();
@@ -1123,53 +1122,33 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(
-                    child: _buildTimePicker(
-                      'Начало', _startTime, (t) => setState(() => _startTime = t),
-                    ),
-                  ),
+                  Expanded(child: _buildTimePicker('Начало', _startTime, (t) => setState(() => _startTime = t))),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildTimePicker(
-                      'Конец', _endTime, (t) => setState(() => _endTime = t),
-                    ),
-                  ),
+                  Expanded(child: _buildTimePicker('Конец', _endTime, (t) => setState(() => _endTime = t))),
                 ],
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Предмет',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
+                decoration: const InputDecoration(labelText: 'Предмет', border: OutlineInputBorder(), isDense: true),
                 initialValue: _subjectId,
                 isExpanded: true,
-                items: widget.subjects
-                    .map((s) => DropdownMenuItem(
-                          value: s.id,
-                          child: Text(s.name, overflow: TextOverflow.ellipsis),
-                        ))
-                    .toList(),
+                items:
+                    widget.subjects
+                        .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis)))
+                        .toList(),
                 onChanged: (val) {
                   if (val != null) setState(() => _subjectId = val);
                 },
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Группа',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
+                decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder(), isDense: true),
                 initialValue: _groupId,
                 isExpanded: true,
-                items: widget.groups
-                    .map((g) => DropdownMenuItem(
-                          value: g.id,
-                          child: Text(g.name, overflow: TextOverflow.ellipsis),
-                        ))
-                    .toList(),
+                items:
+                    widget.groups
+                        .map((g) => DropdownMenuItem(value: g.id, child: Text(g.name, overflow: TextOverflow.ellipsis)))
+                        .toList(),
                 onChanged: (val) {
                   if (val != null) {
                     setState(() => _groupId = val);
@@ -1186,12 +1165,15 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                 ),
                 initialValue: _teacherId,
                 isExpanded: true,
-                items: widget.teachers
-                    .map((t) => DropdownMenuItem(
-                          value: t.id,
-                          child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
-                        ))
-                    .toList(),
+                items:
+                    widget.teachers
+                        .map(
+                          (t) => DropdownMenuItem(
+                            value: t.id,
+                            child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (val) {
                   if (val != null) {
                     setState(() => _teacherId = val);
@@ -1206,31 +1188,24 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                     duration: const Duration(milliseconds: 300),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _isCheckingConflict
-                          ? colors.surfaceContainerHighest.withValues(alpha: 0.5)
-                          : colors.errorContainer.withValues(alpha: 0.8),
+                      color:
+                          _isCheckingConflict
+                              ? colors.surfaceContainerHighest.withValues(alpha: 0.5)
+                              : colors.errorContainer.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _isCheckingConflict ? colors.outline : colors.error,
-                      ),
+                      border: Border.all(color: _isCheckingConflict ? colors.outline : colors.error),
                     ),
                     child: Row(
                       children: [
                         _isCheckingConflict
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                             : Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _isCheckingConflict ? 'Проверка наложений...' : _conflictError!,
                             style: TextStyle(
-                              color: _isCheckingConflict
-                                  ? colors.onSurfaceVariant
-                                  : colors.onErrorContainer,
+                              color: _isCheckingConflict ? colors.onSurfaceVariant : colors.onErrorContainer,
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1246,19 +1221,13 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isSaving ? null : () => Navigator.pop(context, false),
-          child: const Text('Отмена'),
-        ),
+        TextButton(onPressed: _isSaving ? null : () => Navigator.pop(context, false), child: const Text('Отмена')),
         FilledButton(
           onPressed: (_isSaving || _conflictError != null || _isCheckingConflict) ? null : _save,
-          child: _isSaving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Сохранить'),
+          child:
+              _isSaving
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Сохранить'),
         ),
       ],
     );

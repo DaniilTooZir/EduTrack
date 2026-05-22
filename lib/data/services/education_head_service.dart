@@ -1,6 +1,6 @@
+import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:edu_track/models/education_head.dart';
 
 class EducationHeadService {
   final _client = Supabase.instance.client;

@@ -84,39 +84,41 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
           constraints: const BoxConstraints(maxWidth: 800),
           child: RefreshIndicator(
             onRefresh: _loadSchedule,
-            child: _scheduleList.isEmpty
-                ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.6,
-                      child: Center(
-                        child: Text(
-                          'Расписание отсутствует.',
-                          style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-                : ListView(
-                  padding: const EdgeInsets.all(16),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: _groupedSchedule.entries.map((entry) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            child:
+                _scheduleList.isEmpty
+                    ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
-                        Text(
-                          entry.key,
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: Center(
+                            child: Text(
+                              'Расписание отсутствует.',
+                              style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 10),
-                        ...entry.value.map((s) => _buildScheduleCard(s, colors)),
-                        const SizedBox(height: 20),
                       ],
-                    );
-                  }).toList(),
-                ),
+                    )
+                    : ListView(
+                      padding: const EdgeInsets.all(16),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children:
+                          _groupedSchedule.entries.map((entry) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  entry.key,
+                                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+                                ),
+                                const SizedBox(height: 10),
+                                ...entry.value.map((s) => _buildScheduleCard(s, colors)),
+                                const SizedBox(height: 20),
+                              ],
+                            );
+                          }).toList(),
+                    ),
           ),
         ),
       ),

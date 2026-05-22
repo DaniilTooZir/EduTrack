@@ -7,8 +7,7 @@ class CleanHttpClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     if (request.headers.containsKey('X-Supabase-Client-Platform-Version')) {
-      request.headers['X-Supabase-Client-Platform-Version'] =
-          AppConfig.supabaseClientVersion;
+      request.headers['X-Supabase-Client-Platform-Version'] = AppConfig.supabaseClientVersion;
     }
     return _inner.send(request);
   }

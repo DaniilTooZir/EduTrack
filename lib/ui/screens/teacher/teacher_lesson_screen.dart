@@ -151,9 +151,10 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
               if (selectedGroup == null || selectedSubject == null) return;
               setStateDialog(() => isDialogLoading = true);
               final result = await _scheduleService.getScheduleForTeacher(teacherId!, db);
-              final filtered = result.data
-                  .where((s) => s.groupId == selectedGroup!.id && s.subjectId == selectedSubject!.id)
-                  .toList();
+              final filtered =
+                  result.data
+                      .where((s) => s.groupId == selectedGroup!.id && s.subjectId == selectedSubject!.id)
+                      .toList();
               setStateDialog(() {
                 availableSchedules = filtered;
                 selectedSchedule = null;
@@ -283,24 +284,28 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                   ? _buildTeacherLessonsSkeleton()
                   : RefreshIndicator(
                     onRefresh: _loadData,
-                    child: _lessons.isEmpty
-                    ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.6,
-                          child: Center(
-                            child: Text('Проведенных занятий пока нет', style: TextStyle(color: colors.onSurfaceVariant)),
-                          ),
-                        ),
-                      ],
-                    )
-                    : ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _lessons.length,
-                      itemBuilder: (context, index) => _buildLessonTile(_lessons[index], colors),
-                    ),
+                    child:
+                        _lessons.isEmpty
+                            ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: [
+                                SizedBox(
+                                  height: MediaQuery.of(context).size.height * 0.6,
+                                  child: Center(
+                                    child: Text(
+                                      'Проведенных занятий пока нет',
+                                      style: TextStyle(color: colors.onSurfaceVariant),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                            : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(12),
+                              itemCount: _lessons.length,
+                              itemBuilder: (context, index) => _buildLessonTile(_lessons[index], colors),
+                            ),
                   ),
         ),
       ),

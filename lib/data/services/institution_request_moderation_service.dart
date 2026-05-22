@@ -1,11 +1,12 @@
 import 'dart:math';
+
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/utils/app_result.dart';
 
-/// Сервис для автоматической модерации заявок образовательных организаций.
-/// Обрабатывает заявки в статусе `pending` и создаёт аккаунты руководителей.
+// Сервис для автоматической модерации заявок образовательных организаций.
+// Обрабатывает заявки в статусе `pending` и создаёт аккаунты руководителей.
 class InstitutionModerationService {
-  /// Основной метод: получает все заявки в ожидании и обрабатывает каждую.
+  // Основной метод: получает все заявки в ожидании и обрабатывает каждую.
   static Future<AppResult<void>> processPendingRequests() async {
     try {
       final pendingRequests = await SupabaseConnection.client
@@ -24,8 +25,8 @@ class InstitutionModerationService {
     }
   }
 
-  /// Обрабатывает одну заявку: проверяет существование администратора,
-  /// создаёт новое учреждение и администратора или отклоняет заявку.
+  // Обрабатывает одну заявку: проверяет существование администратора,
+  // создаёт новое учреждение и администратора или отклоняет заявку.
   static Future<void> _processSingleRequest(Map<String, dynamic> request) async {
     final email = request['email'];
     try {
@@ -58,12 +59,12 @@ class InstitutionModerationService {
     }
   }
 
-  /// Обновление статуса заявки
+  // Обновление статуса заявки
   static Future<void> _updateRequestStatus(String id, String status) async {
     await SupabaseConnection.client.from('institution_requests').update({'status': status}).eq('id', id);
   }
 
-  /// Генерация логина
+  // Генерация логина
   static String _generateLogin(String firstName, String lastName) {
     final cleanFirst = _transliterate(firstName.toLowerCase().trim());
     final cleanLast = _transliterate(lastName.toLowerCase().trim());
@@ -83,7 +84,7 @@ class InstitutionModerationService {
     return res.replaceAll(RegExp(r'[^a-z0-9]'), '');
   }
 
-  /// Генерация безопасного пароля.
+  // Генерация безопасного пароля.
   static String _generatePassword() {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#%';
     final rand = Random.secure();

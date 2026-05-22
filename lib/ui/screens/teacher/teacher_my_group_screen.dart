@@ -56,21 +56,22 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
     if (_myGroup?.id == null) return;
     final previousStudents = List<Student>.from(_students);
     setState(() {
-      _students = _students.map((s) {
-        return Student(
-          id: s.id,
-          name: s.name,
-          surname: s.surname,
-          email: s.email,
-          login: s.login,
-          password: s.password,
-          groupId: s.groupId,
-          isHeadman: s.id == student.id,
-          createdAt: s.createdAt,
-          group: s.group,
-          avatarUrl: s.avatarUrl,
-        );
-      }).toList();
+      _students =
+          _students.map((s) {
+            return Student(
+              id: s.id,
+              name: s.name,
+              surname: s.surname,
+              email: s.email,
+              login: s.login,
+              password: s.password,
+              groupId: s.groupId,
+              isHeadman: s.id == student.id,
+              createdAt: s.createdAt,
+              group: s.group,
+              avatarUrl: s.avatarUrl,
+            );
+          }).toList();
     });
     final result = await _studentService.setHeadman(_myGroup!.id!, student.id);
     if (!mounted) return;
@@ -113,7 +114,11 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.supervised_user_circle, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
+                                Icon(
+                                  Icons.supervised_user_circle,
+                                  size: 64,
+                                  color: colors.onSurfaceVariant.withValues(alpha: 0.5),
+                                ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Вы не являетесь куратором группы.',
@@ -165,58 +170,58 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                         child: RefreshIndicator(
                           onRefresh: _loadData,
                           child: ListView.separated(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          itemCount: _students.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final student = _students[index];
-                            return Card(
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              color: colors.surface,
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: student.isHeadman ? Colors.amber : colors.primaryContainer,
-                                  child: Icon(
-                                    student.isHeadman ? Icons.star : Icons.person,
-                                    color: student.isHeadman ? Colors.white : colors.onPrimaryContainer,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            itemCount: _students.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final student = _students[index];
+                              return Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                color: colors.surface,
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: student.isHeadman ? Colors.amber : colors.primaryContainer,
+                                    child: Icon(
+                                      student.isHeadman ? Icons.star : Icons.person,
+                                      color: student.isHeadman ? Colors.white : colors.onPrimaryContainer,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    '${student.surname} ${student.name}',
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
+                                  ),
+                                  subtitle: Text(
+                                    student.email,
+                                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(Icons.message_outlined, color: colors.primary),
+                                        tooltip: 'Написать сообщение',
+                                        onPressed: () => _openDirectChat(student),
+                                      ),
+                                      Tooltip(
+                                        message: 'Назначить старостой',
+                                        child: Switch(
+                                          value: student.isHeadman,
+                                          activeThumbColor: Colors.amber,
+                                          onChanged: (value) {
+                                            if (value) {
+                                              _setHeadman(student);
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                title: Text(
-                                  '${student.surname} ${student.name}',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
-                                ),
-                                subtitle: Text(
-                                  student.email,
-                                  style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.message_outlined, color: colors.primary),
-                                      tooltip: 'Написать сообщение',
-                                      onPressed: () => _openDirectChat(student),
-                                    ),
-                                    Tooltip(
-                                      message: 'Назначить старостой',
-                                      child: Switch(
-                                        value: student.isHeadman,
-                                        activeThumbColor: Colors.amber,
-                                        onChanged: (value) {
-                                          if (value) {
-                                            _setHeadman(student);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ],
@@ -234,9 +239,9 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
       MessengerHelper.showError(result.errorMessage);
       return;
     }
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ChatScreen(chatId: result.data, title: 'Группа ${_myGroup!.name}')),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => ChatScreen(chatId: result.data, title: 'Группа ${_myGroup!.name}')));
   }
 
   Future<void> _openDirectChat(Student student) async {
