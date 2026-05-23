@@ -11,12 +11,13 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
-import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+enum _LessonSort { dateDesc, dateAsc, subjectAsc }
 
 class TeacherLessonScreen extends StatefulWidget {
   const TeacherLessonScreen({super.key});
@@ -30,19 +31,63 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   final SubjectService _subjectService = SubjectService();
   final GroupService _groupService = GroupService();
+
   List<Lesson> _lessons = [];
   List<Subject> _subjects = [];
   List<Group> _groups = [];
+  Map<String, Schedule> _scheduleCache = {};
+
   bool _isLoading = true;
+  String? _filterSubjectId;
+  String? _filterGroupId;
+  _LessonSort _sortOrder = _LessonSort.dateDesc;
+
   String? get teacherId => Provider.of<UserProvider>(context, listen: false).userId;
   String? get institutionId => Provider.of<UserProvider>(context, listen: false).institutionId;
+
+  List<Lesson> get _displayedLessons {
+    final list =
+        _lessons.where((l) {
+          final s = _scheduleCache[l.scheduleId];
+          if (_filterSubjectId != null && s?.subjectId != _filterSubjectId) return false;
+          if (_filterGroupId != null && s?.groupId != _filterGroupId) return false;
+          return true;
+        }).toList();
+    list.sort((a, b) {
+      final sa = _scheduleCache[a.scheduleId];
+      final sb = _scheduleCache[b.scheduleId];
+      switch (_sortOrder) {
+        case _LessonSort.dateDesc:
+          final dateA = sa?.date;
+          final dateB = sb?.date;
+          if (dateA == null && dateB == null) return 0;
+          if (dateA == null) return 1;
+          if (dateB == null) return -1;
+          final cmp = dateB.compareTo(dateA);
+          if (cmp != 0) return cmp;
+          return (sb?.startTime ?? '').compareTo(sa?.startTime ?? '');
+        case _LessonSort.dateAsc:
+          final dateA = sa?.date;
+          final dateB = sb?.date;
+          if (dateA == null && dateB == null) return 0;
+          if (dateA == null) return 1;
+          if (dateB == null) return -1;
+          final cmp = dateA.compareTo(dateB);
+          if (cmp != 0) return cmp;
+          return (sa?.startTime ?? '').compareTo(sb?.startTime ?? '');
+        case _LessonSort.subjectAsc:
+          final na = (sa?.subject?.name ?? '').toLowerCase();
+          final nb = (sb?.subject?.name ?? '').toLowerCase();
+          return na.compareTo(nb);
+      }
+    });
+    return list;
+  }
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
   Future<void> _loadData() async {
@@ -52,84 +97,80 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     final groupsResult = await _groupService.getGroups(institutionId!);
     final subjectsResult = await _subjectService.getSubjectsByTeacherId(teacherId!);
     final schedulesResult = await _scheduleService.getScheduleForTeacher(teacherId!, db);
+
     final List<Lesson> allLessons = [];
+    final Map<String, Schedule> cache = {};
     for (final schedule in schedulesResult.data) {
+      cache[schedule.id] = schedule;
       final lessonsResult = await _lessonService.getLessonsByScheduleId(schedule.id);
       if (lessonsResult.isSuccess) allLessons.addAll(lessonsResult.data);
     }
+
     if (mounted) {
       setState(() {
         if (groupsResult.isSuccess) _groups = groupsResult.data;
         if (subjectsResult.isSuccess) _subjects = subjectsResult.data;
         _lessons = allLessons;
+        _scheduleCache = cache;
         _isLoading = false;
       });
     }
   }
 
-  Widget _buildLessonTile(Lesson lesson, ColorScheme colors) {
-    return FutureBuilder<AppResult<Schedule?>>(
-      future: _scheduleService.getScheduleById(lesson.scheduleId),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Card(child: ListTile(title: LinearProgressIndicator()));
-        }
-        final result = snapshot.data!;
-        if (result.isFailure || result.data == null) return const SizedBox.shrink();
-        final schedule = result.data!;
-        final subjectName = schedule.subject?.name ?? 'Предмет';
-        final groupName = schedule.group?.name ?? 'Группа';
-        final dateStr =
-            schedule.date != null
-                ? '${schedule.date!.day.toString().padLeft(2, '0')}.${schedule.date!.month.toString().padLeft(2, '0')}'
-                : 'Без даты';
-        return Card(
-          elevation: 3,
-          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          color: colors.surface,
-          child: Column(
-            children: [
-              ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: colors.primaryContainer,
-                  child: Text(
-                    subjectName[0],
-                    style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                title: Text(
-                  lesson.topic ?? 'Без темы',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
-                ),
-                subtitle: Text(
-                  '$dateStr • $groupName • ${schedule.startTime}',
-                  style: TextStyle(color: colors.onSurfaceVariant),
-                ),
+  Widget _buildLessonTile(Lesson lesson, Schedule schedule, ColorScheme colors) {
+    final subjectName =
+        schedule.subject?.name ?? _subjects.where((s) => s.id == schedule.subjectId).firstOrNull?.name ?? 'Предмет';
+    final groupName =
+        schedule.group?.name ?? _groups.where((g) => g.id == schedule.groupId).firstOrNull?.name ?? 'Группа';
+    final dateStr =
+        schedule.date != null
+            ? '${schedule.date!.day.toString().padLeft(2, '0')}.${schedule.date!.month.toString().padLeft(2, '0')}'
+            : 'Без даты';
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: colors.surface,
+      child: Column(
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: colors.primaryContainer,
+              child: Text(
+                subjectName[0],
+                style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    FilledButton.tonalIcon(
-                      onPressed: () => context.push(AppRoutes.teacherLessonComments, extra: lesson.id),
-                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                      label: const Text('Чат'),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.icon(
-                      onPressed: () => context.push(AppRoutes.teacherGrades, extra: lesson),
-                      icon: const Icon(Icons.grade, size: 18),
-                      label: const Text('Оценки'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
+            title: Text(
+              lesson.topic ?? 'Без темы',
+              style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
+            ),
+            subtitle: Text(
+              '$dateStr • $groupName • ${schedule.startTime}',
+              style: TextStyle(color: colors.onSurfaceVariant),
+            ),
           ),
-        );
-      },
+          Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: () => context.push(AppRoutes.teacherLessonComments, extra: lesson.id),
+                  icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                  label: const Text('Чат'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: () => context.push(AppRoutes.teacherGrades, extra: lesson),
+                  icon: const Icon(Icons.grade, size: 18),
+                  label: const Text('Оценки'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -266,13 +307,29 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     );
   }
 
+  static const _sortLabels = {
+    _LessonSort.dateDesc: 'Новые сначала',
+    _LessonSort.dateAsc: 'Старые сначала',
+    _LessonSort.subjectAsc: 'По предмету А–Я',
+  };
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
+    final hasFilter = _filterSubjectId != null || _filterGroupId != null;
     return Scaffold(
       appBar: AppBar(
+        title: const Text('Занятия'),
         actions: [
+          PopupMenuButton<_LessonSort>(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Сортировка',
+            initialValue: _sortOrder,
+            onSelected: (v) => setState(() => _sortOrder = v),
+            itemBuilder:
+                (_) => _LessonSort.values.map((v) => PopupMenuItem(value: v, child: Text(_sortLabels[v]!))).toList(),
+          ),
           IconButton(icon: const Icon(Icons.add), tooltip: 'Провести занятие', onPressed: _showAddLessonDialog),
         ],
       ),
@@ -282,30 +339,116 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
           child:
               _isLoading
                   ? _buildTeacherLessonsSkeleton()
-                  : RefreshIndicator(
-                    onRefresh: _loadData,
-                    child:
-                        _lessons.isEmpty
-                            ? ListView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              children: [
-                                SizedBox(
-                                  height: MediaQuery.of(context).size.height * 0.6,
-                                  child: Center(
-                                    child: Text(
-                                      'Проведенных занятий пока нет',
-                                      style: TextStyle(color: colors.onSurfaceVariant),
-                                    ),
-                                  ),
+                  : Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<String?>(
+                                initialValue: _filterSubjectId,
+                                decoration: InputDecoration(
+                                  labelText: 'Предмет',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
-                              ],
-                            )
-                            : ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.all(12),
-                              itemCount: _lessons.length,
-                              itemBuilder: (context, index) => _buildLessonTile(_lessons[index], colors),
+                                items: [
+                                  const DropdownMenuItem(child: Text('Все')),
+                                  ..._subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
+                                ],
+                                onChanged: (v) => setState(() => _filterSubjectId = v),
+                              ),
                             ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: DropdownButtonFormField<String?>(
+                                initialValue: _filterGroupId,
+                                decoration: InputDecoration(
+                                  labelText: 'Группа',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                items: [
+                                  const DropdownMenuItem(child: Text('Все')),
+                                  ..._groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
+                                ],
+                                onChanged: (v) => setState(() => _filterGroupId = v),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (hasFilter)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Найдено: ${_displayedLessons.length} из ${_lessons.length}',
+                                style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed:
+                                    () => setState(() {
+                                      _filterSubjectId = null;
+                                      _filterGroupId = null;
+                                    }),
+                                child: const Text('Сбросить'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: _loadData,
+                          child:
+                              _lessons.isEmpty
+                                  ? ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(
+                                        height: MediaQuery.of(context).size.height * 0.55,
+                                        child: Center(
+                                          child: Text(
+                                            'Проведенных занятий пока нет',
+                                            style: TextStyle(color: colors.onSurfaceVariant),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                  : _displayedLessons.isEmpty
+                                  ? ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(
+                                        height: 200,
+                                        child: Center(
+                                          child: Text(
+                                            'Ничего не найдено',
+                                            style: TextStyle(color: colors.onSurfaceVariant),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                  : ListView.builder(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.all(12),
+                                    itemCount: _displayedLessons.length,
+                                    itemBuilder: (context, index) {
+                                      final lesson = _displayedLessons[index];
+                                      final schedule = _scheduleCache[lesson.scheduleId];
+                                      if (schedule == null) return const SizedBox.shrink();
+                                      return _buildLessonTile(lesson, schedule, colors);
+                                    },
+                                  ),
+                        ),
+                      ),
+                    ],
                   ),
         ),
       ),

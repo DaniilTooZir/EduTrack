@@ -8,6 +8,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+enum _AnalyticsSort { gradeAsc, gradeDesc, nameAsc }
+
 class StudentAnalyticsScreen extends StatefulWidget {
   const StudentAnalyticsScreen({super.key});
 
@@ -21,6 +23,20 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   String? _error;
   List<SubjectAnalytics> _analytics = [];
   AcademicPeriod? _loadedPeriod;
+  _AnalyticsSort _sortOrder = _AnalyticsSort.gradeAsc;
+
+  List<SubjectAnalytics> get _sortedAnalytics {
+    final list = List<SubjectAnalytics>.from(_analytics);
+    switch (_sortOrder) {
+      case _AnalyticsSort.gradeAsc:
+        list.sort((a, b) => a.averageGrade.compareTo(b.averageGrade));
+      case _AnalyticsSort.gradeDesc:
+        list.sort((a, b) => b.averageGrade.compareTo(a.averageGrade));
+      case _AnalyticsSort.nameAsc:
+        list.sort((a, b) => a.subject.name.compareTo(b.subject.name));
+    }
+    return list;
+  }
 
   @override
   void initState() {
@@ -110,17 +126,52 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
     }
     final gpa = _overallGpa();
     final gpaColor = _gradeColor(gpa);
+    final sorted = _sortedAnalytics;
     return Column(
       children: [
         _buildGpaHeader(gpa, gpaColor, colors),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Row(
+            children: [
+              Text('Сортировка:', style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant)),
+              const SizedBox(width: 8),
+              SegmentedButton<_AnalyticsSort>(
+                segments: const [
+                  ButtonSegment(
+                    value: _AnalyticsSort.gradeAsc,
+                    label: Text('Балл ↑'),
+                    icon: Icon(Icons.arrow_upward, size: 14),
+                  ),
+                  ButtonSegment(
+                    value: _AnalyticsSort.gradeDesc,
+                    label: Text('Балл ↓'),
+                    icon: Icon(Icons.arrow_downward, size: 14),
+                  ),
+                  ButtonSegment(
+                    value: _AnalyticsSort.nameAsc,
+                    label: Text('А–Я'),
+                    icon: Icon(Icons.sort_by_alpha, size: 14),
+                  ),
+                ],
+                selected: {_sortOrder},
+                onSelectionChanged: (s) => setState(() => _sortOrder = s.first),
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+        ),
         Expanded(
           child: RefreshIndicator(
             onRefresh: _load,
             color: colors.primary,
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              itemCount: _analytics.length,
-              itemBuilder: (context, index) => _SubjectAnalyticsCard(analytics: _analytics[index]),
+              itemCount: sorted.length,
+              itemBuilder: (context, index) => _SubjectAnalyticsCard(analytics: sorted[index]),
             ),
           ),
         ),

@@ -12,6 +12,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+enum _HwSort { dueDateAsc, dueDateDesc, titleAsc }
+
 class TeacherHomeworkScreen extends StatefulWidget {
   final Function(int)? onTabRequest;
   const TeacherHomeworkScreen({super.key, this.onTabRequest});
@@ -40,17 +42,53 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   DateTime? _dueDate;
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
 
+  // Фильтры списка ДЗ
+  final _searchController = TextEditingController();
+  String? _filterGroupId;
+  _HwSort _sortOrder = _HwSort.dueDateAsc;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _searchController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  List<Homework> get _filteredHomeworks {
+    final list =
+        _homeworks.where((hw) {
+          final q = _searchController.text.trim().toLowerCase();
+          if (q.isNotEmpty && !hw.title.toLowerCase().contains(q)) return false;
+          if (_filterGroupId != null && hw.groupId != _filterGroupId) return false;
+          return true;
+        }).toList();
+    switch (_sortOrder) {
+      case _HwSort.dueDateAsc:
+        list.sort((a, b) {
+          if (a.dueDate == null && b.dueDate == null) return 0;
+          if (a.dueDate == null) return 1;
+          if (b.dueDate == null) return -1;
+          return a.dueDate!.compareTo(b.dueDate!);
+        });
+      case _HwSort.dueDateDesc:
+        list.sort((a, b) {
+          if (a.dueDate == null && b.dueDate == null) return 0;
+          if (a.dueDate == null) return 1;
+          if (b.dueDate == null) return -1;
+          return b.dueDate!.compareTo(a.dueDate!);
+        });
+      case _HwSort.titleAsc:
+        list.sort((a, b) => a.title.compareTo(b.title));
+    }
+    return list;
   }
 
   Future<void> _loadData() async {
@@ -236,14 +274,20 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: editTitleController,
+                        maxLength: 100,
                         decoration: const InputDecoration(labelText: 'Заголовок', border: OutlineInputBorder()),
-                        validator: (val) => Validators.requiredField(val, fieldName: 'Заголовок'),
+                        validator:
+                            (val) =>
+                                Validators.requiredField(val, fieldName: 'Заголовок') ??
+                                Validators.validateLength(val, max: 100),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: editDescriptionController,
                         maxLines: 3,
+                        maxLength: 500,
                         decoration: const InputDecoration(labelText: 'Описание', border: OutlineInputBorder()),
+                        validator: (val) => Validators.validateLength(val, max: 500),
                       ),
                       const SizedBox(height: 12),
                       Container(
@@ -428,7 +472,59 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
+                      // Поиск
+                      TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Поиск по заголовку...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon:
+                              _searchController.text.isNotEmpty
+                                  ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
+                                  : null,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Фильтр по группе + сортировка
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String?>(
+                              initialValue: _filterGroupId,
+                              decoration: InputDecoration(
+                                labelText: 'Группа',
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
+                              items: [
+                                const DropdownMenuItem(child: Text('Все группы')),
+                                ..._groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
+                              ],
+                              onChanged: (val) => setState(() => _filterGroupId = val),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          DropdownButtonHideUnderline(
+                            child: DropdownButton<_HwSort>(
+                              value: _sortOrder,
+                              icon: const Icon(Icons.sort),
+                              borderRadius: BorderRadius.circular(12),
+                              items: const [
+                                DropdownMenuItem(value: _HwSort.dueDateAsc, child: Text('Срок ↑')),
+                                DropdownMenuItem(value: _HwSort.dueDateDesc, child: Text('Срок ↓')),
+                                DropdownMenuItem(value: _HwSort.titleAsc, child: Text('А–Я')),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) setState(() => _sortOrder = val);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
                       if (_homeworks.isEmpty)
                         Center(
                           child: Padding(
@@ -436,13 +532,20 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                             child: Text('Нет активных заданий', style: TextStyle(color: colors.onSurfaceVariant)),
                           ),
                         )
+                      else if (_filteredHomeworks.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text('Ничего не найдено', style: TextStyle(color: colors.onSurfaceVariant)),
+                          ),
+                        )
                       else
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _homeworks.length,
+                          itemCount: _filteredHomeworks.length,
                           itemBuilder: (ctx, index) {
-                            final hw = _homeworks[index];
+                            final hw = _filteredHomeworks[index];
                             return Card(
                               elevation: 3,
                               margin: const EdgeInsets.only(bottom: 12),
@@ -529,20 +632,26 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                 const SizedBox(height: 12),
                                 TextFormField(
                                   controller: _titleController,
+                                  maxLength: 100,
                                   decoration: const InputDecoration(
                                     labelText: 'Заголовок',
                                     border: OutlineInputBorder(),
                                   ),
-                                  validator: (val) => Validators.requiredField(val, fieldName: 'Заголовок'),
+                                  validator:
+                                      (val) =>
+                                          Validators.requiredField(val, fieldName: 'Заголовок') ??
+                                          Validators.validateLength(val, max: 100),
                                 ),
                                 const SizedBox(height: 12),
                                 TextFormField(
                                   controller: _descriptionController,
                                   maxLines: 3,
+                                  maxLength: 500,
                                   decoration: const InputDecoration(
                                     labelText: 'Описание (опционально)',
                                     border: OutlineInputBorder(),
                                   ),
+                                  validator: (val) => Validators.validateLength(val, max: 500),
                                 ),
                                 const SizedBox(height: 12),
                                 Container(

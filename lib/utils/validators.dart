@@ -8,7 +8,7 @@ class Validators {
 
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) return 'Введите Email';
-    final emailReg = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+    final emailReg = RegExp(r"^[a-zA-Z0-9.!#$%&'*+\-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
     if (!emailReg.hasMatch(value)) {
       return 'Введите корректный Email';
     }
@@ -45,6 +45,27 @@ class Validators {
     if (value == null) return null;
     if (value.length < min) return 'Минимум $min символов';
     if (value.length > max) return 'Максимум $max символов';
+    return null;
+  }
+
+  static String? validateMinLength(String? value, int min, {String fieldName = 'Поле'}) {
+    if (value == null || value.trim().length < min) return '$fieldName должно содержать не менее $min символов';
+    return null;
+  }
+
+  static String? validateUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final urlReg = RegExp(r'^https?://[^\s/$.?#].[^\s]*$', caseSensitive: false);
+    if (!urlReg.hasMatch(value.trim())) return 'Введите корректный URL (https://...)';
+    return null;
+  }
+
+  static String? validateNotPastDate(DateTime? value) {
+    if (value == null) return null;
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final valueOnly = DateTime(value.year, value.month, value.day);
+    if (valueOnly.isBefore(todayOnly)) return 'Срок не может быть в прошлом';
     return null;
   }
 

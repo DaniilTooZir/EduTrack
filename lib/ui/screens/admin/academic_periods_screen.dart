@@ -18,6 +18,14 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
   bool _isLoading = true;
   List<AcademicPeriod> _periods = [];
   String? _error;
+  bool _sortAsc = true;
+  bool _onlyCurrent = false;
+
+  List<AcademicPeriod> get _displayedPeriods {
+    final list = _onlyCurrent ? _periods.where((p) => p.isCurrent()).toList() : List<AcademicPeriod>.from(_periods);
+    list.sort((a, b) => _sortAsc ? a.startDate.compareTo(b.startDate) : b.startDate.compareTo(a.startDate));
+    return list;
+  }
 
   @override
   void initState() {
@@ -235,18 +243,63 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
         ),
       );
     }
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-        itemCount: _periods.length,
-        itemBuilder:
-            (context, i) => _PeriodCard(
-              period: _periods[i],
-              onEdit: () => _openPeriodDialog(existing: _periods[i]),
-              onDelete: () => _confirmDelete(_periods[i]),
-            ),
-      ),
+    final displayed = _displayedPeriods;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Row(
+            children: [
+              FilterChip(
+                label: const Text('Текущий'),
+                selected: _onlyCurrent,
+                onSelected: (v) => setState(() => _onlyCurrent = v),
+                avatar: Icon(
+                  Icons.today,
+                  size: 16,
+                  color: _onlyCurrent ? colors.onSecondaryContainer : colors.onSurfaceVariant,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () => setState(() => _sortAsc = !_sortAsc),
+                icon: Icon(_sortAsc ? Icons.arrow_upward : Icons.arrow_downward, size: 16),
+                label: Text(_sortAsc ? 'Дата ↑' : 'Дата ↓'),
+                style: TextButton.styleFrom(foregroundColor: colors.primary),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child:
+                displayed.isEmpty
+                    ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: 200,
+                          child: Center(
+                            child: Text('Ничего не найдено', style: TextStyle(color: colors.onSurfaceVariant)),
+                          ),
+                        ),
+                      ],
+                    )
+                    : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+                      itemCount: displayed.length,
+                      itemBuilder:
+                          (context, i) => _PeriodCard(
+                            period: displayed[i],
+                            onEdit: () => _openPeriodDialog(existing: displayed[i]),
+                            onDelete: () => _confirmDelete(displayed[i]),
+                          ),
+                    ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -21,6 +21,7 @@ class _UserListScreenState extends State<UserListScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
   String _selectedRole = 'all';
+  bool _sortAsc = true;
 
   @override
   void initState() {
@@ -91,6 +92,11 @@ class _UserListScreenState extends State<UserListScreen> {
                 (user['login']?.toLowerCase().contains(query) ?? false);
           }).toList();
     }
+    combined.sort((a, b) {
+      final sa = '${a['surname']} ${a['name']}'.toLowerCase();
+      final sb = '${b['surname']} ${b['name']}'.toLowerCase();
+      return _sortAsc ? sa.compareTo(sb) : sb.compareTo(sa);
+    });
     setState(() => _filteredUsers = combined);
   }
 
@@ -180,19 +186,33 @@ class _UserListScreenState extends State<UserListScreen> {
               },
             ),
             const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _filterChip('Все', 'all', colors),
-                  const SizedBox(width: 10),
-                  _filterChip('Преподаватели', 'teacher', colors),
-                  const SizedBox(width: 10),
-                  _filterChip('Операторы', 'schedule_operator', colors),
-                  const SizedBox(width: 10),
-                  _filterChip('Студенты', 'student', colors),
-                ],
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _filterChip('Все', 'all', colors),
+                        const SizedBox(width: 10),
+                        _filterChip('Преподаватели', 'teacher', colors),
+                        const SizedBox(width: 10),
+                        _filterChip('Операторы', 'schedule_operator', colors),
+                        const SizedBox(width: 10),
+                        _filterChip('Студенты', 'student', colors),
+                      ],
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: _sortAsc ? 'А–Я (нажмите для Я–А)' : 'Я–А (нажмите для А–Я)',
+                  icon: Icon(_sortAsc ? Icons.arrow_upward : Icons.arrow_downward, color: colors.primary),
+                  onPressed: () {
+                    setState(() => _sortAsc = !_sortAsc);
+                    _applyFilters();
+                  },
+                ),
+              ],
             ),
           ],
         ),

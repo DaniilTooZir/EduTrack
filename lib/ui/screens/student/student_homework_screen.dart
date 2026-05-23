@@ -89,19 +89,37 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
     }
     final activeHomeworks =
         _homeworks.where((hw) {
-          final status = _statuses[hw.id];
-          return status == null || (!status.isCompleted && status.fileUrl == null && status.studentComment == null);
-        }).toList();
+            final status = _statuses[hw.id];
+            return status == null || (!status.isCompleted && status.fileUrl == null && status.studentComment == null);
+          }).toList()
+          ..sort((a, b) {
+            if (a.dueDate == null && b.dueDate == null) return 0;
+            if (a.dueDate == null) return 1;
+            if (b.dueDate == null) return -1;
+            return a.dueDate!.compareTo(b.dueDate!);
+          });
     final reviewHomeworks =
         _homeworks.where((hw) {
-          final status = _statuses[hw.id];
-          return status != null && !status.isCompleted && (status.fileUrl != null || status.studentComment != null);
-        }).toList();
+            final status = _statuses[hw.id];
+            return status != null && !status.isCompleted && (status.fileUrl != null || status.studentComment != null);
+          }).toList()
+          ..sort((a, b) {
+            if (a.dueDate == null && b.dueDate == null) return 0;
+            if (a.dueDate == null) return 1;
+            if (b.dueDate == null) return -1;
+            return a.dueDate!.compareTo(b.dueDate!);
+          });
     final completedHomeworks =
         _homeworks.where((hw) {
-          final status = _statuses[hw.id];
-          return status != null && status.isCompleted;
-        }).toList();
+            final status = _statuses[hw.id];
+            return status != null && status.isCompleted;
+          }).toList()
+          ..sort((a, b) {
+            if (a.dueDate == null && b.dueDate == null) return 0;
+            if (a.dueDate == null) return 1;
+            if (b.dueDate == null) return -1;
+            return b.dueDate!.compareTo(a.dueDate!);
+          });
     return DefaultTabController(
       length: 3,
       child: Column(
@@ -349,7 +367,10 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
   }
 
   Future<void> _submitWork() async {
-    if (_selectedFiles.isEmpty && _commentController.text.trim().isEmpty) return;
+    if (_selectedFiles.isEmpty && _commentController.text.trim().isEmpty) {
+      MessengerHelper.showError('Добавьте комментарий или прикрепите файл');
+      return;
+    }
     setState(() => _isSubmitting = true);
     String? fileUrl;
     String? fileName;

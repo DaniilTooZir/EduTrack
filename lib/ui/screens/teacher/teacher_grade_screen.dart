@@ -26,9 +26,27 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
   final Map<String, int?> _grades = {};
   bool _isLoading = true;
 
+  final _searchController = TextEditingController();
+  bool _onlyUngraded = false;
+
+  List<Student> get _filteredStudents {
+    final list =
+        _students.where((s) {
+          final q = _searchController.text.trim().toLowerCase();
+          if (q.isNotEmpty) {
+            final fullName = '${s.surname} ${s.name}'.toLowerCase();
+            if (!fullName.contains(q)) return false;
+          }
+          if (_onlyUngraded && _grades[s.id] != null) return false;
+          return true;
+        }).toList();
+    return list;
+  }
+
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
       final extra = GoRouterState.of(context).extra;
@@ -39,6 +57,12 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
         context.pop();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -68,7 +92,29 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
     });
   }
 
+  String _pluralStudents(int n) {
+    if (n % 10 == 1 && n % 100 != 11) return 'студент';
+    if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return 'студента';
+    return 'студентов';
+  }
+
   Future<void> _submitGrades() async {
+    final ungradedCount = _grades.values.where((v) => v == null).length;
+    if (ungradedCount > 0) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder:
+            (ctx) => AlertDialog(
+              title: const Text('Не все студенты оценены'),
+              content: Text('$ungradedCount ${_pluralStudents(ungradedCount)} остались без оценки. Продолжить?'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+                ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Продолжить')),
+              ],
+            ),
+      );
+      if (confirmed != true) return;
+    }
     for (final entry in _grades.entries) {
       final gradeValue = entry.value;
       if (gradeValue != null && lesson.id != null) {
@@ -99,73 +145,131 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                   ? _buildGradesSkeleton()
                   : Column(
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Поиск по имени...',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon:
+                                    _searchController.text.isNotEmpty
+                                        ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
+                                        : null,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                FilterChip(
+                                  label: const Text('Без оценки'),
+                                  selected: _onlyUngraded,
+                                  onSelected: (v) => setState(() => _onlyUngraded = v),
+                                  avatar: Icon(
+                                    Icons.remove_circle_outline,
+                                    size: 16,
+                                    color: _onlyUngraded ? colors.onSecondaryContainer : colors.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${_filteredStudents.length} из ${_students.length}',
+                                  style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                       Expanded(
                         child: RefreshIndicator(
                           onRefresh: _loadData,
-                          child: ListView.separated(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _students.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final student = _students[index];
-                              return Card(
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                color: colors.surface,
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: colors.primaryContainer,
-                                    child: Text(
-                                      student.name[0],
-                                      style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    '${student.surname} ${student.name}',
-                                    style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
-                                  ),
-                                  trailing: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: colors.surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: DropdownButtonHideUnderline(
-                                      child: DropdownButton<int>(
-                                        value: _grades[student.id],
-                                        dropdownColor: colors.surface,
-                                        icon: Icon(Icons.arrow_drop_down, color: colors.primary),
-                                        items:
-                                            [2, 3, 4, 5]
-                                                .map(
-                                                  (grade) => DropdownMenuItem(
-                                                    value: grade,
-                                                    child: Text(
-                                                      grade.toString(),
-                                                      style: TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        color:
-                                                            grade >= 4
-                                                                ? Colors.green
-                                                                : (grade == 3 ? Colors.orange : Colors.red),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                )
-                                                .toList(),
-                                        hint: Text('—', style: TextStyle(color: colors.onSurfaceVariant)),
-                                        onChanged: (val) {
-                                          setState(() {
-                                            _grades[student.id] = val;
-                                          });
-                                        },
+                          child:
+                              _filteredStudents.isEmpty
+                                  ? ListView(
+                                    children: [
+                                      SizedBox(
+                                        height: 200,
+                                        child: Center(
+                                          child: Text(
+                                            'Ничего не найдено',
+                                            style: TextStyle(color: colors.onSurfaceVariant),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
+                                  )
+                                  : ListView.separated(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: _filteredStudents.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                    itemBuilder: (context, index) {
+                                      final student = _filteredStudents[index];
+                                      return Card(
+                                        elevation: 2,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        color: colors.surface,
+                                        child: ListTile(
+                                          leading: CircleAvatar(
+                                            backgroundColor: colors.primaryContainer,
+                                            child: Text(
+                                              student.name[0],
+                                              style: TextStyle(
+                                                color: colors.onPrimaryContainer,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          title: Text(
+                                            '${student.surname} ${student.name}',
+                                            style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
+                                          ),
+                                          trailing: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                                            decoration: BoxDecoration(
+                                              color: colors.surfaceContainerHighest,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: DropdownButtonHideUnderline(
+                                              child: DropdownButton<int>(
+                                                value: _grades[student.id],
+                                                dropdownColor: colors.surface,
+                                                icon: Icon(Icons.arrow_drop_down, color: colors.primary),
+                                                items:
+                                                    [2, 3, 4, 5]
+                                                        .map(
+                                                          (grade) => DropdownMenuItem(
+                                                            value: grade,
+                                                            child: Text(
+                                                              grade.toString(),
+                                                              style: TextStyle(
+                                                                fontWeight: FontWeight.bold,
+                                                                color:
+                                                                    grade >= 4
+                                                                        ? Colors.green
+                                                                        : (grade == 3 ? Colors.orange : Colors.red),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                hint: Text('—', style: TextStyle(color: colors.onSurfaceVariant)),
+                                                onChanged: (val) {
+                                                  setState(() {
+                                                    _grades[student.id] = val;
+                                                  });
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                ),
-                              );
-                            },
-                          ),
                         ),
                       ),
                       Container(
