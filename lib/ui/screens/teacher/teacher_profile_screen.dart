@@ -4,7 +4,6 @@ import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
-import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +23,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   final _surnameController = TextEditingController();
   final _emailController = TextEditingController();
   final _loginController = TextEditingController();
+  final _departmentController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -94,6 +94,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     _surnameController.text = _teacher!.surname;
     _emailController.text = _teacher!.email;
     _loginController.text = _teacher!.login;
+    _departmentController.text = _teacher!.department ?? '';
   }
 
   Future<void> _saveChanges() async {
@@ -115,6 +116,8 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     if (_surnameController.text.trim() != _teacher!.surname) updatedData['surname'] = _surnameController.text.trim();
     if (_emailController.text.trim() != _teacher!.email) updatedData['email'] = _emailController.text.trim();
     if (_loginController.text.trim() != _teacher!.login) updatedData['login'] = _loginController.text.trim();
+    final dept = _departmentController.text.trim();
+    if (dept != (_teacher!.department ?? '')) updatedData['department'] = dept.isEmpty ? null : dept;
     if (password.isNotEmpty) updatedData['password'] = password;
 
     if (updatedData.isEmpty) {
@@ -153,6 +156,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     _surnameController.dispose();
     _emailController.dispose();
     _loginController.dispose();
+    _departmentController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -160,7 +164,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -332,6 +335,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
             validator: (val) => Validators.requiredField(val, fieldName: 'Логин'),
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._-]'))],
           ),
+          _buildField(controller: _departmentController, label: 'Кафедра (необязательно)'),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: TextFormField(

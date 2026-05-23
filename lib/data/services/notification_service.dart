@@ -3,8 +3,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+
+const _kNotificationsKey = 'notifications_enabled';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -13,6 +16,11 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   bool get _notificationsSupported => !kIsWeb && !Platform.isWindows;
+
+  Future<bool> _isEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_kNotificationsKey) ?? true;
+  }
 
   Future<void> init() async {
     if (!_notificationsSupported) return;
@@ -43,6 +51,7 @@ class NotificationService {
   // Мгновенное уведомление
   Future<void> showNotification({required int id, required String title, required String body}) async {
     if (!_notificationsSupported) return;
+    if (!await _isEnabled()) return;
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'edu_track_channel',
       'EduTrack Notifications',
@@ -67,6 +76,7 @@ class NotificationService {
     required DateTime dueDate,
   }) async {
     if (!_notificationsSupported) return;
+    if (!await _isEnabled()) return;
     final reminderTime = dueDate.subtract(const Duration(hours: 24));
     if (!reminderTime.isAfter(DateTime.now())) return;
     final scheduled = tz.TZDateTime.from(reminderTime, tz.local);

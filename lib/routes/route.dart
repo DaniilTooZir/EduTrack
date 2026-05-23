@@ -7,6 +7,7 @@ import 'package:edu_track/ui/screens/check_request_status_screen.dart';
 import 'package:edu_track/ui/screens/institution_request_screen.dart';
 import 'package:edu_track/ui/screens/login_screen.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_operator_home_screen.dart';
+import 'package:edu_track/ui/screens/settings_screen.dart';
 import 'package:edu_track/ui/screens/splash_screen.dart';
 import 'package:edu_track/ui/screens/student/student_home_screen.dart';
 import 'package:edu_track/ui/screens/student/student_lesson_comment_screen.dart';
@@ -27,6 +28,7 @@ class AppNavigation {
     AppRoutes.welcome,
     AppRoutes.institutionRequest,
     AppRoutes.checkStatus,
+    AppRoutes.settings,
   ];
 
   static GoRouter createRouter(UserProvider userProvider) {
@@ -41,7 +43,7 @@ class AppNavigation {
         if (!loggedIn && !isGoingToPublic) {
           return AppRoutes.welcome;
         }
-        if (loggedIn && isGoingToPublic) {
+        if (loggedIn && isGoingToPublic && state.matchedLocation != AppRoutes.settings) {
           switch (userProvider.role) {
             case 'admin':
               return AppRoutes.adminHome;
@@ -66,6 +68,7 @@ class AppNavigation {
         GoRoute(path: AppRoutes.checkStatus, builder: (context, state) => const CheckRequestStatusScreen()),
         GoRoute(path: AppRoutes.adminHome, builder: (context, state) => const AdminHomeScreen()),
         GoRoute(path: AppRoutes.adminPeriods, builder: (context, state) => const AcademicPeriodsScreen()),
+        GoRoute(path: AppRoutes.settings, builder: (context, state) => const SettingsScreen()),
         GoRoute(path: AppRoutes.teacherHome, builder: (context, state) => const TeacherHomeScreen()),
         GoRoute(path: AppRoutes.studentHome, builder: (context, state) => const StudentHomeScreen()),
         GoRoute(path: AppRoutes.scheduleOperatorHome, builder: (context, state) => const ScheduleOperatorHomeScreen()),
