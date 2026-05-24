@@ -55,11 +55,12 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   }
 
   Future<void> _load() async {
-    if (!_isLoading)
+    if (!_isLoading) {
       setState(() {
         _isLoading = true;
         _error = null;
       });
+    }
     final provider = Provider.of<UserProvider>(context, listen: false);
     final studentId = provider.userId;
     final period = provider.selectedPeriod;
@@ -127,55 +128,103 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
     final gpa = _overallGpa();
     final gpaColor = _gradeColor(gpa);
     final sorted = _sortedAnalytics;
-    return Column(
-      children: [
-        _buildGpaHeader(gpa, gpaColor, colors),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Row(
-            children: [
-              Text('Сортировка:', style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant)),
-              const SizedBox(width: 8),
-              SegmentedButton<_AnalyticsSort>(
-                segments: const [
-                  ButtonSegment(
-                    value: _AnalyticsSort.gradeAsc,
-                    label: Text('Балл ↑'),
-                    icon: Icon(Icons.arrow_upward, size: 14),
-                  ),
-                  ButtonSegment(
-                    value: _AnalyticsSort.gradeDesc,
-                    label: Text('Балл ↓'),
-                    icon: Icon(Icons.arrow_downward, size: 14),
-                  ),
-                  ButtonSegment(
-                    value: _AnalyticsSort.nameAsc,
-                    label: Text('А–Я'),
-                    icon: Icon(Icons.sort_by_alpha, size: 14),
-                  ),
-                ],
-                selected: {_sortOrder},
-                onSelectionChanged: (s) => setState(() => _sortOrder = s.first),
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          TabBar(
+            tabs: const [Tab(text: 'Аналитика'), Tab(text: 'Журнал')],
+            labelColor: colors.primary,
+            indicatorColor: colors.primary,
+            unselectedLabelColor: colors.onSurfaceVariant,
           ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _load,
-            color: colors.primary,
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              itemCount: sorted.length,
-              itemBuilder: (context, index) => _SubjectAnalyticsCard(analytics: sorted[index]),
+          Expanded(
+            child: TabBarView(
+              children: [
+                Column(
+                  children: [
+                    _buildGpaHeader(gpa, gpaColor, colors),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Row(
+                        children: [
+                          Text('Сортировка:', style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant)),
+                          const SizedBox(width: 8),
+                          SegmentedButton<_AnalyticsSort>(
+                            segments: const [
+                              ButtonSegment(
+                                value: _AnalyticsSort.gradeAsc,
+                                label: Text('Балл ↑'),
+                                icon: Icon(Icons.arrow_upward, size: 14),
+                              ),
+                              ButtonSegment(
+                                value: _AnalyticsSort.gradeDesc,
+                                label: Text('Балл ↓'),
+                                icon: Icon(Icons.arrow_downward, size: 14),
+                              ),
+                              ButtonSegment(
+                                value: _AnalyticsSort.nameAsc,
+                                label: Text('А–Я'),
+                                icon: Icon(Icons.sort_by_alpha, size: 14),
+                              ),
+                            ],
+                            selected: {_sortOrder},
+                            onSelectionChanged: (s) => setState(() => _sortOrder = s.first),
+                            style: ButtonStyle(
+                              visualDensity: VisualDensity.compact,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _load,
+                        color: colors.primary,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                          itemCount: sorted.length,
+                          itemBuilder: (context, index) => _SubjectAnalyticsCard(analytics: sorted[index]),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                RefreshIndicator(onRefresh: _load, color: colors.primary, child: _buildJournalTab(sorted, colors)),
+              ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildJournalTab(List<SubjectAnalytics> subjects, ColorScheme colors) {
+    final withGrades = subjects.where((s) => s.gradeSeries.isNotEmpty).toList();
+    if (withGrades.isEmpty) {
+      return ListView(
+        children: [
+          SizedBox(
+            height: 300,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.menu_book_rounded, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
+                  const SizedBox(height: 16),
+                  Text('Нет оценок для отображения', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      itemCount: withGrades.length,
+      itemBuilder: (context, index) => _JournalSubjectTile(analytics: withGrades[index]),
     );
   }
 
@@ -398,6 +447,126 @@ class _GradeLineChart extends StatelessWidget {
             borderData: FlBorderData(show: false),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _JournalSubjectTile extends StatelessWidget {
+  final SubjectAnalytics analytics;
+
+  const _JournalSubjectTile({required this.analytics});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final avg = analytics.averageGrade;
+    final avgColor = _gradeColor(avg);
+    final entries = [...analytics.gradeSeries]..sort((a, b) => b.date.compareTo(a.date));
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        childrenPadding: EdgeInsets.zero,
+        leading: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(color: avgColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+          child: Center(
+            child: Text(
+              avg == 0.0 ? '—' : avg.toStringAsFixed(1),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: avgColor),
+            ),
+          ),
+        ),
+        title: Text(
+          analytics.subject.name,
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: colors.onSurface),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            '${entries.length} ${_gradeWord(entries.length)}',
+            style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+          ),
+        ),
+        children: [
+          Divider(height: 1, color: colors.outlineVariant),
+          ...entries.asMap().entries.map((e) {
+            final isLast = e.key == entries.length - 1;
+            return Column(
+              children: [
+                _JournalGradeRow(entry: e.value, colors: colors),
+                if (!isLast) Divider(height: 1, indent: 16, endIndent: 16, color: colors.outlineVariant),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _gradeWord(int n) {
+    if (n % 100 >= 11 && n % 100 <= 14) return 'оценок';
+    switch (n % 10) {
+      case 1:
+        return 'оценка';
+      case 2:
+      case 3:
+      case 4:
+        return 'оценки';
+      default:
+        return 'оценок';
+    }
+  }
+}
+
+class _JournalGradeRow extends StatelessWidget {
+  final ({DateTime date, int value}) entry;
+  final ColorScheme colors;
+
+  const _JournalGradeRow({required this.entry, required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    final gradeColor = _gradeColor(entry.value.toDouble());
+    final d = entry.date;
+    final dateStr = '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+    const labels = {5: 'Отлично', 4: 'Хорошо', 3: 'Удовл.', 2: 'Неудовл.'};
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: gradeColor.withValues(alpha: 0.15), shape: BoxShape.circle),
+            child: Center(
+              child: Text(
+                '${entry.value}',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: gradeColor),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(dateStr, style: TextStyle(fontSize: 14, color: colors.onSurface))),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: gradeColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              labels[entry.value] ?? '${entry.value}',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: gradeColor),
+            ),
+          ),
+        ],
       ),
     );
   }

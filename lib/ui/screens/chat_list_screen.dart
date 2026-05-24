@@ -122,106 +122,103 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Сообщения')),
-      body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
-        child:
-            _isLoading
-                ? _buildSkeleton(colors)
-                : Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Поиск по чатам...',
-                              prefixIcon: const Icon(Icons.search),
-                              suffixIcon:
-                                  _searchController.text.isNotEmpty
-                                      ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
-                                      : null,
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                            ),
+    return Container(
+      decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+      child:
+          _isLoading
+              ? _buildSkeleton(colors)
+              : Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Поиск по чатам...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon:
+                                _searchController.text.isNotEmpty
+                                    ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
+                                    : null,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              FilterChip(
-                                label: const Text('Непрочитанные'),
-                                selected: _onlyUnread,
-                                onSelected: (v) => setState(() => _onlyUnread = v),
-                                avatar: Icon(
-                                  Icons.mark_chat_unread_outlined,
-                                  size: 16,
-                                  color: _onlyUnread ? colors.onSecondaryContainer : colors.onSurfaceVariant,
-                                ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            FilterChip(
+                              label: const Text('Непрочитанные'),
+                              selected: _onlyUnread,
+                              onSelected: (v) => setState(() => _onlyUnread = v),
+                              avatar: Icon(
+                                Icons.mark_chat_unread_outlined,
+                                size: 16,
+                                color: _onlyUnread ? colors.onSecondaryContainer : colors.onSurfaceVariant,
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: _loadChats,
-                        child:
-                            _chats.isEmpty
-                                ? ListView(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    SizedBox(
-                                      height: MediaQuery.of(context).size.height * 0.5,
-                                      child: Center(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.chat_bubble_outline,
-                                              size: 64,
-                                              color: colors.onSurfaceVariant.withValues(alpha: 0.5),
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              'У вас пока нет диалогов',
-                                              style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
-                                            ),
-                                          ],
-                                        ),
+                  ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _loadChats,
+                      child:
+                          _chats.isEmpty
+                              ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(
+                                    height: MediaQuery.of(context).size.height * 0.5,
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.chat_bubble_outline,
+                                            size: 64,
+                                            color: colors.onSurfaceVariant.withValues(alpha: 0.5),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'У вас пока нет диалогов',
+                                            style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ],
-                                )
-                                : _filteredChats.isEmpty
-                                ? ListView(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    SizedBox(
-                                      height: MediaQuery.of(context).size.height * 0.4,
-                                      child: Center(
-                                        child: Text(
-                                          'Ничего не найдено',
-                                          style: TextStyle(color: colors.onSurfaceVariant),
-                                        ),
+                                  ),
+                                ],
+                              )
+                              : _filteredChats.isEmpty
+                              ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(
+                                    height: MediaQuery.of(context).size.height * 0.4,
+                                    child: Center(
+                                      child: Text(
+                                        'Ничего не найдено',
+                                        style: TextStyle(color: colors.onSurfaceVariant),
                                       ),
                                     ),
-                                  ],
-                                )
-                                : ListView.builder(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: _filteredChats.length,
-                                  itemBuilder: (context, index) => _buildChatTile(_filteredChats[index], colors),
-                                ),
-                      ),
+                                  ),
+                                ],
+                              )
+                              : ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.all(16),
+                                itemCount: _filteredChats.length,
+                                itemBuilder: (context, index) => _buildChatTile(_filteredChats[index], colors),
+                              ),
                     ),
-                  ],
-                ),
-      ),
+                  ),
+                ],
+              ),
     );
   }
 

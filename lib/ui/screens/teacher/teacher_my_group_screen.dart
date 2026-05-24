@@ -5,6 +5,7 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
+import 'package:edu_track/ui/screens/teacher/curator_group_journal_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
@@ -146,22 +147,70 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: colors.primary.withOpacity(0.4),
+                              color: colors.primary.withValues(alpha: 0.4),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
                           ],
                         ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Группа ${_myGroup!.name}',
-                              style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Группа ${_myGroup!.name}',
+                                        style: TextStyle(
+                                          color: colors.onPrimary,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Студентов: ${_students.length}',
+                                        style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.supervised_user_circle_rounded,
+                                  size: 48,
+                                  color: colors.onPrimary.withValues(alpha: 0.25),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Студентов: ${_students.length}',
-                              style: TextStyle(color: colors.onPrimary.withOpacity(0.9), fontSize: 16),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed:
+                                    () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => CuratorGroupJournalScreen(
+                                              groupId: _myGroup!.id!,
+                                              groupName: _myGroup!.name,
+                                              students: _students,
+                                            ),
+                                      ),
+                                    ),
+                                icon: const Icon(Icons.assessment_rounded, color: Colors.white),
+                                label: const Text(
+                                  'Журнал успеваемости группы',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Colors.white54),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
                             ),
                           ],
                         ),
