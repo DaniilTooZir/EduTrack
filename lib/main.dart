@@ -6,7 +6,6 @@ import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -34,23 +33,11 @@ class _AppInitializerState extends State<AppInitializer> {
   }
 
   Future<_AppData> _initialize() async {
-    try {
-      await dotenv.load();
-    } catch (_) {
-      throw Exception('Файл конфигурации .env не найден. Обратитесь к разработчику.');
-    }
-
     await SupabaseConnection.initializeSupabase();
     return _finishInit();
   }
 
   Future<_AppData> _initializeOffline() async {
-    try {
-      await dotenv.load();
-    } catch (_) {
-      throw Exception('Файл конфигурации .env не найден. Обратитесь к разработчику.');
-    }
-
     await SupabaseConnection.initializeSupabaseOffline();
     return _finishInit();
   }

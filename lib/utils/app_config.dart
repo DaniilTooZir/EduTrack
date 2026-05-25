@@ -1,7 +1,8 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 class AppConfig {
-  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
-  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-  static String get supabaseClientVersion => dotenv.env['SUPABASE_CLIENT_VERSION'] ?? 'Windows 10 Pro 10.0';
+  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const supabaseClientVersion = String.fromEnvironment(
+    'SUPABASE_CLIENT_VERSION',
+    defaultValue: 'Windows 10 Pro 10.0',
+  );
 }
