@@ -22,6 +22,7 @@ class UserProvider with ChangeNotifier {
   String? _groupId;
 
   String? _userName;
+  String? _userSurname;
   String? _userEmail;
   String? _avatarUrl;
   String? _institutionName;
@@ -38,6 +39,7 @@ class UserProvider with ChangeNotifier {
   String? get institutionId => _institutionId;
   String? get groupId => _groupId;
   String? get userName => _userName;
+  String? get userSurname => _userSurname;
   String? get userEmail => _userEmail;
   String? get avatarUrl => _avatarUrl;
   String? get institutionName => _institutionName;
@@ -52,6 +54,7 @@ class UserProvider with ChangeNotifier {
     _institutionId = auth.institutionId;
     _groupId = auth.groupId;
     _userName = auth.name;
+    _userSurname = auth.surname;
     _userEmail = auth.email;
     _avatarUrl = auth.avatarUrl;
     _institutionName = auth.institutionName;
@@ -102,7 +105,8 @@ class UserProvider with ChangeNotifier {
       final selectString = _role == 'student' ? '*, groups(name, institutions(name))' : '*, institutions(name)';
       final data = await client.from(table).select(selectString).eq('id', _userId!).maybeSingle();
       if (data == null) return false;
-      _userName = '${data['surname'] ?? ''} ${data['name'] ?? ''}'.trim();
+      _userName = data['name']?.toString();
+      _userSurname = data['surname']?.toString();
       _userEmail = data['email']?.toString();
       _avatarUrl = data['avatar_url']?.toString();
       if (_role == 'student') {
@@ -127,6 +131,7 @@ class UserProvider with ChangeNotifier {
     _institutionId = cached.institutionId;
     _groupId = cached.groupId;
     _userName = cached.name;
+    _userSurname = cached.surname;
     _userEmail = cached.email;
     _avatarUrl = cached.avatarUrl;
     _institutionName = cached.institutionName;
@@ -190,6 +195,7 @@ class UserProvider with ChangeNotifier {
     _institutionId = null;
     _groupId = null;
     _userName = null;
+    _userSurname = null;
     _userEmail = null;
     _avatarUrl = null;
     _institutionName = null;

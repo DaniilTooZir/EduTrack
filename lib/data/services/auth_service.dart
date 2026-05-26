@@ -7,6 +7,7 @@ class AuthResult {
   final String institutionId;
   final String? groupId;
   final String? name;
+  final String? surname;
   final String? email;
   final String? avatarUrl;
   final String? institutionName;
@@ -17,6 +18,7 @@ class AuthResult {
     required this.institutionId,
     this.groupId,
     this.name,
+    this.surname,
     this.email,
     this.avatarUrl,
     this.institutionName,
@@ -84,7 +86,8 @@ class AuthService {
         userId: data['id'].toString(),
         institutionId: instId,
         groupId: data['group_id']?.toString(),
-        name: '${data['surname'] ?? ''} ${data['name'] ?? ''}'.trim(),
+        name: data['name']?.toString(),
+        surname: data['surname']?.toString(),
         email: data['email'],
         avatarUrl: data['avatar_url'],
         institutionName: instName,
