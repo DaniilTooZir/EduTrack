@@ -1,4 +1,4 @@
-import 'package:edu_track/data/services/avatar_service.dart';
+﻿import 'package:edu_track/data/services/avatar_service.dart';
 import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/data/services/student_service.dart';
@@ -228,9 +228,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: colors.primaryContainer.withOpacity(0.3),
+                                      color: colors.primaryContainer.withValues(alpha: 0.3),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: colors.primary.withOpacity(0.3)),
+                                      border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
                                     ),
                                     child: Row(
                                       children: [
@@ -300,7 +300,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       return;
     }
     if (mounted) {
-      Navigator.of(context).push(
+      await Navigator.of(context).push(
         MaterialPageRoute(
           builder:
               (_) => ChatScreen(chatId: result.data, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),

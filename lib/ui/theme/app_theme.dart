@@ -7,7 +7,7 @@ class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, surface: Colors.white, background: Colors.grey.shade50),
+    colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, surface: Colors.white),
     scaffoldBackgroundColor: Colors.grey.shade50,
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.blue,
@@ -29,7 +29,6 @@ class AppTheme {
       seedColor: const Color(0xFF9575CD),
       brightness: Brightness.dark,
       surface: const Color(0xFF1E1E1E),
-      background: const Color(0xFF121212),
     ),
     scaffoldBackgroundColor: const Color(0xFF121212),
     appBarTheme: AppBarTheme(
@@ -52,8 +51,7 @@ class AppTheme {
       seedColor: const Color(0xFF5E35B1),
       primary: const Color(0xFF5E35B1),
       secondary: const Color(0xFF7E57C2),
-      surface: Colors.white.withOpacity(0.9),
-      background: const Color(0xFFF3E5F5),
+      surface: Colors.white.withValues(alpha: 0.9),
     ),
     scaffoldBackgroundColor: const Color(0xFFF3E5F5),
     appBarTheme: const AppBarTheme(
@@ -84,7 +82,6 @@ class AppTheme {
           end: Alignment.bottomRight,
         );
       case AppThemeMode.purple:
-      default:
         return const LinearGradient(
           colors: [Color(0xFFF3E5F5), Color(0xFFD1C4E9)],
           begin: Alignment.topLeft,
@@ -100,7 +97,6 @@ class AppTheme {
       case AppThemeMode.dark:
         return 'assets/images/logo_dark.png';
       case AppThemeMode.purple:
-      default:
         return 'assets/images/logo_purple.png';
     }
   }

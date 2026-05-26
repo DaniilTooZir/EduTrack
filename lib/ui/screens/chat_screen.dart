@@ -1,4 +1,4 @@
-import 'package:edu_track/data/services/chat_service.dart';
+﻿import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/models/message.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -163,7 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: colors.surfaceContainerHighest.withOpacity(0.5),
+                                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -222,7 +222,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 boxShadow: [
                   if (!isMe)
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(0, 1)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2, offset: const Offset(0, 1)),
                 ],
               ),
               child: IntrinsicWidth(
@@ -256,7 +256,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: isMe ? Colors.white.withOpacity(0.3) : colors.surfaceContainerHighest,
+                            color: isMe ? Colors.white.withValues(alpha: 0.3) : colors.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -298,8 +298,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               fontSize: 10,
                               color:
                                   isMe
-                                      ? colors.onPrimaryContainer.withOpacity(0.5)
-                                      : colors.onSurfaceVariant.withOpacity(0.5),
+                                      ? colors.onPrimaryContainer.withValues(alpha: 0.5)
+                                      : colors.onSurfaceVariant.withValues(alpha: 0.5),
                             ),
                           ),
                           if (isMe) ...[
@@ -307,7 +307,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             Icon(
                               message.isRead ? Icons.done_all : Icons.done,
                               size: 14,
-                              color: message.isRead ? Colors.blue : colors.onPrimaryContainer.withOpacity(0.3),
+                              color: message.isRead ? Colors.blue : colors.onPrimaryContainer.withValues(alpha: 0.3),
                             ),
                           ],
                           if (!isMe) const SizedBox(width: 20),
@@ -366,7 +366,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       hintText: 'Сообщение...',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
                       filled: true,
-                      fillColor: colors.surfaceContainerHighest.withOpacity(0.3),
+                      fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                     minLines: 1,

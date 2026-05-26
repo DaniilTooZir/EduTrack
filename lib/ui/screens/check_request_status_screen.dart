@@ -1,4 +1,4 @@
-import 'package:edu_track/data/services/institution_request_status_service.dart';
+﻿import 'package:edu_track/data/services/institution_request_status_service.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
@@ -176,7 +176,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
           decoration: BoxDecoration(
             color: colors.primaryContainer,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colors.primary.withOpacity(0.2)),
+            border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [

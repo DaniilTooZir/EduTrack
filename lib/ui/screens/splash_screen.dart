@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -80,7 +80,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             Text(
                               'Загрузка данных...',
                               style: TextStyle(
-                                color: colors.onSurface.withOpacity(0.7),
+                                color: colors.onSurface.withValues(alpha: 0.7),
                                 fontSize: 16,
                                 fontStyle: FontStyle.italic,
                               ),

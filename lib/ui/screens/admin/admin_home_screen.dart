@@ -208,7 +208,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         ),
       ),
       selected: selected,
-      selectedTileColor: colors.primaryContainer.withOpacity(0.3),
+      selectedTileColor: colors.primaryContainer.withValues(alpha: 0.3),
       onTap: () {
         _navigateToTab(index);
         Navigator.of(context).pop();
@@ -237,13 +237,17 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [colors.primary.withOpacity(0.8), colors.primary],
+                      colors: [colors.primary.withValues(alpha: 0.8), colors.primary],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
-                      BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+                      BoxShadow(
+                        color: colors.primary.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
                     ],
                   ),
                   child: Column(
@@ -256,7 +260,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Управляйте пользователями, группами и учебным процессом.',
-                        style: TextStyle(color: colors.onPrimary.withOpacity(0.8), fontSize: 16),
+                        style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.8), fontSize: 16),
                       ),
                     ],
                   ),
@@ -382,7 +386,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       width: 160,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colors.surface.withOpacity(0.9),
+        color: colors.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4))],
       ),
@@ -394,7 +398,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: badgeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Icon(icon, color: badgeColor, size: 24),
               ),
               Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: badgeColor)),

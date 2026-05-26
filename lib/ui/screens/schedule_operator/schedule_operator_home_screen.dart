@@ -1,4 +1,4 @@
-import 'package:edu_track/data/services/schedule_service.dart';
+﻿import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
@@ -150,7 +150,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
         ),
       ),
       selected: selected,
-      selectedTileColor: colors.primary.withOpacity(0.1),
+      selectedTileColor: colors.primary.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
       onTap: () {
         _navigateToTab(index);
@@ -252,7 +252,9 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(color: colors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +266,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
           const SizedBox(height: 8),
           Text(
             'Добро пожаловать, Оператор. Здесь вы можете просматривать и корректировать учебное расписание.',
-            style: TextStyle(color: colors.onPrimary.withOpacity(0.8), fontSize: 14),
+            style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.8), fontSize: 14),
           ),
         ],
       ),

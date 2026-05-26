@@ -1,4 +1,4 @@
-import 'package:edu_track/data/services/chat_service.dart';
+﻿import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
@@ -77,20 +77,22 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
     final homeworksResult = await _homeworkService.getHomeworksByStudentGroup(studentId);
     if (homeworksResult.isFailure) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _dashboardError = homeworksResult.errorMessage;
           _isDashboardLoading = false;
         });
+      }
       return;
     }
     final statusesResult = await _homeworkService.getHomeworkStatusesForStudent(studentId);
     if (statusesResult.isFailure) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _dashboardError = statusesResult.errorMessage;
           _isDashboardLoading = false;
         });
+      }
       return;
     }
     final homeworks = homeworksResult.data;
@@ -100,10 +102,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     int pending = 0;
     for (final hw in homeworks) {
       final status = statusMap[hw.id];
-      if (status != null && status.isCompleted)
+      if (status != null && status.isCompleted) {
         completed++;
-      else
+      } else {
         pending++;
+      }
     }
     if (mounted) {
       setState(() {
@@ -236,7 +239,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
       ),
       selected: selected,
-      selectedTileColor: colors.primaryContainer.withOpacity(0.3),
+      selectedTileColor: colors.primaryContainer.withValues(alpha: 0.3),
       onTap: () {
         _onItemTapped(index);
         Navigator.of(context).pop();
@@ -259,13 +262,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [colors.primary.withOpacity(0.8), colors.primary],
+                  colors: [colors.primary.withValues(alpha: 0.8), colors.primary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
-                  BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+                  BoxShadow(color: colors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
                 ],
               ),
               child: Column(
@@ -279,12 +282,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   if (_groupName != null)
                     Text(
                       'Твоя группа: $_groupName',
-                      style: TextStyle(color: colors.onPrimary.withOpacity(0.9), fontSize: 16),
+                      style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 16),
                     )
                   else
                     Text(
                       'Добро пожаловать в EduTrack',
-                      style: TextStyle(color: colors.onPrimary.withOpacity(0.9), fontSize: 16),
+                      style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 16),
                     ),
                 ],
               ),
@@ -335,7 +338,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     title: 'Выполнено',
                     value: '$_completedHomework',
                     iconColor: Colors.green,
-                    bgColor: Colors.green.withOpacity(0.2),
+                    bgColor: Colors.green.withValues(alpha: 0.2),
                     colors: colors,
                   ),
                   const SizedBox(height: 12),
@@ -344,7 +347,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     title: 'Осталось',
                     value: '$_pendingHomework',
                     iconColor: Colors.orange,
-                    bgColor: Colors.orange.withOpacity(0.2),
+                    bgColor: Colors.orange.withValues(alpha: 0.2),
                     colors: colors,
                   ),
                 ],
@@ -369,7 +372,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: colors.surface.withOpacity(0.9), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: colors.surface.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Row(
           children: [
             Container(
@@ -429,6 +435,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   Future<void> _openGroupChat(BuildContext context) async {
+    final navigator = Navigator.of(context);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final groupResult = await _homeworkService.getGroupByStudentId(userProvider.userId!);
     if (groupResult.isFailure || groupResult.data == null) {
@@ -444,9 +451,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       return;
     }
     if (mounted) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatResult.data, title: 'Группа $groupName')));
+      await navigator.push(
+        MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatResult.data, title: 'Группа $groupName')),
+      );
     }
   }
 

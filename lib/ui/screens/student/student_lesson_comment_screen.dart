@@ -1,4 +1,4 @@
-import 'package:edu_track/data/services/file_service.dart';
+﻿import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -161,7 +161,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -184,7 +184,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
             const SizedBox(height: 4),
             Text(
               _formatTimestamp(comment.timestamp),
-              style: TextStyle(fontSize: 10, color: textColor.withOpacity(0.6)),
+              style: TextStyle(fontSize: 10, color: textColor.withValues(alpha: 0.6)),
             ),
           ],
         ),

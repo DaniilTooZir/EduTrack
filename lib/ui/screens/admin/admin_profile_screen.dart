@@ -106,7 +106,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
     MessengerHelper.showSuccess('Фото профиля обновлено');
     if (mounted) setState(() => _isSaving = false);
-    _loadAdminData();
+    await _loadAdminData();
   }
 
   void _fillControllers() {

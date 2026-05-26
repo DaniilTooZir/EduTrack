@@ -164,7 +164,7 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
                 prefixIcon: Icon(Icons.search, color: colors.primary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 filled: true,
-                fillColor: colors.surfaceContainerHighest.withOpacity(0.3),
+                fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                 isDense: true,
               ),
               onChanged: (val) => setState(() => _searchQuery = val),
@@ -250,36 +250,6 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
     });
   }
 
-  Future<void> _toggleStatus(String studentId, bool currentStatus) async {
-    final result = await widget.homeworkService.evaluateHomework(
-      homeworkId: widget.homework.id,
-      studentId: studentId,
-      isCompleted: !currentStatus,
-    );
-    if (result.isFailure) {
-      MessengerHelper.showError('Не удалось обновить статус');
-      return;
-    }
-    if (!mounted) return;
-    setState(() {
-      final existing = _statusMap[studentId];
-      if (existing != null) {
-        _statusMap[studentId] = HomeworkStatus(
-          id: existing.id,
-          homeworkId: existing.homeworkId,
-          studentId: existing.studentId,
-          isCompleted: !currentStatus,
-          updatedAt: DateTime.now(),
-          studentComment: existing.studentComment,
-          fileUrl: existing.fileUrl,
-          fileName: existing.fileName,
-        );
-      } else {
-        _loadDetails();
-      }
-    });
-  }
-
   void _showEvaluationDialog(Student student, HomeworkStatus? status) {
     showDialog(
       context: context,
@@ -295,7 +265,7 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                 isCompleted: isCompleted,
                 teacherComment: comment,
               );
-              _loadDetails();
+              await _loadDetails();
             },
           ),
     );
@@ -324,7 +294,7 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: colors.onSurfaceVariant.withOpacity(0.4),
+                    color: colors.onSurfaceVariant.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -373,7 +343,7 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                             final hasComment = status?.studentComment != null;
                             return Card(
                               elevation: 0,
-                              color: colors.surfaceContainerHighest.withOpacity(0.3),
+                              color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               margin: const EdgeInsets.only(bottom: 8),
                               child: ListTile(
@@ -486,7 +456,7 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withOpacity(0.5),
+                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(widget.status!.studentComment!),
@@ -513,7 +483,7 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
               style: const TextStyle(fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Напишите замечания или похвалу...',
-                hintStyle: TextStyle(fontSize: 14, color: colors.onSurfaceVariant.withOpacity(0.5)),
+                hintStyle: TextStyle(fontSize: 14, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: colors.surface,

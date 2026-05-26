@@ -1,4 +1,4 @@
-import 'package:edu_track/data/services/file_service.dart';
+﻿import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/homework.dart';
@@ -73,7 +73,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
             fileService: _fileService,
           ),
     );
-    _loadHomework();
+    await _loadHomework();
   }
 
   @override
@@ -451,7 +451,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: colors.onSurfaceVariant.withOpacity(0.4),
+                    color: colors.onSurfaceVariant.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -466,7 +466,10 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                     Text(hw.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     if (hw.description != null)
-                      Text(hw.description!, style: TextStyle(color: colors.onSurface.withOpacity(0.8), fontSize: 16)),
+                      Text(
+                        hw.description!,
+                        style: TextStyle(color: colors.onSurface.withValues(alpha: 0.8), fontSize: 16),
+                      ),
                     const SizedBox(height: 16),
                     if (hw.fileUrl != null)
                       InkWell(
@@ -522,9 +525,9 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: colors.primaryContainer.withOpacity(0.2),
+                              color: colors.primaryContainer.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: colors.primary.withOpacity(0.2)),
+                              border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,9 +600,9 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           padding: const EdgeInsets.all(16),
                           margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -637,7 +640,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: colors.surfaceContainerHighest.withOpacity(0.5),
+                            color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: colors.outlineVariant),
                           ),
@@ -650,9 +653,9 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: colors.primaryContainer.withOpacity(0.5),
+                              color: colors.primaryContainer.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: colors.primary.withOpacity(0.3)),
+                              border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               children: [
@@ -683,7 +686,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             hintText: 'Напишите исправленный комментарий...',
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             filled: true,
-                            fillColor: colors.surfaceContainerHighest.withOpacity(0.3),
+                            fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -715,9 +718,9 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
-                                color: colors.surfaceContainerHighest.withOpacity(0.3),
+                                color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: colors.outline.withOpacity(0.2)),
+                                border: Border.all(color: colors.outline.withValues(alpha: 0.2)),
                               ),
                               child: Row(
                                 children: [
@@ -788,7 +791,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           hintText: 'Напишите комментарий к решению...',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           filled: true,
-                          fillColor: colors.surfaceContainerHighest.withOpacity(0.3),
+                          fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -820,9 +823,9 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
-                              color: colors.surfaceContainerHighest.withOpacity(0.3),
+                              color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: colors.outline.withOpacity(0.2)),
+                              border: Border.all(color: colors.outline.withValues(alpha: 0.2)),
                             ),
                             child: Row(
                               children: [

@@ -34,7 +34,6 @@ linter:
     prefer_single_quotes: true
     always_declare_return_types: true
     avoid_redundant_argument_values: true
-    avoid_returning_null_for_future: true
     avoid_returning_this: true
     avoid_type_to_string: true
     cancel_subscriptions: true

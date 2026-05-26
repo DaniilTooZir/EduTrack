@@ -72,11 +72,12 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
     }
     MessengerHelper.showSuccess('Предмет успешно добавлен');
     _nameController.clear();
-    if (mounted)
+    if (mounted) {
       setState(() {
         _isAdding = false;
         _autovalidateMode = AutovalidateMode.disabled;
       });
+    }
     await _loadData();
   }
 

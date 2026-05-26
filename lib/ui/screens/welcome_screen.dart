@@ -1,4 +1,4 @@
-import 'package:edu_track/routes/app_routes.dart';
+﻿import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +20,10 @@ class WelcomeScreen extends StatelessWidget {
       fontWeight: FontWeight.w800,
       color: colors.primary,
     );
-    final subtitleStyle = TextStyle(fontSize: size.width.clamp(14.0, 18.0), color: colors.onSurface.withOpacity(0.7));
+    final subtitleStyle = TextStyle(
+      fontSize: size.width.clamp(14.0, 18.0),
+      color: colors.onSurface.withValues(alpha: 0.7),
+    );
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Container(
@@ -74,7 +77,7 @@ class WelcomeScreen extends StatelessWidget {
                               const SizedBox(height: 20),
                               SizedBox(
                                 width: buttonWidth,
-                                child: Divider(thickness: 1, color: colors.outline.withOpacity(0.5)),
+                                child: Divider(thickness: 1, color: colors.outline.withValues(alpha: 0.5)),
                               ),
                               const SizedBox(height: 20),
                               SizedBox(
@@ -93,7 +96,7 @@ class WelcomeScreen extends StatelessWidget {
                               const SizedBox(height: 20),
                               SizedBox(
                                 width: buttonWidth,
-                                child: Divider(thickness: 1, color: colors.outline.withOpacity(0.5)),
+                                child: Divider(thickness: 1, color: colors.outline.withValues(alpha: 0.5)),
                               ),
                               const SizedBox(height: 20),
                               SizedBox(

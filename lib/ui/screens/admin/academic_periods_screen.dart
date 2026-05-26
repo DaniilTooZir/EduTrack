@@ -42,11 +42,12 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
       });
       return;
     }
-    if (!_isLoading)
+    if (!_isLoading) {
       setState(() {
         _isLoading = true;
         _error = null;
       });
+    }
     final result = await _service.getPeriods(instId);
     if (!mounted) return;
     if (result.isFailure) {

@@ -31,7 +31,6 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   PlatformFile? _selectedFile;
   bool _isLoading = true;
   bool _isSaving = false;
-  bool _isUploadingFile = false;
   List<Homework> _homeworks = [];
   List<Subject> _subjects = [];
   List<Group> _groups = [];
@@ -158,9 +157,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
     String? fileUrl;
     String? fileName;
     if (_selectedFile != null) {
-      setState(() => _isUploadingFile = true);
       final uploadResult = await _fileService.uploadFile(file: _selectedFile!, folderName: 'homework_files');
-      setState(() => _isUploadingFile = false);
       if (uploadResult.isFailure) {
         MessengerHelper.showError(uploadResult.errorMessage);
         if (mounted) setState(() => _isSaving = false);
@@ -221,7 +218,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
         return;
       }
       MessengerHelper.showSuccess('Задание удалено');
-      _loadData();
+      await _loadData();
     }
   }
 
@@ -387,6 +384,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                             if (!editFormKey.currentState!.validate()) return;
                             if (editSelectedGroupId == null) return;
                             setStateDialog(() => isDialogUploading = true);
+                            final navigator = Navigator.of(context);
                             String? newFileUrl;
                             String? newFileName;
                             if (editNewFile != null) {
@@ -418,9 +416,9 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                               MessengerHelper.showError(updateResult.errorMessage);
                               return;
                             }
-                            Navigator.pop(context);
+                            navigator.pop();
                             MessengerHelper.showSuccess('ДЗ обновлено');
-                            _loadData();
+                            await _loadData();
                           },
                   child:
                       isDialogUploading

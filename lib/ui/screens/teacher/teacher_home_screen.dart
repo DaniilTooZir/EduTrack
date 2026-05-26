@@ -1,4 +1,4 @@
-import 'package:edu_track/data/database/connection_to_database.dart';
+﻿import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -49,18 +49,20 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Future<void> _loadData() async {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
-    if (mounted)
+    if (mounted) {
       setState(() {
         _isLoading = true;
         _hasError = false;
       });
+    }
     final result = await SubjectService().getSubjectsByTeacherId(teacherId);
     if (result.isFailure) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isLoading = false;
           _hasError = true;
         });
+      }
       return;
     }
     if (mounted) {
@@ -285,7 +287,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ),
       ),
       selected: selected,
-      selectedTileColor: colors.primaryContainer.withOpacity(0.3),
+      selectedTileColor: colors.primaryContainer.withValues(alpha: 0.3),
       onTap: () {
         _navigateToTab(index);
         Navigator.of(context).pop();
@@ -410,7 +412,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: colors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(color: colors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,7 +423,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           const SizedBox(height: 8),
           Text(
             'Готовы начать учебный день? Проверьте расписание или создайте новые задания.',
-            style: TextStyle(color: colors.onPrimary.withOpacity(0.9), fontSize: 14),
+            style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 14),
           ),
         ],
       ),
