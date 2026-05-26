@@ -163,7 +163,7 @@ class RealtimeListener {
                 final senderId = payload.newRecord['sender_id'];
                 if (senderId == userId) return;
                 final chatId = payload.newRecord['chat_id']?.toString() ?? '';
-                if (_userChatIds.isNotEmpty && !_userChatIds.contains(chatId)) return;
+                if (!_userChatIds.contains(chatId)) return;
                 final content = payload.newRecord['content']?.toString() ?? '';
                 final fileName = payload.newRecord['file_name']?.toString() ?? '';
                 final body =
