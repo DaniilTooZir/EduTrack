@@ -248,6 +248,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   Widget _buildDashboard(ColorScheme colors) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final firstName = userProvider.userName ?? 'студент';
     return RefreshIndicator(
       onRefresh: _loadDashboardData,
       color: colors.primary,
@@ -275,7 +277,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Привет, студент!',
+                    'Привет, $firstName!',
                     style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),

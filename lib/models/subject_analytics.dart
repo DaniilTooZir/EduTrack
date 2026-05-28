@@ -6,8 +6,7 @@ class SubjectAnalytics {
   final List<Grade> grades;
   final double averageGrade;
 
-  // Оценки с датами, отсортированные хронологически (для графика).
-  final List<({DateTime date, int value})> gradeSeries;
+  final List<({DateTime date, int value, String? gradeId})> gradeSeries;
   const SubjectAnalytics({
     required this.subject,
     required this.grades,
@@ -15,8 +14,6 @@ class SubjectAnalytics {
     required this.gradeSeries,
   });
 
-  // [lessonSubjectMap] — маппинг lessonId > subjectId.
-  // [lessonDateMap]    — маппинг lessonId > дата урока (для графика).
   factory SubjectAnalytics.fromGrades(
     Subject subject,
     List<Grade> allGrades,
@@ -24,12 +21,12 @@ class SubjectAnalytics {
     Map<String, DateTime>? lessonDateMap,
   }) {
     final filtered = allGrades.where((g) => lessonSubjectMap[g.lessonId] == subject.id).toList();
-    final List<({DateTime date, int value})> series;
+    final List<({DateTime date, int value, String? gradeId})> series;
     if (lessonDateMap != null) {
       series =
           filtered
               .where((g) => lessonDateMap.containsKey(g.lessonId))
-              .map((g) => (date: lessonDateMap[g.lessonId]!, value: g.value))
+              .map((g) => (date: lessonDateMap[g.lessonId]!, value: g.value, gradeId: g.id))
               .toList()
             ..sort((a, b) => a.date.compareTo(b.date));
     } else {

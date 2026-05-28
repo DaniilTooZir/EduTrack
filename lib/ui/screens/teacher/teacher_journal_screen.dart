@@ -1,4 +1,5 @@
 import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/grade_comment_service.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/data/services/lesson_attendance_service.dart';
 import 'package:edu_track/models/academic_period.dart';
@@ -17,6 +18,7 @@ const double _nameColWidth = 160.0;
 const double _cellWidth = 56.0;
 const double _cellHeight = 48.0;
 const double _headerHeight = 48.0;
+const double _avgColWidth = 64.0;
 
 Color _gradeColor(int value, ColorScheme colors) => switch (value) {
   5 => const Color(0xFF2E7D32),
@@ -24,6 +26,14 @@ Color _gradeColor(int value, ColorScheme colors) => switch (value) {
   3 => const Color(0xFFE65100),
   _ => colors.error,
 };
+
+Color _avgColor(double avg, ColorScheme colors) {
+  if (avg == 0) return colors.outline;
+  if (avg >= 4.5) return const Color(0xFF2E7D32);
+  if (avg >= 3.5) return const Color(0xFF558B2F);
+  if (avg >= 2.5) return const Color(0xFFE65100);
+  return colors.error;
+}
 
 class TeacherJournalScreen extends StatefulWidget {
   final String groupId;
@@ -39,6 +49,7 @@ class TeacherJournalScreen extends StatefulWidget {
 class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   late GradeService _gradeService;
   final _attendanceService = AttendanceService();
+  final _commentService = GradeCommentService();
 
   bool _isLoading = true;
   bool _gradeServiceReady = false;
@@ -121,8 +132,10 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
 
   Future<void> _onCellTap(Student student, Lesson lesson) async {
     final key = '${student.id}|${lesson.id!}';
+    final teacherId = Provider.of<UserProvider>(context, listen: false).userId ?? '';
     final result = await showModalBottomSheet<Object?>(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder:
           (_) => _CellEditSheet(
@@ -133,19 +146,28 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
           ),
     );
     if (result == null || !mounted) return;
-    if (result is int) {
-      final grade = Grade(lessonId: lesson.id!, studentId: student.id, value: result);
+    if (result is Map<String, dynamic>) {
+      final gradeValue = result['value'] as int;
+      final comment = (result['comment'] as String? ?? '').trim();
+      final grade = Grade(lessonId: lesson.id!, studentId: student.id, value: gradeValue);
       final res = await _gradeService.addOrUpdateGrade(grade);
       if (!mounted) return;
       if (res.isFailure) {
         MessengerHelper.showError(res.errorMessage);
         return;
       }
+      final gradeId = res.data;
+      if (comment.isNotEmpty) {
+        await _commentService.saveOrUpdate(gradeId: gradeId, teacherId: teacherId, message: comment);
+      } else {
+        await _commentService.delete(gradeId);
+      }
+      if (!mounted) return;
       setState(() {
-        _gradeMap[key] = grade;
+        _gradeMap[key] = grade.copyWith(id: gradeId);
         _attendanceMap.remove(key);
       });
-      MessengerHelper.showSuccess('Оценка $result сохранена');
+      MessengerHelper.showSuccess('Оценка $gradeValue сохранена');
     } else if (result == 'н') {
       final attendance = LessonAttendance(lessonId: lesson.id!, studentId: student.id, status: 'absent');
       final res = await _attendanceService.addOrUpdateAttendance(attendance);
@@ -160,12 +182,17 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       });
       MessengerHelper.showSuccess('Отметка «Н» сохранена');
     } else if (result == 'clear') {
+      final existingGradeId = _gradeMap[key]?.id;
       final res = await _gradeService.clearJournalCell(studentId: student.id, lessonId: lesson.id!);
       if (!mounted) return;
       if (res.isFailure) {
         MessengerHelper.showError(res.errorMessage);
         return;
       }
+      if (existingGradeId != null) {
+        await _commentService.delete(existingGradeId);
+      }
+      if (!mounted) return;
       setState(() {
         _gradeMap.remove(key);
         _attendanceMap.remove(key);
@@ -198,6 +225,12 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
     );
   }
 
+  double _computeAvg(Student student) {
+    final grades = _lessons.map((l) => _gradeMap['${student.id}|${l.id!}']).whereType<Grade>().toList();
+    if (grades.isEmpty) return 0;
+    return grades.map((g) => g.value).reduce((a, b) => a + b) / grades.length;
+  }
+
   Widget _buildJournal(ColorScheme colors) {
     return SingleChildScrollView(
       child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: _buildGrid(colors)),
@@ -219,7 +252,23 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
     return Container(
       height: _headerHeight,
       color: colors.primaryContainer,
-      child: Row(children: [_headerNameCell(colors), for (final lesson in _lessons) _headerDateCell(lesson, colors)]),
+      child: Row(
+        children: [
+          _headerNameCell(colors),
+          for (final lesson in _lessons) _headerDateCell(lesson, colors),
+          _headerAvgCell(colors),
+        ],
+      ),
+    );
+  }
+
+  Widget _headerAvgCell(ColorScheme colors) {
+    return Container(
+      width: _avgColWidth,
+      height: _headerHeight,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(border: Border(left: BorderSide(color: colors.outline.withValues(alpha: 0.5)))),
+      child: Text('Ср.', style: TextStyle(fontWeight: FontWeight.bold, color: colors.onPrimaryContainer, fontSize: 12)),
     );
   }
 
@@ -274,8 +323,24 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
             ),
           ),
           for (final lesson in _lessons) _buildDataCell(student, lesson, colors),
+          _buildAvgCell(student, colors),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvgCell(Student student, ColorScheme colors) {
+    final avg = _computeAvg(student);
+    final color = _avgColor(avg, colors);
+    return Container(
+      width: _avgColWidth,
+      height: _cellHeight,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(border: Border(left: BorderSide(color: colors.outline.withValues(alpha: 0.5)))),
+      child:
+          avg == 0
+              ? Icon(Icons.remove, size: 16, color: colors.outline.withValues(alpha: 0.4))
+              : Text(avg.toStringAsFixed(1), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
     );
   }
 
@@ -329,6 +394,10 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
                       padding: EdgeInsets.only(left: 4),
                       child: Skeleton(height: _headerHeight, width: _cellWidth, borderRadius: 8),
                     ),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 4),
+                    child: Skeleton(height: _headerHeight, width: _avgColWidth, borderRadius: 8),
+                  ),
                 ],
               ),
               for (var r = 0; r < rows; r++)
@@ -342,6 +411,10 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
                           padding: EdgeInsets.only(left: 4),
                           child: Skeleton(height: _cellHeight, width: _cellWidth, borderRadius: 8),
                         ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 4),
+                        child: Skeleton(height: _cellHeight, width: _avgColWidth, borderRadius: 8),
+                      ),
                     ],
                   ),
                 ),
@@ -389,7 +462,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   }
 }
 
-class _CellEditSheet extends StatelessWidget {
+class _CellEditSheet extends StatefulWidget {
   final String studentName;
   final String dateLabel;
   final Grade? currentGrade;
@@ -398,12 +471,42 @@ class _CellEditSheet extends StatelessWidget {
   const _CellEditSheet({required this.studentName, required this.dateLabel, this.currentGrade, this.currentAttendance});
 
   @override
+  State<_CellEditSheet> createState() => _CellEditSheetState();
+}
+
+class _CellEditSheetState extends State<_CellEditSheet> {
+  final _commentController = TextEditingController();
+  final _commentService = GradeCommentService();
+  bool _loadingComment = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.currentGrade?.id != null) _loadComment();
+  }
+
+  Future<void> _loadComment() async {
+    setState(() => _loadingComment = true);
+    final result = await _commentService.getComment(widget.currentGrade!.id!);
+    if (mounted && result.isSuccess && result.data != null) {
+      _commentController.text = result.data!;
+    }
+    if (mounted) setState(() => _loadingComment = false);
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final hasData = currentGrade != null || currentAttendance != null;
+    final hasData = widget.currentGrade != null || widget.currentAttendance != null;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -416,13 +519,13 @@ class _CellEditSheet extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              studentName,
+              widget.studentName,
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: colors.onSurface),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 4),
-            Text(dateLabel, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
-            const SizedBox(height: 28),
+            Text(widget.dateLabel, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -430,19 +533,45 @@ class _CellEditSheet extends StatelessWidget {
                   _OptionButton(
                     label: '$g',
                     color: _gradeColor(g, colors),
-                    isSelected: currentGrade?.value == g,
-                    onTap: () => Navigator.of(context).pop(g),
+                    isSelected: widget.currentGrade?.value == g,
+                    onTap: () => Navigator.of(context).pop({'value': g, 'comment': _commentController.text.trim()}),
                   ),
                 _OptionButton(
                   label: 'Н',
                   color: colors.error,
-                  isSelected: currentAttendance != null && currentGrade == null,
+                  isSelected: widget.currentAttendance != null && widget.currentGrade == null,
                   onTap: () => Navigator.of(context).pop('н'),
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _commentController,
+              decoration: InputDecoration(
+                hintText: 'Комментарий к оценке (необязательно)',
+                prefixIcon:
+                    _loadingComment
+                        ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                        )
+                        : const Icon(Icons.comment_outlined, size: 20),
+                suffixIcon: ListenableBuilder(
+                  listenable: _commentController,
+                  builder:
+                      (_, __) =>
+                          _commentController.text.isNotEmpty
+                              ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: _commentController.clear)
+                              : const SizedBox.shrink(),
+                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              maxLines: 2,
+              textInputAction: TextInputAction.done,
+            ),
             if (hasData) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(

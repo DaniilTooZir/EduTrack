@@ -1,4 +1,5 @@
 import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/grade_comment_service.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/grade.dart';
@@ -19,9 +20,11 @@ class StudentAnalyticsScreen extends StatefulWidget {
 
 class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   late final GradeService _gradeService;
+  final _commentService = GradeCommentService();
   bool _isLoading = true;
   String? _error;
   List<SubjectAnalytics> _analytics = [];
+  Map<String, String> _commentMap = {};
   AcademicPeriod? _loadedPeriod;
   _AnalyticsSort _sortOrder = _AnalyticsSort.gradeAsc;
 
@@ -83,8 +86,13 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
         _isLoading = false;
       });
     } else {
+      final analytics = result.data;
+      final gradeIds = analytics.expand((a) => a.grades).map((g) => g.id).whereType<String>().toList();
+      final commentsResult = await _commentService.getCommentsByGradeIds(gradeIds);
+      if (!mounted) return;
       setState(() {
-        _analytics = result.data;
+        _analytics = analytics;
+        _commentMap = commentsResult.isSuccess ? commentsResult.data : {};
         _isLoading = false;
       });
     }
@@ -191,7 +199,11 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
                     ),
                   ],
                 ),
-                RefreshIndicator(onRefresh: _load, color: colors.primary, child: _buildJournalTab(sorted, colors)),
+                RefreshIndicator(
+                  onRefresh: _load,
+                  color: colors.primary,
+                  child: _buildJournalTab(sorted, colors, _commentMap),
+                ),
               ],
             ),
           ),
@@ -200,7 +212,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
     );
   }
 
-  Widget _buildJournalTab(List<SubjectAnalytics> subjects, ColorScheme colors) {
+  Widget _buildJournalTab(List<SubjectAnalytics> subjects, ColorScheme colors, Map<String, String> commentMap) {
     final withGrades = subjects.where((s) => s.gradeSeries.isNotEmpty).toList();
     if (withGrades.isEmpty) {
       return ListView(
@@ -224,7 +236,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       itemCount: withGrades.length,
-      itemBuilder: (context, index) => _JournalSubjectTile(analytics: withGrades[index]),
+      itemBuilder: (context, index) => _JournalSubjectTile(analytics: withGrades[index], commentMap: commentMap),
     );
   }
 
@@ -454,8 +466,9 @@ class _GradeLineChart extends StatelessWidget {
 
 class _JournalSubjectTile extends StatelessWidget {
   final SubjectAnalytics analytics;
+  final Map<String, String> commentMap;
 
-  const _JournalSubjectTile({required this.analytics});
+  const _JournalSubjectTile({required this.analytics, required this.commentMap});
 
   @override
   Widget build(BuildContext context) {
@@ -499,9 +512,10 @@ class _JournalSubjectTile extends StatelessWidget {
           Divider(height: 1, color: colors.outlineVariant),
           ...entries.asMap().entries.map((e) {
             final isLast = e.key == entries.length - 1;
+            final comment = e.value.gradeId != null ? commentMap[e.value.gradeId] : null;
             return Column(
               children: [
-                _JournalGradeRow(entry: e.value, colors: colors),
+                _JournalGradeRow(entry: e.value, colors: colors, comment: comment),
                 if (!isLast) Divider(height: 1, indent: 16, endIndent: 16, color: colors.outlineVariant),
               ],
             );
@@ -527,10 +541,11 @@ class _JournalSubjectTile extends StatelessWidget {
 }
 
 class _JournalGradeRow extends StatelessWidget {
-  final ({DateTime date, int value}) entry;
+  final ({DateTime date, int value, String? gradeId}) entry;
   final ColorScheme colors;
+  final String? comment;
 
-  const _JournalGradeRow({required this.entry, required this.colors});
+  const _JournalGradeRow({required this.entry, required this.colors, this.comment});
 
   @override
   Widget build(BuildContext context) {
@@ -541,6 +556,7 @@ class _JournalGradeRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 40,
@@ -554,7 +570,22 @@ class _JournalGradeRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(dateStr, style: TextStyle(fontSize: 14, color: colors.onSurface))),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(dateStr, style: TextStyle(fontSize: 14, color: colors.onSurface)),
+                if (comment != null && comment!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    comment!,
+                    style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant, fontStyle: FontStyle.italic),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(

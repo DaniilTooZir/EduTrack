@@ -16,22 +16,23 @@ class GradeService {
     : _db = db,
       _supabase = client ?? Supabase.instance.client;
 
-  Future<AppResult<bool>> addOrUpdateGrade(Grade grade) async {
+  Future<AppResult<String>> addOrUpdateGrade(Grade grade) async {
     try {
       final existing =
           await _supabase
               .from('grade')
-              .select()
+              .select('id')
               .eq('lessons_id', grade.lessonId)
               .eq('student_id', grade.studentId)
               .maybeSingle();
       if (existing != null) {
-        final id = existing['id'];
+        final id = existing['id'].toString();
         await _supabase.from('grade').update({'value': grade.value}).eq('id', id);
+        return AppResult.success(id);
       } else {
-        await _supabase.from('grade').insert(grade.toMap());
+        final inserted = await _supabase.from('grade').insert(grade.toMap()).select('id').single();
+        return AppResult.success(inserted['id'].toString());
       }
-      return AppResult.success(true);
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при сохранении оценки: ${e.message}');
     } catch (e) {

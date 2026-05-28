@@ -399,7 +399,7 @@ class _SubjectGradesTile extends StatelessWidget {
 }
 
 class _GradeEntryRow extends StatelessWidget {
-  final ({DateTime date, int value}) entry;
+  final ({DateTime date, int value, String? gradeId}) entry;
   final ColorScheme colors;
   const _GradeEntryRow({required this.entry, required this.colors});
 

@@ -402,6 +402,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 
   Widget _buildWelcomeCard(ColorScheme colors) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final firstName = userProvider.userName ?? 'преподаватель';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -419,7 +421,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('С возвращением!', style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(
+            'С возвращением, $firstName!',
+            style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           Text(
             'Готовы начать учебный день? Проверьте расписание или создайте новые задания.',
