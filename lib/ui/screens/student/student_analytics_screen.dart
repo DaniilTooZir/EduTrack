@@ -1,10 +1,13 @@
 import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/final_grade_service.dart';
 import 'package:edu_track/data/services/grade_comment_service.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/models/academic_period.dart';
+import 'package:edu_track/models/final_grade.dart';
 import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -21,10 +24,13 @@ class StudentAnalyticsScreen extends StatefulWidget {
 class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   late final GradeService _gradeService;
   final _commentService = GradeCommentService();
+  final _finalGradeService = FinalGradeService();
+
   bool _isLoading = true;
   String? _error;
   List<SubjectAnalytics> _analytics = [];
   Map<String, String> _commentMap = {};
+  Map<String, FinalGrade> _finalGradeMap = {};
   AcademicPeriod? _loadedPeriod;
   _AnalyticsSort _sortOrder = _AnalyticsSort.gradeAsc;
 
@@ -74,28 +80,44 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
       });
       return;
     }
-    final result = await _gradeService.getStudentAnalytics(
+    final analyticsFuture = _gradeService.getStudentAnalytics(
       studentId,
       startDate: period?.startDate,
       endDate: period?.endDate,
     );
+    final Future<AppResult<List<FinalGrade>>?> finalGradeFuture =
+        period != null
+            ? _finalGradeService.getFinalGradesByStudent(studentId: studentId, periodId: period.id)
+            : Future.value();
+
+    final (result, finalResult) = await (analyticsFuture, finalGradeFuture).wait;
     if (!mounted) return;
     if (result.isFailure) {
       setState(() {
         _error = result.errorMessage;
         _isLoading = false;
       });
-    } else {
-      final analytics = result.data;
-      final gradeIds = analytics.expand((a) => a.grades).map((g) => g.id).whereType<String>().toList();
-      final commentsResult = await _commentService.getCommentsByGradeIds(gradeIds);
-      if (!mounted) return;
-      setState(() {
-        _analytics = analytics;
-        _commentMap = commentsResult.isSuccess ? commentsResult.data : {};
-        _isLoading = false;
-      });
+      return;
     }
+
+    final analytics = result.data;
+    final gradeIds = analytics.expand((a) => a.grades).map((g) => g.id).whereType<String>().toList();
+    final commentsResult = await _commentService.getCommentsByGradeIds(gradeIds);
+    if (!mounted) return;
+
+    final finalGradeMap = <String, FinalGrade>{};
+    if (finalResult != null && finalResult.isSuccess) {
+      for (final fg in finalResult.data) {
+        finalGradeMap[fg.subjectId] = fg;
+      }
+    }
+
+    setState(() {
+      _analytics = analytics;
+      _commentMap = commentsResult.isSuccess ? commentsResult.data : {};
+      _finalGradeMap = finalGradeMap;
+      _isLoading = false;
+    });
   }
 
   double _overallGpa() {
@@ -193,7 +215,11 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
                         child: ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                           itemCount: sorted.length,
-                          itemBuilder: (context, index) => _SubjectAnalyticsCard(analytics: sorted[index]),
+                          itemBuilder:
+                              (context, index) => _SubjectAnalyticsCard(
+                                analytics: sorted[index],
+                                finalGrade: _finalGradeMap[sorted[index].subject.id],
+                              ),
                         ),
                       ),
                     ),
@@ -236,7 +262,12 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       itemCount: withGrades.length,
-      itemBuilder: (context, index) => _JournalSubjectTile(analytics: withGrades[index], commentMap: commentMap),
+      itemBuilder:
+          (context, index) => _JournalSubjectTile(
+            analytics: withGrades[index],
+            commentMap: commentMap,
+            finalGrade: _finalGradeMap[withGrades[index].subject.id],
+          ),
     );
   }
 
@@ -301,10 +332,18 @@ Color _gradeColor(double avg) {
   return Colors.red;
 }
 
+Color _gradeColorInt(int value) => switch (value) {
+  5 => const Color(0xFF2E7D32),
+  4 => const Color(0xFF558B2F),
+  3 => const Color(0xFFE65100),
+  _ => Colors.red,
+};
+
 class _SubjectAnalyticsCard extends StatelessWidget {
   final SubjectAnalytics analytics;
+  final FinalGrade? finalGrade;
 
-  const _SubjectAnalyticsCard({required this.analytics});
+  const _SubjectAnalyticsCard({required this.analytics, this.finalGrade});
 
   @override
   Widget build(BuildContext context) {
@@ -339,7 +378,15 @@ class _SubjectAnalyticsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text('Оценок: ${analytics.grades.length}', style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+            Row(
+              children: [
+                Text(
+                  'Оценок: ${analytics.grades.length}',
+                  style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                ),
+                if (finalGrade != null) ...[const SizedBox(width: 8), _FinalGradeBadge(value: finalGrade!.value)],
+              ],
+            ),
             const SizedBox(height: 6),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -358,6 +405,177 @@ class _SubjectAnalyticsCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
             child: _GradeLineChart(analytics: analytics, barColor: barColor, colors: colors),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _JournalSubjectTile extends StatelessWidget {
+  final SubjectAnalytics analytics;
+  final Map<String, String> commentMap;
+  final FinalGrade? finalGrade;
+
+  const _JournalSubjectTile({required this.analytics, required this.commentMap, this.finalGrade});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final avg = analytics.averageGrade;
+    final avgColor = _gradeColor(avg);
+    final entries = [...analytics.gradeSeries]..sort((a, b) => b.date.compareTo(a.date));
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        childrenPadding: EdgeInsets.zero,
+        leading: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(color: avgColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+          child: Center(
+            child: Text(
+              avg == 0.0 ? '—' : avg.toStringAsFixed(1),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: avgColor),
+            ),
+          ),
+        ),
+        title: Text(
+          analytics.subject.name,
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: colors.onSurface),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            children: [
+              Text(
+                '${entries.length} ${_gradeWord(entries.length)}',
+                style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+              ),
+              if (finalGrade != null) ...[const SizedBox(width: 8), _FinalGradeBadge(value: finalGrade!.value)],
+            ],
+          ),
+        ),
+        children: [
+          Divider(height: 1, color: colors.outlineVariant),
+          ...entries.asMap().entries.map((e) {
+            final isLast = e.key == entries.length - 1;
+            final comment = e.value.gradeId != null ? commentMap[e.value.gradeId] : null;
+            return Column(
+              children: [
+                _JournalGradeRow(entry: e.value, colors: colors, comment: comment),
+                if (!isLast) Divider(height: 1, indent: 16, endIndent: 16, color: colors.outlineVariant),
+              ],
+            );
+          }),
+          if (finalGrade != null) ...[
+            Divider(height: 1, color: colors.outlineVariant),
+            _FinalGradeRow(finalGrade: finalGrade!, colors: colors),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _gradeWord(int n) {
+    if (n % 100 >= 11 && n % 100 <= 14) return 'оценок';
+    switch (n % 10) {
+      case 1:
+        return 'оценка';
+      case 2:
+      case 3:
+      case 4:
+        return 'оценки';
+      default:
+        return 'оценок';
+    }
+  }
+}
+
+class _FinalGradeRow extends StatelessWidget {
+  final FinalGrade finalGrade;
+  final ColorScheme colors;
+
+  const _FinalGradeRow({required this.finalGrade, required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    final gradeColor = _gradeColorInt(finalGrade.value);
+    const labels = {5: 'Отлично', 4: 'Хорошо', 3: 'Удовл.', 2: 'Неудовл.'};
+    return Container(
+      color: gradeColor.withValues(alpha: 0.05),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: gradeColor.withValues(alpha: 0.15), shape: BoxShape.circle),
+            child: Center(
+              child: Text(
+                '${finalGrade.value}',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: gradeColor),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Итоговая оценка за период',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.onSurface),
+                ),
+                const SizedBox(height: 2),
+                Text('Выставлена преподавателем', style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: gradeColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: gradeColor.withValues(alpha: 0.4)),
+            ),
+            child: Text(
+              labels[finalGrade.value] ?? '${finalGrade.value}',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: gradeColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FinalGradeBadge extends StatelessWidget {
+  final int value;
+
+  const _FinalGradeBadge({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _gradeColorInt(value);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.verified_outlined, size: 11, color: color),
+          const SizedBox(width: 3),
+          Text('Итог: $value', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
         ],
       ),
     );
@@ -461,82 +679,6 @@ class _GradeLineChart extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _JournalSubjectTile extends StatelessWidget {
-  final SubjectAnalytics analytics;
-  final Map<String, String> commentMap;
-
-  const _JournalSubjectTile({required this.analytics, required this.commentMap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final avg = analytics.averageGrade;
-    final avgColor = _gradeColor(avg);
-    final entries = [...analytics.gradeSeries]..sort((a, b) => b.date.compareTo(a.date));
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        childrenPadding: EdgeInsets.zero,
-        leading: Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(color: avgColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-          child: Center(
-            child: Text(
-              avg == 0.0 ? '—' : avg.toStringAsFixed(1),
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: avgColor),
-            ),
-          ),
-        ),
-        title: Text(
-          analytics.subject.name,
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: colors.onSurface),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            '${entries.length} ${_gradeWord(entries.length)}',
-            style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
-          ),
-        ),
-        children: [
-          Divider(height: 1, color: colors.outlineVariant),
-          ...entries.asMap().entries.map((e) {
-            final isLast = e.key == entries.length - 1;
-            final comment = e.value.gradeId != null ? commentMap[e.value.gradeId] : null;
-            return Column(
-              children: [
-                _JournalGradeRow(entry: e.value, colors: colors, comment: comment),
-                if (!isLast) Divider(height: 1, indent: 16, endIndent: 16, color: colors.outlineVariant),
-              ],
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  String _gradeWord(int n) {
-    if (n % 100 >= 11 && n % 100 <= 14) return 'оценок';
-    switch (n % 10) {
-      case 1:
-        return 'оценка';
-      case 2:
-      case 3:
-      case 4:
-        return 'оценки';
-      default:
-        return 'оценок';
-    }
   }
 }
 

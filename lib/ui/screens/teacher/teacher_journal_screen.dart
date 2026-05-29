@@ -1,8 +1,10 @@
 import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/final_grade_service.dart';
 import 'package:edu_track/data/services/grade_comment_service.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/data/services/lesson_attendance_service.dart';
 import 'package:edu_track/models/academic_period.dart';
+import 'package:edu_track/models/final_grade.dart';
 import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/lesson_attendance.dart';
@@ -10,6 +12,7 @@ import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +22,7 @@ const double _cellWidth = 56.0;
 const double _cellHeight = 48.0;
 const double _headerHeight = 48.0;
 const double _avgColWidth = 64.0;
+const double _finalColWidth = 64.0;
 
 Color _gradeColor(int value, ColorScheme colors) => switch (value) {
   5 => const Color(0xFF2E7D32),
@@ -50,6 +54,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   late GradeService _gradeService;
   final _attendanceService = AttendanceService();
   final _commentService = GradeCommentService();
+  final _finalGradeService = FinalGradeService();
 
   bool _isLoading = true;
   bool _gradeServiceReady = false;
@@ -59,6 +64,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   Map<String, Grade> _gradeMap = {};
   Map<String, LessonAttendance> _attendanceMap = {};
   Map<String, DateTime?> _lessonDateMap = {};
+  Map<String, FinalGrade> _finalGradeMap = {};
   AcademicPeriod? _loadedPeriod;
 
   @override
@@ -83,12 +89,23 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       _errorMessage = null;
     });
     final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
-    final result = await _gradeService.getJournalData(
+
+    final journalFuture = _gradeService.getJournalData(
       groupId: widget.groupId,
       subjectId: widget.subjectId,
       startDate: period?.startDate,
       endDate: period?.endDate,
     );
+    final finalGradeFuture =
+        period != null
+            ? _finalGradeService.getFinalGrades(
+              groupId: widget.groupId,
+              subjectId: widget.subjectId,
+              periodId: period.id,
+            )
+            : Future.value(AppResult<List<FinalGrade>>.success([]));
+
+    final (result, finalResult) = await (journalFuture, finalGradeFuture).wait;
     if (!mounted) return;
     if (result.isFailure) {
       setState(() {
@@ -120,12 +137,20 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       return da.compareTo(db);
     });
 
+    final finalGradeMap = <String, FinalGrade>{};
+    if (finalResult.isSuccess) {
+      for (final fg in finalResult.data) {
+        finalGradeMap[fg.studentId] = fg;
+      }
+    }
+
     setState(() {
       _lessons = lessons;
       _students = students;
       _gradeMap = {for (final g in grades) '${g.studentId}|${g.lessonId}': g};
       _attendanceMap = {for (final a in attendances) '${a.studentId}|${a.lessonId}': a};
       _lessonDateMap = lessonDateMap;
+      _finalGradeMap = finalGradeMap;
       _isLoading = false;
     });
   }
@@ -201,6 +226,60 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
     }
   }
 
+  Future<void> _onFinalCellTap(Student student) async {
+    final period = _loadedPeriod;
+    if (period == null) return;
+    final teacherId = Provider.of<UserProvider>(context, listen: false).userId ?? '';
+    final avg = _computeAvg(student);
+    final currentFinalGrade = _finalGradeMap[student.id];
+
+    final result = await showModalBottomSheet<Object?>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder:
+          (_) => _FinalGradeSheet(
+            studentName: '${student.surname} ${student.name}',
+            computedAvg: avg,
+            currentFinalGrade: currentFinalGrade,
+          ),
+    );
+    if (result == null || !mounted) return;
+    if (result is int) {
+      final finalGrade = FinalGrade(
+        id: currentFinalGrade?.id,
+        studentId: student.id,
+        subjectId: widget.subjectId,
+        groupId: widget.groupId,
+        periodId: period.id,
+        value: result,
+        isManual: true,
+        teacherId: teacherId,
+      );
+      final res = await _finalGradeService.setFinalGrade(finalGrade);
+      if (!mounted) return;
+      if (res.isFailure) {
+        MessengerHelper.showError(res.errorMessage);
+        return;
+      }
+      setState(() => _finalGradeMap[student.id] = finalGrade.copyWith(id: res.data));
+      MessengerHelper.showSuccess('Итоговая оценка $result сохранена');
+    } else if (result == 'clear') {
+      final res = await _finalGradeService.clearFinalGrade(
+        studentId: student.id,
+        subjectId: widget.subjectId,
+        periodId: period.id,
+      );
+      if (!mounted) return;
+      if (res.isFailure) {
+        MessengerHelper.showError(res.errorMessage);
+        return;
+      }
+      setState(() => _finalGradeMap.remove(student.id));
+      MessengerHelper.showSuccess('Итоговая оценка удалена');
+    }
+  }
+
   String _fmtDate(DateTime? d) {
     if (d == null) return '?';
     return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}';
@@ -231,6 +310,8 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
     return grades.map((g) => g.value).reduce((a, b) => a + b) / grades.length;
   }
 
+  bool get _showFinalColumn => _loadedPeriod != null;
+
   Widget _buildJournal(ColorScheme colors) {
     return SingleChildScrollView(
       child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: _buildGrid(colors)),
@@ -257,6 +338,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
           _headerNameCell(colors),
           for (final lesson in _lessons) _headerDateCell(lesson, colors),
           _headerAvgCell(colors),
+          if (_showFinalColumn) _headerFinalCell(colors),
         ],
       ),
     );
@@ -269,6 +351,19 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       alignment: Alignment.center,
       decoration: BoxDecoration(border: Border(left: BorderSide(color: colors.outline.withValues(alpha: 0.5)))),
       child: Text('Ср.', style: TextStyle(fontWeight: FontWeight.bold, color: colors.onPrimaryContainer, fontSize: 12)),
+    );
+  }
+
+  Widget _headerFinalCell(ColorScheme colors) {
+    return Container(
+      width: _finalColWidth,
+      height: _headerHeight,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: colors.outline.withValues(alpha: 0.5))),
+        color: colors.primary.withValues(alpha: 0.12),
+      ),
+      child: Text('Итог', style: TextStyle(fontWeight: FontWeight.bold, color: colors.primary, fontSize: 12)),
     );
   }
 
@@ -324,6 +419,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
           ),
           for (final lesson in _lessons) _buildDataCell(student, lesson, colors),
           _buildAvgCell(student, colors),
+          if (_showFinalColumn) _buildFinalGradeCell(student, colors),
         ],
       ),
     );
@@ -341,6 +437,45 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
           avg == 0
               ? Icon(Icons.remove, size: 16, color: colors.outline.withValues(alpha: 0.4))
               : Text(avg.toStringAsFixed(1), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+    );
+  }
+
+  Widget _buildFinalGradeCell(Student student, ColorScheme colors) {
+    final finalGrade = _finalGradeMap[student.id];
+    final avg = _computeAvg(student);
+    final suggested = avg == 0 ? null : avg.round().clamp(2, 5);
+
+    return GestureDetector(
+      onTap: () => _onFinalCellTap(student),
+      child: Container(
+        width: _finalColWidth,
+        height: _cellHeight,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: colors.primary.withValues(alpha: 0.3))),
+          color: colors.primary.withValues(alpha: 0.06),
+        ),
+        child:
+            finalGrade != null
+                ? Text(
+                  '${finalGrade.value}',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: _gradeColor(finalGrade.value, colors),
+                  ),
+                )
+                : suggested != null
+                ? Text(
+                  '~$suggested',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: _gradeColor(suggested, colors).withValues(alpha: 0.45),
+                  ),
+                )
+                : Icon(Icons.add, size: 16, color: colors.primary.withValues(alpha: 0.3)),
+      ),
     );
   }
 
@@ -594,32 +729,161 @@ class _CellEditSheetState extends State<_CellEditSheet> {
   }
 }
 
+class _FinalGradeSheet extends StatelessWidget {
+  final String studentName;
+  final double computedAvg;
+  final FinalGrade? currentFinalGrade;
+
+  const _FinalGradeSheet({required this.studentName, required this.computedAvg, this.currentFinalGrade});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final suggested = computedAvg == 0 ? null : computedAvg.round().clamp(2, 5);
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              studentName,
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: colors.onSurface),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text('Итоговая оценка за период', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
+            const SizedBox(height: 16),
+            if (computedAvg > 0)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colors.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calculate_outlined, size: 16, color: colors.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Средний балл: ${computedAvg.toStringAsFixed(2)}',
+                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
+                    ),
+                    if (suggested != null) ...[
+                      const SizedBox(width: 6),
+                      Text('→', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
+                      const SizedBox(width: 4),
+                      Text(
+                        'рекомендуется $suggested',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _gradeColor(suggested, colors),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                for (final g in [2, 3, 4, 5])
+                  _OptionButton(
+                    label: '$g',
+                    color: _gradeColor(g, colors),
+                    isSelected: currentFinalGrade?.value == g,
+                    hasSuggestion: suggested == g && currentFinalGrade == null,
+                    onTap: () => Navigator.of(context).pop(g),
+                  ),
+              ],
+            ),
+            if (currentFinalGrade != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).pop('clear'),
+                  icon: const Icon(Icons.clear_rounded),
+                  label: const Text('Удалить итоговую оценку'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.error,
+                    side: BorderSide(color: colors.error.withValues(alpha: 0.5)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    minimumSize: const Size.fromHeight(44),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _OptionButton extends StatelessWidget {
   final String label;
   final Color color;
   final bool isSelected;
+  final bool hasSuggestion;
   final VoidCallback onTap;
 
-  const _OptionButton({required this.label, required this.color, required this.isSelected, required this.onTap});
+  const _OptionButton({
+    required this.label,
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+    this.hasSuggestion = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: isSelected ? color : color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color, width: isSelected ? 0 : 1.5),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : color),
-        ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isSelected ? color : color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color, width: isSelected ? 0 : 1.5),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : color),
+            ),
+          ),
+          if (hasSuggestion)
+            Positioned(
+              top: -5,
+              right: -5,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
