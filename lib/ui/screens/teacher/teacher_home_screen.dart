@@ -1,9 +1,13 @@
 ﻿import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
+import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/chat_list_screen.dart';
+import 'package:edu_track/ui/screens/teacher/teacher_debts_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_journal_screen.dart';
@@ -31,6 +35,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   bool _isLoading = true;
   bool _hasError = false;
   List<Subject> _subjects = [];
+  Schedule? _nextLesson;
+  final ScheduleService _scheduleService = ScheduleService();
   String? _journalGroupId;
   String? _journalSubjectId;
   VoidCallback? _journalRefreshCallback;
@@ -44,11 +50,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     'Моя группа',
     'Сообщения',
     'Журнал успеваемости',
+    'Задолженности',
   ];
 
   Future<void> _loadData() async {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
+    final db = Provider.of<AppDatabase>(context, listen: false);
     if (mounted) {
       setState(() {
         _isLoading = true;
@@ -65,9 +73,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       }
       return;
     }
+    final scheduleResult = await _scheduleService.getScheduleForTeacher(teacherId, db);
+    Schedule? nextLesson;
+    if (scheduleResult.isSuccess) {
+      nextLesson = _findNextLesson(scheduleResult.data);
+    }
     if (mounted) {
       setState(() {
         _subjects = result.data;
+        _nextLesson = nextLesson;
         _isLoading = false;
       });
     }
@@ -160,6 +174,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 )
                 : const SizedBox.shrink();
         break;
+      case 9:
+        bodyContent = const TeacherDebtsScreen();
+        break;
       default:
         bodyContent = const SizedBox.shrink();
     }
@@ -250,6 +267,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               selectedTileColor: colors.primaryContainer.withValues(alpha: 0.3),
               onTap: _openJournalSelector,
             ),
+            _buildDrawerItem(Icons.warning_amber_rounded, 'Задолженности', 9, colors),
             _buildDrawerItem(Icons.message_rounded, 'Сообщения', 7, colors),
             _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2, colors),
             _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
@@ -309,7 +327,16 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWelcomeCard(colors),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            if (_nextLesson != null) ...[
+              Text(
+                'Ближайший урок',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+              ),
+              const SizedBox(height: 8),
+              _buildNextLessonCard(_nextLesson!, colors),
+              const SizedBox(height: 16),
+            ],
             Text(
               'Быстрые действия',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
@@ -322,6 +349,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 children: [
                   _buildQuickActionCard(Icons.add_task, 'Выдать ДЗ', () => _navigateToTab(1), colors),
                   _buildQuickActionCard(Icons.checklist, 'Проверить ДЗ', () => _navigateToTab(5), colors),
+                  _buildQuickActionCard(Icons.warning_amber_rounded, 'Задолжники', () => _navigateToTab(9), colors),
                   _buildQuickActionCard(Icons.group, 'Моя группа', () => _navigateToTab(6), colors),
                   _buildQuickActionCard(Icons.play_lesson, 'Начать урок', () => _navigateToTab(2), colors),
                   _buildQuickActionCard(Icons.calendar_today, 'Расписание', () => _navigateToTab(3), colors),
@@ -481,6 +509,112 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     );
   }
 
+  Schedule? _findNextLesson(List<Schedule> schedules) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    Schedule? best;
+    DateTime? bestStart;
+    for (final s in schedules) {
+      if (s.date == null) continue;
+      final lessonDate = DateTime(s.date!.year, s.date!.month, s.date!.day);
+      if (lessonDate.isBefore(today)) continue;
+      final parts = s.startTime.split(':');
+      if (parts.length < 2) continue;
+      final h = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1]);
+      if (h == null || m == null) continue;
+      final lessonStart = DateTime(lessonDate.year, lessonDate.month, lessonDate.day, h, m);
+      if (lessonDate == today && lessonStart.isBefore(now)) continue;
+      if (best == null || lessonStart.isBefore(bestStart!)) {
+        best = s;
+        bestStart = lessonStart;
+      }
+    }
+    return best;
+  }
+
+  String _lessonDateLabel(Schedule s) {
+    if (s.date == null) return '';
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final lessonDate = DateTime(s.date!.year, s.date!.month, s.date!.day);
+    final diff = lessonDate.difference(todayDate).inDays;
+    if (diff == 0) return 'Сегодня';
+    if (diff == 1) return 'Завтра';
+    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    return '${days[s.date!.weekday - 1]}, ${s.date!.day.toString().padLeft(2, '0')}.${s.date!.month.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildNextLessonCard(Schedule lesson, ColorScheme colors) {
+    final label = _lessonDateLabel(lesson);
+    final isToday = label == 'Сегодня';
+    final accentColor = isToday ? colors.primary : colors.secondary;
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 5, color: accentColor),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            label,
+                            style: TextStyle(color: accentColor, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.access_time_rounded, size: 15, color: colors.onSurfaceVariant),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${lesson.startTime.substring(0, 5)} – ${lesson.endTime.substring(0, 5)}',
+                          style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      lesson.subjectName ?? 'Предмет',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: colors.onSurface),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.group_outlined, size: 15, color: colors.onSurfaceVariant),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            lesson.groupName ?? 'Группа',
+                            style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTeacherHomeSkeleton() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -488,7 +622,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Skeleton(height: 150, width: double.infinity, borderRadius: 24),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          const Skeleton(height: 22, width: 160),
+          const SizedBox(height: 8),
+          const Skeleton(height: 86, width: double.infinity, borderRadius: 16),
+          const SizedBox(height: 16),
           const Skeleton(height: 20, width: 150),
           const SizedBox(height: 12),
           SizedBox(

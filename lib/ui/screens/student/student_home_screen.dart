@@ -1,5 +1,9 @@
-﻿import 'package:edu_track/data/services/chat_service.dart';
+﻿import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/chat_service.dart';
+import 'package:edu_track/data/services/debt_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
+import 'package:edu_track/data/services/schedule_service.dart';
+import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/chat_list_screen.dart';
@@ -33,7 +37,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _totalHomework = 0;
   int _completedHomework = 0;
   int _pendingHomework = 0;
+  double _overallAverage = 0.0;
   final HomeworkService _homeworkService = HomeworkService();
+  final DebtService _debtService = DebtService();
+  final ScheduleService _scheduleService = ScheduleService();
+  Schedule? _nextLesson;
   final List<String> _titles = [
     'Главная',
     'Домашние задания',
@@ -60,6 +68,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       });
     }
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final db = Provider.of<AppDatabase>(context, listen: false);
     final studentId = userProvider.userId;
     if (studentId == null) {
       if (mounted) {
@@ -108,12 +117,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         pending++;
       }
     }
+    final avgResult = await _debtService.getStudentOverallAverage(studentId);
+    final avg = avgResult.isSuccess ? avgResult.data : 0.0;
+    final scheduleResult = await _scheduleService.getScheduleForStudent(studentId, userProvider.groupId, db);
+    Schedule? nextLesson;
+    if (scheduleResult.isSuccess) {
+      nextLesson = _findNextLesson(scheduleResult.data);
+    }
     if (mounted) {
       setState(() {
         _groupName = groupName;
         _totalHomework = homeworks.length;
         _completedHomework = completed;
         _pendingHomework = pending;
+        _overallAverage = avg;
+        _nextLesson = nextLesson;
         _isDashboardLoading = false;
       });
     }
@@ -294,7 +312,17 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            _buildDebtBanner(colors),
+            if (_nextLesson != null) ...[
+              Text(
+                'Ближайший урок',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
+              ),
+              const SizedBox(height: 8),
+              _buildNextLessonCard(_nextLesson!, colors),
+              const SizedBox(height: 16),
+            ],
             Text(
               'Быстрые действия',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
@@ -357,6 +385,44 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDebtBanner(ColorScheme colors) {
+    final hasLowGrade = _overallAverage > 0 && _overallAverage < 3.0;
+    final hasPending = _pendingHomework > 0;
+    if (!hasLowGrade && !hasPending) return const SizedBox.shrink();
+    final parts = <String>[];
+    if (hasLowGrade) parts.add('Средний балл: ${_overallAverage.toStringAsFixed(1)} (ниже 3.0)');
+    if (hasPending) parts.add('$_pendingHomework невыполненных заданий');
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.error.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer, size: 26),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Внимание: есть задолженности',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.onErrorContainer, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                ...parts.map((p) => Text('• $p', style: TextStyle(color: colors.onErrorContainer, fontSize: 13))),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -459,6 +525,112 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
   }
 
+  Schedule? _findNextLesson(List<Schedule> schedules) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    Schedule? best;
+    DateTime? bestStart;
+    for (final s in schedules) {
+      if (s.date == null) continue;
+      final lessonDate = DateTime(s.date!.year, s.date!.month, s.date!.day);
+      if (lessonDate.isBefore(today)) continue;
+      final parts = s.startTime.split(':');
+      if (parts.length < 2) continue;
+      final h = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1]);
+      if (h == null || m == null) continue;
+      final lessonStart = DateTime(lessonDate.year, lessonDate.month, lessonDate.day, h, m);
+      if (lessonDate == today && lessonStart.isBefore(now)) continue;
+      if (best == null || lessonStart.isBefore(bestStart!)) {
+        best = s;
+        bestStart = lessonStart;
+      }
+    }
+    return best;
+  }
+
+  String _lessonDateLabel(Schedule s) {
+    if (s.date == null) return '';
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final lessonDate = DateTime(s.date!.year, s.date!.month, s.date!.day);
+    final diff = lessonDate.difference(todayDate).inDays;
+    if (diff == 0) return 'Сегодня';
+    if (diff == 1) return 'Завтра';
+    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    return '${days[s.date!.weekday - 1]}, ${s.date!.day.toString().padLeft(2, '0')}.${s.date!.month.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildNextLessonCard(Schedule lesson, ColorScheme colors) {
+    final label = _lessonDateLabel(lesson);
+    final isToday = label == 'Сегодня';
+    final accentColor = isToday ? colors.primary : colors.secondary;
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 5, color: accentColor),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            label,
+                            style: TextStyle(color: accentColor, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.access_time_rounded, size: 15, color: colors.onSurfaceVariant),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${lesson.startTime.substring(0, 5)} – ${lesson.endTime.substring(0, 5)}',
+                          style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      lesson.subjectName ?? 'Предмет',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: colors.onSurface),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.person_outline, size: 15, color: colors.onSurfaceVariant),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            lesson.teacherName,
+                            style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDashboardSkeleton(ColorScheme colors) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -466,7 +638,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Skeleton(height: 160, width: double.infinity, borderRadius: 24),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          const Skeleton(height: 22, width: 160),
+          const SizedBox(height: 8),
+          const Skeleton(height: 86, width: double.infinity, borderRadius: 16),
+          const SizedBox(height: 16),
           const Skeleton(height: 24, width: 180),
           const SizedBox(height: 12),
           SizedBox(
