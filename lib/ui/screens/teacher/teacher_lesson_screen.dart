@@ -1,7 +1,6 @@
-import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/lesson_service.dart';
-import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/lesson.dart';
@@ -28,7 +27,7 @@ class TeacherLessonScreen extends StatefulWidget {
 
 class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   final LessonService _lessonService = LessonService();
-  final ScheduleService _scheduleService = ScheduleService();
+  ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   final SubjectService _subjectService = SubjectService();
   final GroupService _groupService = GroupService();
 
@@ -93,10 +92,9 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   Future<void> _loadData() async {
     if (teacherId == null || institutionId == null) return;
     setState(() => _isLoading = true);
-    final db = Provider.of<AppDatabase>(context, listen: false);
     final groupsResult = await _groupService.getGroups(institutionId!);
     final subjectsResult = await _subjectService.getSubjectsByTeacherId(teacherId!);
-    final schedulesResult = await _scheduleService.getScheduleForTeacher(teacherId!, db);
+    final schedulesResult = await _scheduleService.getScheduleForTeacher(teacherId!);
 
     final List<Lesson> allLessons = [];
     final Map<String, Schedule> cache = {};
@@ -182,7 +180,6 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     Schedule? selectedSchedule;
     List<Schedule> availableSchedules = [];
     bool isDialogLoading = false;
-    final db = Provider.of<AppDatabase>(context, listen: false);
     await showDialog(
       context: context,
       builder: (context) {
@@ -191,7 +188,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
             Future<void> updateSchedules() async {
               if (selectedGroup == null || selectedSubject == null) return;
               setStateDialog(() => isDialogLoading = true);
-              final result = await _scheduleService.getScheduleForTeacher(teacherId!, db);
+              final result = await _scheduleService.getScheduleForTeacher(teacherId!);
               final filtered =
                   result.data
                       .where((s) => s.groupId == selectedGroup!.id && s.subjectId == selectedSubject!.id)

@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/group_service.dart';
-import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/group.dart';
@@ -24,7 +24,7 @@ class ScheduleScheduleOperatorScreen extends StatefulWidget {
 }
 
 class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScreen> {
-  late final ScheduleService _scheduleService;
+  late final ScheduleRepository _scheduleService;
   late final SubjectService _subjectService;
   late final GroupService _groupService;
   late final TeacherService _teacherService;
@@ -70,7 +70,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   @override
   void initState() {
     super.initState();
-    _scheduleService = ScheduleService();
+    _scheduleService = Provider.of<ScheduleRepository>(context, listen: false);
     _subjectService = SubjectService();
     _groupService = GroupService();
     _teacherService = TeacherService();
@@ -913,7 +913,7 @@ class _EditLessonDialog extends StatefulWidget {
   final List<Group> groups;
   final List<Teacher> teachers;
   final String institutionId;
-  final ScheduleService scheduleService;
+  final ScheduleRepository scheduleService;
 
   const _EditLessonDialog({
     required this.lesson,

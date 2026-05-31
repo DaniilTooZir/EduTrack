@@ -1,6 +1,10 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/grade_repository.dart';
+import 'package:edu_track/data/repositories/schedule_repository.dart';
+import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/data/services/notification_service.dart';
+import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -14,7 +18,15 @@ void main() {
   runApp(const AppInitializer());
 }
 
-typedef _AppData = ({GoRouter router, UserProvider userProvider, ThemeProvider themeProvider, AppDatabase db});
+typedef _AppData =
+    ({
+      GoRouter router,
+      UserProvider userProvider,
+      ThemeProvider themeProvider,
+      AppDatabase db,
+      ScheduleRepository scheduleRepository,
+      GradeRepository gradeRepository,
+    });
 
 class AppInitializer extends StatefulWidget {
   const AppInitializer({super.key});
@@ -46,12 +58,21 @@ class _AppInitializerState extends State<AppInitializer> {
     await NotificationService().init();
 
     final db = AppDatabase();
+    final scheduleRepository = ScheduleRepository(remote: ScheduleService(), local: db);
+    final gradeRepository = GradeRepository(remote: GradeService(), local: db);
     final userProvider = UserProvider(appDatabase: db);
     final themeProvider = ThemeProvider();
     await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
 
     final router = AppNavigation.createRouter(userProvider);
-    return (router: router, userProvider: userProvider, themeProvider: themeProvider, db: db);
+    return (
+      router: router,
+      userProvider: userProvider,
+      themeProvider: themeProvider,
+      db: db,
+      scheduleRepository: scheduleRepository,
+      gradeRepository: gradeRepository,
+    );
   }
 
   void _retry() => setState(() {
@@ -84,6 +105,8 @@ class _AppInitializerState extends State<AppInitializer> {
             ChangeNotifierProvider<UserProvider>.value(value: data.userProvider),
             ChangeNotifierProvider<ThemeProvider>.value(value: data.themeProvider),
             Provider<AppDatabase>.value(value: data.db),
+            Provider<ScheduleRepository>.value(value: data.scheduleRepository),
+            Provider<GradeRepository>.value(value: data.gradeRepository),
           ],
           child: MyApp(router: data.router),
         );

@@ -1,5 +1,4 @@
-import 'package:edu_track/data/local/app_database.dart';
-import 'package:edu_track/data/services/schedule_service.dart';
+import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -15,7 +14,7 @@ class StudentScheduleScreen extends StatefulWidget {
 }
 
 class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
-  final ScheduleService _scheduleService = ScheduleService();
+  ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   bool _isLoading = true;
   bool _initialized = false;
   List<Schedule> _scheduleList = [];
@@ -39,9 +38,8 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final studentId = userProvider.userId;
     final groupId = userProvider.groupId;
-    final db = Provider.of<AppDatabase>(context, listen: false);
     if (studentId == null) return;
-    final result = await _scheduleService.getScheduleForStudent(studentId, groupId, db);
+    final result = await _scheduleService.getScheduleForStudent(studentId, groupId);
     if (result.isFailure) {
       if (mounted) setState(() => _isLoading = false);
       return;

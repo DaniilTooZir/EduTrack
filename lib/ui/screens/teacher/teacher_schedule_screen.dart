@@ -1,5 +1,4 @@
-import 'package:edu_track/data/local/app_database.dart';
-import 'package:edu_track/data/services/schedule_service.dart';
+import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -15,7 +14,7 @@ class TeacherScheduleScreen extends StatefulWidget {
 }
 
 class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
-  final ScheduleService _scheduleService = ScheduleService();
+  ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   bool _isLoading = true;
   List<Schedule> _scheduleList = [];
   Map<String, List<Schedule>> _groupedSchedule = {};
@@ -31,10 +30,9 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
   Future<void> _loadSchedule() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final teacherId = userProvider.userId;
-    final db = Provider.of<AppDatabase>(context, listen: false);
     if (teacherId == null) return;
     setState(() => _isLoading = true);
-    final result = await _scheduleService.getScheduleForTeacher(teacherId, db);
+    final result = await _scheduleService.getScheduleForTeacher(teacherId);
     final list = result.data;
     list.sort((a, b) {
       if (a.date == null && b.date != null) return -1;

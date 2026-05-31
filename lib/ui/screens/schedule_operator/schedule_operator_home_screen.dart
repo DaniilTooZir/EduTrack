@@ -1,4 +1,4 @@
-﻿import 'package:edu_track/data/services/schedule_service.dart';
+﻿import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
@@ -21,7 +21,7 @@ class ScheduleOperatorHomeScreen extends StatefulWidget {
 class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen> {
   int _selectedIndex = 0;
   final List<String> _titles = ['Главная', 'Расписание'];
-  final ScheduleService _scheduleService = ScheduleService();
+  ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   bool _isLoading = true;
   List<Schedule> _schedules = [];
 

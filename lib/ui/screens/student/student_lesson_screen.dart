@@ -1,6 +1,5 @@
-import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/lesson_service.dart';
-import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -22,7 +21,7 @@ class StudentLessonScreen extends StatefulWidget {
 
 class _StudentLessonScreenState extends State<StudentLessonScreen> {
   final LessonService _lessonService = LessonService();
-  final ScheduleService _scheduleService = ScheduleService();
+  ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
 
   bool _loading = true;
   List<Lesson> _lessons = [];
@@ -74,10 +73,9 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final sid = userProvider.userId;
     final groupId = userProvider.groupId;
-    final db = Provider.of<AppDatabase>(context, listen: false);
     if (sid == null) return;
     setState(() => _loading = true);
-    final schedulesResult = await _scheduleService.getScheduleForStudent(sid, groupId, db);
+    final schedulesResult = await _scheduleService.getScheduleForStudent(sid, groupId);
     if (schedulesResult.isFailure) {
       if (mounted) setState(() => _loading = false);
       return;

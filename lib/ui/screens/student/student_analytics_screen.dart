@@ -1,7 +1,6 @@
-import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/data/services/final_grade_service.dart';
 import 'package:edu_track/data/services/grade_comment_service.dart';
-import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/final_grade.dart';
 import 'package:edu_track/models/grade.dart';
@@ -22,7 +21,7 @@ class StudentAnalyticsScreen extends StatefulWidget {
 }
 
 class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
-  late final GradeService _gradeService;
+  late final GradeRepository _gradeService;
   final _commentService = GradeCommentService();
   final _finalGradeService = FinalGradeService();
 
@@ -50,7 +49,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   @override
   void initState() {
     super.initState();
-    _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
+    _gradeService = Provider.of<GradeRepository>(context, listen: false);
   }
 
   @override

@@ -1,5 +1,4 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
-import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -83,14 +82,10 @@ class ScheduleService {
 
   Future<AppResult<List<Schedule>>> getScheduleForStudent(
     String studentId,
-    String? groupId,
-    AppDatabase db, {
+    String groupId, {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    if (groupId == null) {
-      return AppResult.failure('ID группы не найден локально.');
-    }
     try {
       var query = _client
           .from('schedule')
@@ -98,18 +93,17 @@ class ScheduleService {
           .eq('group_id', groupId);
       if (startDate != null) query = query.gte('date', startDate.toIso8601String());
       if (endDate != null) query = query.lte('date', endDate.toIso8601String());
-      final networkSchedules = (await query as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
-      await db.saveSchedules(networkSchedules);
-      return AppResult.success(networkSchedules);
+      final schedules = (await query as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+      return AppResult.success(schedules);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке расписания: ${e.message}');
     } catch (e) {
-      final localData = await db.getSchedulesForGroup(groupId);
-      return AppResult.success(localData);
+      return AppResult.failure('Не удалось загрузить расписание.');
     }
   }
 
   Future<AppResult<List<Schedule>>> getScheduleForTeacher(
-    String teacherId,
-    AppDatabase db, {
+    String teacherId, {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
@@ -120,23 +114,20 @@ class ScheduleService {
           .eq('teacher_id', teacherId);
       if (startDate != null) query = query.gte('date', startDate.toIso8601String());
       if (endDate != null) query = query.lte('date', endDate.toIso8601String());
-      final response = await query;
-      final networkSchedules = (response as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
-      networkSchedules.sort((a, b) {
-        if (a.date != null && b.date != null) {
-          return a.date!.compareTo(b.date!);
-        }
+      final schedules = (await query as List).map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList();
+      schedules.sort((a, b) {
+        if (a.date != null && b.date != null) return a.date!.compareTo(b.date!);
         if (a.date != null) return -1;
         if (b.date != null) return 1;
         final weekdayCompare = a.weekday.compareTo(b.weekday);
         if (weekdayCompare != 0) return weekdayCompare;
         return a.startTime.compareTo(b.startTime);
       });
-      await db.saveSchedules(networkSchedules);
-      return AppResult.success(networkSchedules);
+      return AppResult.success(schedules);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке расписания: ${e.message}');
     } catch (e) {
-      final localData = await db.getSchedulesForTeacher(teacherId);
-      return AppResult.success(localData);
+      return AppResult.failure('Не удалось загрузить расписание.');
     }
   }
 

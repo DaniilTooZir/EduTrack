@@ -1,5 +1,4 @@
-import 'package:edu_track/data/local/app_database.dart';
-import 'package:edu_track/data/services/grade_service.dart';
+import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -184,7 +183,7 @@ class _StudentGradesSheet extends StatefulWidget {
 }
 
 class _StudentGradesSheetState extends State<_StudentGradesSheet> {
-  late final GradeService _gradeService;
+  late final GradeRepository _gradeService;
   bool _isLoading = true;
   String? _error;
   List<SubjectAnalytics> _analytics = [];
@@ -192,7 +191,7 @@ class _StudentGradesSheetState extends State<_StudentGradesSheet> {
   @override
   void initState() {
     super.initState();
-    _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
+    _gradeService = Provider.of<GradeRepository>(context, listen: false);
     _load();
   }
 

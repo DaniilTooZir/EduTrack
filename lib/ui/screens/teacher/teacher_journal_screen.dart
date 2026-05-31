@@ -1,7 +1,6 @@
-import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/data/services/final_grade_service.dart';
 import 'package:edu_track/data/services/grade_comment_service.dart';
-import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/data/services/lesson_attendance_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/final_grade.dart';
@@ -63,7 +62,7 @@ class TeacherJournalScreen extends StatefulWidget {
 }
 
 class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
-  late GradeService _gradeService;
+  late GradeRepository _gradeService;
   final _attendanceService = AttendanceService();
   final _commentService = GradeCommentService();
   final _finalGradeService = FinalGradeService();
@@ -84,7 +83,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_gradeServiceReady) {
-      _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
+      _gradeService = Provider.of<GradeRepository>(context, listen: false);
       _gradeServiceReady = true;
       widget.onReady?.call(_loadJournal);
       widget.onExportReady?.call(_triggerExport);

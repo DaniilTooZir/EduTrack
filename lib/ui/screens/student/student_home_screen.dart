@@ -1,8 +1,7 @@
-﻿import 'package:edu_track/data/local/app_database.dart';
+﻿import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/debt_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
-import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
@@ -40,7 +39,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   double _overallAverage = 0.0;
   final HomeworkService _homeworkService = HomeworkService();
   final DebtService _debtService = DebtService();
-  final ScheduleService _scheduleService = ScheduleService();
+  ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   Schedule? _nextLesson;
   final List<String> _titles = [
     'Главная',
@@ -68,7 +67,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       });
     }
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final db = Provider.of<AppDatabase>(context, listen: false);
     final studentId = userProvider.userId;
     if (studentId == null) {
       if (mounted) {
@@ -119,7 +117,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
     final avgResult = await _debtService.getStudentOverallAverage(studentId);
     final avg = avgResult.isSuccess ? avgResult.data : 0.0;
-    final scheduleResult = await _scheduleService.getScheduleForStudent(studentId, userProvider.groupId, db);
+    final scheduleResult = await _scheduleService.getScheduleForStudent(studentId, userProvider.groupId);
     Schedule? nextLesson;
     if (scheduleResult.isSuccess) {
       nextLesson = _findNextLesson(scheduleResult.data);
