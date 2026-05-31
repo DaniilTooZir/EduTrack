@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   file_selector_windows
   flutter_timezone
+  printing
   sqlite3_flutter_libs
   url_launcher_windows
 )

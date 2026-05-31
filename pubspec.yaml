@@ -58,6 +58,8 @@ dependencies:
   connectivity_plus: ^6.0.0
   shimmer: ^3.0.0
   fl_chart: ^0.69.0
+  pdf: ^3.11.0
+  printing: ^5.13.1
 
 dev_dependencies:
   flutter_test:

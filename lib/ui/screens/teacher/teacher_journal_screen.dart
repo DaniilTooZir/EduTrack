@@ -13,6 +13,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_result.dart';
+import 'package:edu_track/utils/journal_pdf_exporter.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -42,9 +43,20 @@ Color _avgColor(double avg, ColorScheme colors) {
 class TeacherJournalScreen extends StatefulWidget {
   final String groupId;
   final String subjectId;
+  final String? subjectName;
+  final String? groupName;
   final void Function(VoidCallback loadJournal)? onReady;
+  final void Function(VoidCallback exportFn)? onExportReady;
 
-  const TeacherJournalScreen({super.key, required this.groupId, required this.subjectId, this.onReady});
+  const TeacherJournalScreen({
+    super.key,
+    required this.groupId,
+    required this.subjectId,
+    this.subjectName,
+    this.groupName,
+    this.onReady,
+    this.onExportReady,
+  });
 
   @override
   State<TeacherJournalScreen> createState() => _TeacherJournalScreenState();
@@ -57,6 +69,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   final _finalGradeService = FinalGradeService();
 
   bool _isLoading = true;
+  bool _isExporting = false;
   bool _gradeServiceReady = false;
   String? _errorMessage;
   List<Lesson> _lessons = [];
@@ -74,11 +87,38 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       _gradeService = GradeService(db: Provider.of<AppDatabase>(context, listen: false));
       _gradeServiceReady = true;
       widget.onReady?.call(_loadJournal);
+      widget.onExportReady?.call(_triggerExport);
     }
     final period = Provider.of<UserProvider>(context).selectedPeriod;
     if (period != _loadedPeriod) {
       _loadedPeriod = period;
       _loadJournal();
+    }
+  }
+
+  void _triggerExport() {
+    if (_isExporting || _isLoading || _lessons.isEmpty) return;
+    _doExport();
+  }
+
+  Future<void> _doExport() async {
+    setState(() => _isExporting = true);
+    try {
+      await JournalPdfExporter.share(
+        students: _students,
+        lessons: _lessons,
+        gradeMap: _gradeMap,
+        attendanceMap: _attendanceMap,
+        lessonDateMap: _lessonDateMap,
+        finalGradeMap: _finalGradeMap,
+        period: _loadedPeriod,
+        subjectName: widget.subjectName ?? widget.subjectId,
+        groupName: widget.groupName ?? widget.groupId,
+      );
+    } catch (_) {
+      if (mounted) MessengerHelper.showError('Не удалось создать PDF');
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
     }
   }
 
@@ -293,7 +333,8 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
-      child:
+      child: Stack(
+        children: [
           _isLoading
               ? _buildSkeleton()
               : _errorMessage != null
@@ -301,6 +342,28 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
               : (_lessons.isEmpty || _students.isEmpty)
               ? _buildEmpty(colors)
               : _buildJournal(colors),
+          if (_isExporting)
+            Container(
+              color: Colors.black26,
+              child: Center(
+                child: Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: colors.primary),
+                        const SizedBox(height: 16),
+                        Text('Создание PDF...', style: TextStyle(color: colors.onSurface, fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

@@ -1,4 +1,6 @@
-﻿import 'package:edu_track/data/database/connection_to_database.dart';
+﻿import 'dart:async';
+
+import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
@@ -22,6 +24,7 @@ import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -39,7 +42,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   final ScheduleService _scheduleService = ScheduleService();
   String? _journalGroupId;
   String? _journalSubjectId;
+  String? _journalGroupName;
+  String? _journalSubjectName;
   VoidCallback? _journalRefreshCallback;
+  VoidCallback? _journalExportCallback;
   final List<String> _titles = [
     'Главная',
     'Домашние задания',
@@ -87,10 +93,37 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     }
   }
 
+  static const _kGroupId = 'journal_group_id';
+  static const _kSubjectId = 'journal_subject_id';
+  static const _kGroupName = 'journal_group_name';
+  static const _kSubjectName = 'journal_subject_name';
+
+  Future<void> _loadSavedJournal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final groupId = prefs.getString(_kGroupId);
+    final subjectId = prefs.getString(_kSubjectId);
+    if (groupId == null || subjectId == null || !mounted) return;
+    setState(() {
+      _journalGroupId = groupId;
+      _journalSubjectId = subjectId;
+      _journalGroupName = prefs.getString(_kGroupName);
+      _journalSubjectName = prefs.getString(_kSubjectName);
+    });
+  }
+
+  Future<void> _saveJournalSelection(Map<String, String?> result) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kGroupId, result['groupId']!);
+    await prefs.setString(_kSubjectId, result['subjectId']!);
+    if (result['groupName'] != null) await prefs.setString(_kGroupName, result['groupName']!);
+    if (result['subjectName'] != null) await prefs.setString(_kSubjectName, result['subjectName']!);
+  }
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadSavedJournal();
   }
 
   void _refreshDashboard() {
@@ -112,9 +145,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       builder: (ctx) => _JournalSelectorSheet(teacherId: teacherId),
     );
     if (result != null && mounted) {
+      unawaited(_saveJournalSelection(result));
       setState(() {
         _journalGroupId = result['groupId'];
         _journalSubjectId = result['subjectId'];
+        _journalGroupName = result['groupName'];
+        _journalSubjectName = result['subjectName'];
         if (switchToTab) _selectedIndex = 8;
       });
     }
@@ -170,7 +206,16 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   key: ValueKey('$_journalGroupId|$_journalSubjectId'),
                   groupId: _journalGroupId!,
                   subjectId: _journalSubjectId!,
-                  onReady: (fn) => _journalRefreshCallback = fn,
+                  groupName: _journalGroupName,
+                  subjectName: _journalSubjectName,
+                  onReady:
+                      (fn) => WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) setState(() => _journalRefreshCallback = fn);
+                      }),
+                  onExportReady:
+                      (fn) => WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) setState(() => _journalExportCallback = fn);
+                      }),
                 )
                 : const SizedBox.shrink();
         break;
@@ -187,7 +232,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         elevation: 0,
         title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
-        leadingWidth: _selectedIndex == 8 ? 196 : 56,
+        leadingWidth: _selectedIndex == 8 ? 248 : 56,
         leading:
             _selectedIndex == 8
                 ? Row(
@@ -208,6 +253,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
+                    if (_journalExportCallback != null)
+                      IconButton(
+                        icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 22),
+                        tooltip: 'Экспорт в PDF',
+                        onPressed: _journalExportCallback,
+                      ),
                   ],
                 )
                 : null,
@@ -820,8 +871,16 @@ class _JournalSelectorSheetState extends State<_JournalSelectorSheet> {
               child: ElevatedButton(
                 onPressed:
                     _selectedGroupId != null && _selectedSubjectId != null
-                        ? () =>
-                            Navigator.of(context).pop({'groupId': _selectedGroupId!, 'subjectId': _selectedSubjectId!})
+                        ? () {
+                          final grp = _filteredGroups.firstWhere((g) => g.id == _selectedGroupId);
+                          final subj = _subjects.firstWhere((s) => s.id == _selectedSubjectId);
+                          Navigator.of(context).pop({
+                            'groupId': _selectedGroupId!,
+                            'subjectId': _selectedSubjectId!,
+                            'groupName': grp.name,
+                            'subjectName': subj.name,
+                          });
+                        }
                         : null,
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
