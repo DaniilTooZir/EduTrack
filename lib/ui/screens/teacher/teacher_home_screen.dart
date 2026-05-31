@@ -44,6 +44,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   String? _journalSubjectId;
   String? _journalGroupName;
   String? _journalSubjectName;
+  bool _journalPrefsLoaded = false;
   VoidCallback? _journalRefreshCallback;
   VoidCallback? _journalExportCallback;
   final List<String> _titles = [
@@ -102,12 +103,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     final groupId = prefs.getString(_kGroupId);
     final subjectId = prefs.getString(_kSubjectId);
-    if (groupId == null || subjectId == null || !mounted) return;
+    if (!mounted) return;
     setState(() {
-      _journalGroupId = groupId;
-      _journalSubjectId = subjectId;
-      _journalGroupName = prefs.getString(_kGroupName);
-      _journalSubjectName = prefs.getString(_kSubjectName);
+      _journalPrefsLoaded = true;
+      if (groupId != null && subjectId != null) {
+        _journalGroupId = groupId;
+        _journalSubjectId = subjectId;
+        _journalGroupName = prefs.getString(_kGroupName);
+        _journalSubjectName = prefs.getString(_kSubjectName);
+      }
     });
   }
 
@@ -132,7 +136,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
   Future<void> _openJournalSelector() async {
     Navigator.pop(context);
-    await _showJournalSelectorSheet(switchToTab: true);
+    if (_journalPrefsLoaded && _journalGroupId != null && _journalSubjectId != null) {
+      setState(() => _selectedIndex = 8);
+    } else {
+      await _showJournalSelectorSheet(switchToTab: true);
+    }
   }
 
   Future<void> _showJournalSelectorSheet({bool switchToTab = false}) async {
