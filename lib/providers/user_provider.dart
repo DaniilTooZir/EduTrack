@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:edu_track/data/database/connection_to_database.dart';
-import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/user_repository.dart';
 import 'package:edu_track/data/services/academic_period_service.dart';
 import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
@@ -12,9 +12,9 @@ import 'package:edu_track/models/academic_period.dart';
 import 'package:flutter/foundation.dart';
 
 class UserProvider with ChangeNotifier {
-  final AppDatabase _appDatabase;
+  final UserRepository _userRepository;
 
-  UserProvider({required AppDatabase appDatabase}) : _appDatabase = appDatabase;
+  UserProvider({required UserRepository userRepository}) : _userRepository = userRepository;
 
   String? _userId;
   String? _role;
@@ -60,7 +60,7 @@ class UserProvider with ChangeNotifier {
     _institutionName = auth.institutionName;
     _groupName = auth.groupName;
     await SessionService.saveSession(auth.userId, auth.role, auth.institutionId, auth.groupId);
-    await _appDatabase.saveUserProfile(auth);
+    await _userRepository.saveProfile(auth);
     _setupRealtime();
     notifyListeners();
     unawaited(loadPeriods());
@@ -124,7 +124,7 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> _loadCachedProfile() async {
-    final cached = await _appDatabase.getUserProfile();
+    final cached = await _userRepository.getCachedProfile();
     if (cached == null) return;
     _userId = cached.userId;
     _role = cached.role;
@@ -202,7 +202,7 @@ class UserProvider with ChangeNotifier {
     _groupName = null;
     _periods = [];
     _selectedPeriod = null;
-    await Future.wait([SessionService.clearSession(), _appDatabase.clearAll()]);
+    await Future.wait([SessionService.clearSession(), _userRepository.clearAll()]);
     notifyListeners();
   }
 }

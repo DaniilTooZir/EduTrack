@@ -2,6 +2,7 @@ import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
+import 'package:edu_track/data/repositories/user_repository.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/data/services/notification_service.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
@@ -26,6 +27,7 @@ typedef _AppData =
       AppDatabase db,
       ScheduleRepository scheduleRepository,
       GradeRepository gradeRepository,
+      UserRepository userRepository,
     });
 
 class AppInitializer extends StatefulWidget {
@@ -58,9 +60,10 @@ class _AppInitializerState extends State<AppInitializer> {
     await NotificationService().init();
 
     final db = AppDatabase();
+    final userRepository = UserRepository(local: db);
     final scheduleRepository = ScheduleRepository(remote: ScheduleService(), local: db);
     final gradeRepository = GradeRepository(remote: GradeService(), local: db);
-    final userProvider = UserProvider(appDatabase: db);
+    final userProvider = UserProvider(userRepository: userRepository);
     final themeProvider = ThemeProvider();
     await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
 
@@ -72,6 +75,7 @@ class _AppInitializerState extends State<AppInitializer> {
       db: db,
       scheduleRepository: scheduleRepository,
       gradeRepository: gradeRepository,
+      userRepository: userRepository,
     );
   }
 
@@ -105,6 +109,7 @@ class _AppInitializerState extends State<AppInitializer> {
             ChangeNotifierProvider<UserProvider>.value(value: data.userProvider),
             ChangeNotifierProvider<ThemeProvider>.value(value: data.themeProvider),
             Provider<AppDatabase>.value(value: data.db),
+            Provider<UserRepository>.value(value: data.userRepository),
             Provider<ScheduleRepository>.value(value: data.scheduleRepository),
             Provider<GradeRepository>.value(value: data.gradeRepository),
           ],
