@@ -2,7 +2,7 @@
 
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
-import 'package:edu_track/data/services/subject_service.dart';
+import 'package:edu_track/data/repositories/subject_repository.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -38,7 +38,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   bool _hasError = false;
   List<Subject> _subjects = [];
   Schedule? _nextLesson;
-  ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
+  ScheduleRepository get _scheduleRepository => Provider.of<ScheduleRepository>(context, listen: false);
+  SubjectRepository get _subjectRepository => Provider.of<SubjectRepository>(context, listen: false);
   String? _journalGroupId;
   String? _journalSubjectId;
   String? _journalGroupName;
@@ -68,7 +69,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         _hasError = false;
       });
     }
-    final result = await SubjectService().getSubjectsByTeacherId(teacherId);
+    final result = await _subjectRepository.getSubjectsByTeacherId(teacherId);
     if (result.isFailure) {
       if (mounted) {
         setState(() {
@@ -78,7 +79,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       }
       return;
     }
-    final scheduleResult = await _scheduleService.getScheduleForTeacher(teacherId);
+    final scheduleResult = await _scheduleRepository.getScheduleForTeacher(teacherId);
     Schedule? nextLesson;
     if (scheduleResult.isSuccess) {
       nextLesson = _findNextLesson(scheduleResult.data);

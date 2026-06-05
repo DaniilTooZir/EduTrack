@@ -1,11 +1,15 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/repositories/grade_repository.dart';
+import 'package:edu_track/data/repositories/homework_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
+import 'package:edu_track/data/repositories/subject_repository.dart';
 import 'package:edu_track/data/repositories/user_repository.dart';
 import 'package:edu_track/data/services/grade_service.dart';
+import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/notification_service.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
+import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -27,6 +31,8 @@ typedef _AppData =
       AppDatabase db,
       ScheduleRepository scheduleRepository,
       GradeRepository gradeRepository,
+      HomeworkRepository homeworkRepository,
+      SubjectRepository subjectRepository,
       UserRepository userRepository,
     });
 
@@ -63,6 +69,8 @@ class _AppInitializerState extends State<AppInitializer> {
     final userRepository = UserRepository(local: db);
     final scheduleRepository = ScheduleRepository(remote: ScheduleService(), local: db);
     final gradeRepository = GradeRepository(remote: GradeService(), local: db);
+    final homeworkRepository = HomeworkRepository(remote: HomeworkService(), local: db);
+    final subjectRepository = SubjectRepository(remote: SubjectService(), local: db);
     final userProvider = UserProvider(userRepository: userRepository);
     final themeProvider = ThemeProvider();
     await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
@@ -75,6 +83,8 @@ class _AppInitializerState extends State<AppInitializer> {
       db: db,
       scheduleRepository: scheduleRepository,
       gradeRepository: gradeRepository,
+      homeworkRepository: homeworkRepository,
+      subjectRepository: subjectRepository,
       userRepository: userRepository,
     );
   }
@@ -112,6 +122,8 @@ class _AppInitializerState extends State<AppInitializer> {
             Provider<UserRepository>.value(value: data.userRepository),
             Provider<ScheduleRepository>.value(value: data.scheduleRepository),
             Provider<GradeRepository>.value(value: data.gradeRepository),
+            Provider<HomeworkRepository>.value(value: data.homeworkRepository),
+            Provider<SubjectRepository>.value(value: data.subjectRepository),
           ],
           child: MyApp(router: data.router),
         );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/models/schedule.dart';
@@ -16,13 +18,18 @@ class ScheduleRepository {
     DateTime? endDate,
   }) async {
     if (groupId == null) return AppResult.failure('ID группы не найден.');
-    final result = await _remote.getScheduleForStudent(studentId, groupId, startDate: startDate, endDate: endDate);
-    if (result.isSuccess) {
-      await _local.saveSchedules(result.data);
-      return result;
-    }
     final cached = await _local.getSchedulesForGroup(groupId);
-    return AppResult.success(cached);
+    if (cached.isNotEmpty) {
+      unawaited(
+        _remote.getScheduleForStudent(studentId, groupId, startDate: startDate, endDate: endDate).then((result) {
+          if (result.isSuccess) _local.saveSchedules(result.data);
+        }),
+      );
+      return AppResult.success(cached);
+    }
+    final result = await _remote.getScheduleForStudent(studentId, groupId, startDate: startDate, endDate: endDate);
+    if (result.isSuccess) await _local.saveSchedules(result.data);
+    return result;
   }
 
   Future<AppResult<List<Schedule>>> getScheduleForTeacher(
@@ -30,13 +37,18 @@ class ScheduleRepository {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    final result = await _remote.getScheduleForTeacher(teacherId, startDate: startDate, endDate: endDate);
-    if (result.isSuccess) {
-      await _local.saveSchedules(result.data);
-      return result;
-    }
     final cached = await _local.getSchedulesForTeacher(teacherId);
-    return AppResult.success(cached);
+    if (cached.isNotEmpty) {
+      unawaited(
+        _remote.getScheduleForTeacher(teacherId, startDate: startDate, endDate: endDate).then((result) {
+          if (result.isSuccess) _local.saveSchedules(result.data);
+        }),
+      );
+      return AppResult.success(cached);
+    }
+    final result = await _remote.getScheduleForTeacher(teacherId, startDate: startDate, endDate: endDate);
+    if (result.isSuccess) await _local.saveSchedules(result.data);
+    return result;
   }
 
   Future<AppResult<List<Schedule>>> getScheduleForInstitution(String institutionId) =>

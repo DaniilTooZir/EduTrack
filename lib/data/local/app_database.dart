@@ -5,6 +5,8 @@ import 'package:drift/native.dart';
 import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/group.dart';
+import 'package:edu_track/models/homework.dart';
+import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
@@ -82,12 +84,54 @@ class LocalGrades extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [LocalSchedules, LocalSubjects, LocalGroups, LocalTeachers, LocalUsers, LocalGrades])
+class LocalHomeworks extends Table {
+  TextColumn get id => text()();
+  TextColumn get subjectId => text()();
+  TextColumn get groupId => text()();
+  TextColumn get lessonId => text().nullable()();
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+  DateTimeColumn get dueDate => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().nullable()();
+  TextColumn get fileUrl => text().nullable()();
+  TextColumn get fileName => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class LocalHomeworkStatuses extends Table {
+  TextColumn get id => text()();
+  TextColumn get homeworkId => text()();
+  TextColumn get studentId => text()();
+  BoolColumn get isCompleted => boolean()();
+  TextColumn get studentComment => text().nullable()();
+  TextColumn get teacherComment => text().nullable()();
+  TextColumn get fileUrl => text().nullable()();
+  TextColumn get fileName => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(
+  tables: [
+    LocalSchedules,
+    LocalSubjects,
+    LocalGroups,
+    LocalTeachers,
+    LocalUsers,
+    LocalGrades,
+    LocalHomeworks,
+    LocalHomeworkStatuses,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -106,6 +150,8 @@ class AppDatabase extends _$AppDatabase {
     await delete(localTeachers).go();
     await delete(localUsers).go();
     await delete(localGrades).go();
+    await delete(localHomeworks).go();
+    await delete(localHomeworkStatuses).go();
   }
 
   Future<void> saveSchedules(List<Schedule> schedules) async {
@@ -205,7 +251,6 @@ class AppDatabase extends _$AppDatabase {
     final query = select(localSchedules).join([
       leftOuterJoin(localSubjects, localSubjects.id.equalsExp(localSchedules.subjectId)),
       leftOuterJoin(localGroups, localGroups.id.equalsExp(localSchedules.groupId)),
-      // leftOuterJoin(localTeachers...) потом допилить
     ]);
     query.where(localSchedules.teacherId.equals(teacherId));
     query.orderBy([OrderingTerm(expression: localSchedules.date), OrderingTerm(expression: localSchedules.startTime)]);
@@ -303,6 +348,117 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Grade>> getGradesByLesson(String lessonId) async {
     final rows = await (select(localGrades)..where((t) => t.lessonId.equals(lessonId))).get();
     return rows.map((r) => Grade(id: r.id, lessonId: r.lessonId, studentId: r.studentId, value: r.value)).toList();
+  }
+
+  Future<void> saveHomeworks(List<Homework> homeworks) async {
+    await transaction(() async {
+      for (final h in homeworks) {
+        if (h.id.isEmpty) continue;
+        await into(localHomeworks).insertOnConflictUpdate(
+          LocalHomeworksCompanion.insert(
+            id: h.id,
+            subjectId: h.subjectId,
+            groupId: h.groupId,
+            lessonId: Value(h.lessonId),
+            title: h.title,
+            description: Value(h.description),
+            dueDate: Value(h.dueDate),
+            createdAt: Value(h.createdAt),
+            fileUrl: Value(h.fileUrl),
+            fileName: Value(h.fileName),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<List<Homework>> getHomeworksByGroup(String groupId) async {
+    final rows =
+        await (select(localHomeworks)
+              ..where((t) => t.groupId.equals(groupId))
+              ..orderBy([(t) => OrderingTerm(expression: t.dueDate)]))
+            .get();
+    return rows
+        .map(
+          (r) => Homework(
+            id: r.id,
+            subjectId: r.subjectId,
+            groupId: r.groupId,
+            lessonId: r.lessonId,
+            title: r.title,
+            description: r.description,
+            dueDate: r.dueDate,
+            createdAt: r.createdAt,
+            fileUrl: r.fileUrl,
+            fileName: r.fileName,
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> saveHomeworkStatuses(List<HomeworkStatus> statuses) async {
+    await transaction(() async {
+      for (final s in statuses) {
+        if (s.id.isEmpty) continue;
+        await into(localHomeworkStatuses).insertOnConflictUpdate(
+          LocalHomeworkStatusesCompanion.insert(
+            id: s.id,
+            homeworkId: s.homeworkId,
+            studentId: s.studentId,
+            isCompleted: s.isCompleted,
+            studentComment: Value(s.studentComment),
+            teacherComment: Value(s.teacherComment),
+            fileUrl: Value(s.fileUrl),
+            fileName: Value(s.fileName),
+            updatedAt: s.updatedAt,
+          ),
+        );
+      }
+    });
+  }
+
+  Future<List<HomeworkStatus>> getHomeworkStatusesByStudent(String studentId) async {
+    final rows = await (select(localHomeworkStatuses)..where((t) => t.studentId.equals(studentId))).get();
+    return rows
+        .map(
+          (r) => HomeworkStatus(
+            id: r.id,
+            homeworkId: r.homeworkId,
+            studentId: r.studentId,
+            isCompleted: r.isCompleted,
+            studentComment: r.studentComment,
+            teacherComment: r.teacherComment,
+            fileUrl: r.fileUrl,
+            fileName: r.fileName,
+            updatedAt: r.updatedAt,
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<Subject>> getSubjectsByTeacher(String teacherId) async {
+    final query = select(
+      localSchedules,
+    ).join([innerJoin(localSubjects, localSubjects.id.equalsExp(localSchedules.subjectId))]);
+    query.where(localSchedules.teacherId.equals(teacherId));
+    final rows = await query.get();
+    final seen = <String>{};
+    final result = <Subject>[];
+    for (final row in rows) {
+      final subjectRow = row.readTable(localSubjects);
+      if (seen.add(subjectRow.id)) {
+        result.add(
+          Subject(
+            id: subjectRow.id,
+            name: subjectRow.name,
+            institutionId: subjectRow.institutionId,
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
+    }
+    result.sort((a, b) => a.name.compareTo(b.name));
+    return result;
   }
 }
 

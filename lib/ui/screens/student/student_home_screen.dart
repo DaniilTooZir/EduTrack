@@ -1,7 +1,7 @@
-﻿import 'package:edu_track/data/repositories/schedule_repository.dart';
+﻿import 'package:edu_track/data/repositories/grade_repository.dart';
+import 'package:edu_track/data/repositories/homework_repository.dart';
+import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/chat_service.dart';
-import 'package:edu_track/data/services/debt_service.dart';
-import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
@@ -32,14 +32,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _selectedIndex = 0;
   bool _isDashboardLoading = true;
   String? _dashboardError;
-  String? _groupName;
   int _totalHomework = 0;
   int _completedHomework = 0;
   int _pendingHomework = 0;
   double _overallAverage = 0.0;
-  final HomeworkService _homeworkService = HomeworkService();
-  final DebtService _debtService = DebtService();
-  ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
+  ScheduleRepository get _scheduleRepository => Provider.of<ScheduleRepository>(context, listen: false);
+  HomeworkRepository get _homeworkRepository => Provider.of<HomeworkRepository>(context, listen: false);
+  GradeRepository get _gradeRepository => Provider.of<GradeRepository>(context, listen: false);
   Schedule? _nextLesson;
   final List<String> _titles = [
     'Главная',
@@ -68,6 +67,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final studentId = userProvider.userId;
+    final groupId = userProvider.groupId;
     if (studentId == null) {
       if (mounted) {
         setState(() {
@@ -77,12 +77,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       }
       return;
     }
-    final groupResult = await _homeworkService.getGroupByStudentId(studentId);
-    String? groupName;
-    if (groupResult.isSuccess && groupResult.data != null) {
-      groupName = groupResult.data!['name'] as String;
-    }
-    final homeworksResult = await _homeworkService.getHomeworksByStudentGroup(studentId);
+    final homeworksResult = await _homeworkRepository.getHomeworksForStudentGroup(studentId, groupId ?? '');
     if (homeworksResult.isFailure) {
       if (mounted) {
         setState(() {
@@ -92,7 +87,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       }
       return;
     }
-    final statusesResult = await _homeworkService.getHomeworkStatusesForStudent(studentId);
+    final statusesResult = await _homeworkRepository.getStatusesForStudent(studentId);
     if (statusesResult.isFailure) {
       if (mounted) {
         setState(() {
@@ -115,16 +110,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         pending++;
       }
     }
-    final avgResult = await _debtService.getStudentOverallAverage(studentId);
-    final avg = avgResult.isSuccess ? avgResult.data : 0.0;
-    final scheduleResult = await _scheduleService.getScheduleForStudent(studentId, userProvider.groupId);
+    final avg = await _gradeRepository.getStudentAverage(studentId);
+    final scheduleResult = await _scheduleRepository.getScheduleForStudent(studentId, groupId);
     Schedule? nextLesson;
     if (scheduleResult.isSuccess) {
       nextLesson = _findNextLesson(scheduleResult.data);
     }
     if (mounted) {
       setState(() {
-        _groupName = groupName;
         _totalHomework = homeworks.length;
         _completedHomework = completed;
         _pendingHomework = pending;
@@ -297,16 +290,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  if (_groupName != null)
-                    Text(
-                      'Твоя группа: $_groupName',
-                      style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 16),
-                    )
-                  else
-                    Text(
-                      'Добро пожаловать в EduTrack',
-                      style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 16),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final groupName = Provider.of<UserProvider>(context, listen: false).groupName;
+                      return Text(
+                        groupName != null ? 'Твоя группа: $groupName' : 'Добро пожаловать в EduTrack',
+                        style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 16),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -503,15 +495,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   Future<void> _openGroupChat(BuildContext context) async {
     final navigator = Navigator.of(context);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final groupResult = await _homeworkService.getGroupByStudentId(userProvider.userId!);
-    if (groupResult.isFailure || groupResult.data == null) {
+    final groupId = userProvider.groupId;
+    final groupName = userProvider.groupName;
+    if (groupId == null) {
       MessengerHelper.showError('Не удалось получить данные группы');
       return;
     }
-    final groupData = groupResult.data!;
-    final groupId = groupData['id'] as String;
-    final groupName = groupData['name'] as String;
-    final chatResult = await ChatService().getOrCreateGroupChat(groupId, groupName);
+    final chatResult = await ChatService().getOrCreateGroupChat(groupId, groupName ?? groupId);
     if (chatResult.isFailure) {
       MessengerHelper.showError(chatResult.errorMessage);
       return;

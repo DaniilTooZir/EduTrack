@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/models/grade.dart';
@@ -11,25 +13,40 @@ class GradeRepository {
   GradeRepository({required GradeService remote, required AppDatabase local}) : _remote = remote, _local = local;
 
   Future<AppResult<List<Grade>>> getGradesByStudent(String studentId) async {
-    final result = await _remote.getGradesByStudent(studentId);
-    if (result.isSuccess) {
-      await _local.saveGrades(result.data);
-      return result;
-    }
     final cached = await _local.getGradesByStudent(studentId);
-    if (cached.isNotEmpty) return AppResult.success(cached);
+    if (cached.isNotEmpty) {
+      unawaited(
+        _remote.getGradesByStudent(studentId).then((result) {
+          if (result.isSuccess) _local.saveGrades(result.data);
+        }),
+      );
+      return AppResult.success(cached);
+    }
+    final result = await _remote.getGradesByStudent(studentId);
+    if (result.isSuccess) await _local.saveGrades(result.data);
     return result;
   }
 
   Future<AppResult<List<Grade>>> getGradesByLesson(String lessonId) async {
-    final result = await _remote.getGradesByLesson(lessonId);
-    if (result.isSuccess) {
-      await _local.saveGrades(result.data);
-      return result;
-    }
     final cached = await _local.getGradesByLesson(lessonId);
-    if (cached.isNotEmpty) return AppResult.success(cached);
+    if (cached.isNotEmpty) {
+      unawaited(
+        _remote.getGradesByLesson(lessonId).then((result) {
+          if (result.isSuccess) _local.saveGrades(result.data);
+        }),
+      );
+      return AppResult.success(cached);
+    }
+    final result = await _remote.getGradesByLesson(lessonId);
+    if (result.isSuccess) await _local.saveGrades(result.data);
     return result;
+  }
+
+  // Возвращает средний балл студента, используя кэшированные оценки
+  Future<double> getStudentAverage(String studentId) async {
+    final result = await getGradesByStudent(studentId);
+    if (result.isFailure || result.data.isEmpty) return 0.0;
+    return result.data.fold<int>(0, (acc, g) => acc + g.value) / result.data.length;
   }
 
   Future<AppResult<String>> addOrUpdateGrade(Grade grade) => _remote.addOrUpdateGrade(grade);

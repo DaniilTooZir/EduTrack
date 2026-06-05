@@ -1973,6 +1973,997 @@ class LocalGradesCompanion extends UpdateCompanion<LocalGrade> {
   }
 }
 
+class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworksTable, LocalHomework> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalHomeworksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _subjectIdMeta = const VerificationMeta('subjectId');
+  @override
+  late final GeneratedColumn<String> subjectId = GeneratedColumn<String>(
+    'subject_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _groupIdMeta = const VerificationMeta('groupId');
+  @override
+  late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
+    'group_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lessonIdMeta = const VerificationMeta('lessonId');
+  @override
+  late final GeneratedColumn<String> lessonId = GeneratedColumn<String>(
+    'lesson_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dueDateMeta = const VerificationMeta('dueDate');
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+    'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fileUrlMeta = const VerificationMeta('fileUrl');
+  @override
+  late final GeneratedColumn<String> fileUrl = GeneratedColumn<String>(
+    'file_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta('fileName');
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    subjectId,
+    groupId,
+    lessonId,
+    title,
+    description,
+    dueDate,
+    createdAt,
+    fileUrl,
+    fileName,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_homeworks';
+  @override
+  VerificationContext validateIntegrity(Insertable<LocalHomework> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(_subjectIdMeta, subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta));
+    } else if (isInserting) {
+      context.missing(_subjectIdMeta);
+    }
+    if (data.containsKey('group_id')) {
+      context.handle(_groupIdMeta, groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta));
+    } else if (isInserting) {
+      context.missing(_groupIdMeta);
+    }
+    if (data.containsKey('lesson_id')) {
+      context.handle(_lessonIdMeta, lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(_titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(_descriptionMeta, description.isAcceptableOrUnknown(data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(_dueDateMeta, dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('file_url')) {
+      context.handle(_fileUrlMeta, fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta));
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(_fileNameMeta, fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalHomework map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalHomework(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      subjectId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}subject_id'])!,
+      groupId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}group_id'])!,
+      lessonId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}lesson_id']),
+      title: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      description: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}description']),
+      dueDate: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}due_date']),
+      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at']),
+      fileUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}file_url']),
+      fileName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}file_name']),
+    );
+  }
+
+  @override
+  $LocalHomeworksTable createAlias(String alias) {
+    return $LocalHomeworksTable(attachedDatabase, alias);
+  }
+}
+
+class LocalHomework extends DataClass implements Insertable<LocalHomework> {
+  final String id;
+  final String subjectId;
+  final String groupId;
+  final String? lessonId;
+  final String title;
+  final String? description;
+  final DateTime? dueDate;
+  final DateTime? createdAt;
+  final String? fileUrl;
+  final String? fileName;
+  const LocalHomework({
+    required this.id,
+    required this.subjectId,
+    required this.groupId,
+    this.lessonId,
+    required this.title,
+    this.description,
+    this.dueDate,
+    this.createdAt,
+    this.fileUrl,
+    this.fileName,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['subject_id'] = Variable<String>(subjectId);
+    map['group_id'] = Variable<String>(groupId);
+    if (!nullToAbsent || lessonId != null) {
+      map['lesson_id'] = Variable<String>(lessonId);
+    }
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || dueDate != null) {
+      map['due_date'] = Variable<DateTime>(dueDate);
+    }
+    if (!nullToAbsent || createdAt != null) {
+      map['created_at'] = Variable<DateTime>(createdAt);
+    }
+    if (!nullToAbsent || fileUrl != null) {
+      map['file_url'] = Variable<String>(fileUrl);
+    }
+    if (!nullToAbsent || fileName != null) {
+      map['file_name'] = Variable<String>(fileName);
+    }
+    return map;
+  }
+
+  LocalHomeworksCompanion toCompanion(bool nullToAbsent) {
+    return LocalHomeworksCompanion(
+      id: Value(id),
+      subjectId: Value(subjectId),
+      groupId: Value(groupId),
+      lessonId: lessonId == null && nullToAbsent ? const Value.absent() : Value(lessonId),
+      title: Value(title),
+      description: description == null && nullToAbsent ? const Value.absent() : Value(description),
+      dueDate: dueDate == null && nullToAbsent ? const Value.absent() : Value(dueDate),
+      createdAt: createdAt == null && nullToAbsent ? const Value.absent() : Value(createdAt),
+      fileUrl: fileUrl == null && nullToAbsent ? const Value.absent() : Value(fileUrl),
+      fileName: fileName == null && nullToAbsent ? const Value.absent() : Value(fileName),
+    );
+  }
+
+  factory LocalHomework.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalHomework(
+      id: serializer.fromJson<String>(json['id']),
+      subjectId: serializer.fromJson<String>(json['subjectId']),
+      groupId: serializer.fromJson<String>(json['groupId']),
+      lessonId: serializer.fromJson<String?>(json['lessonId']),
+      title: serializer.fromJson<String>(json['title']),
+      description: serializer.fromJson<String?>(json['description']),
+      dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
+      createdAt: serializer.fromJson<DateTime?>(json['createdAt']),
+      fileUrl: serializer.fromJson<String?>(json['fileUrl']),
+      fileName: serializer.fromJson<String?>(json['fileName']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'subjectId': serializer.toJson<String>(subjectId),
+      'groupId': serializer.toJson<String>(groupId),
+      'lessonId': serializer.toJson<String?>(lessonId),
+      'title': serializer.toJson<String>(title),
+      'description': serializer.toJson<String?>(description),
+      'dueDate': serializer.toJson<DateTime?>(dueDate),
+      'createdAt': serializer.toJson<DateTime?>(createdAt),
+      'fileUrl': serializer.toJson<String?>(fileUrl),
+      'fileName': serializer.toJson<String?>(fileName),
+    };
+  }
+
+  LocalHomework copyWith({
+    String? id,
+    String? subjectId,
+    String? groupId,
+    Value<String?> lessonId = const Value.absent(),
+    String? title,
+    Value<String?> description = const Value.absent(),
+    Value<DateTime?> dueDate = const Value.absent(),
+    Value<DateTime?> createdAt = const Value.absent(),
+    Value<String?> fileUrl = const Value.absent(),
+    Value<String?> fileName = const Value.absent(),
+  }) => LocalHomework(
+    id: id ?? this.id,
+    subjectId: subjectId ?? this.subjectId,
+    groupId: groupId ?? this.groupId,
+    lessonId: lessonId.present ? lessonId.value : this.lessonId,
+    title: title ?? this.title,
+    description: description.present ? description.value : this.description,
+    dueDate: dueDate.present ? dueDate.value : this.dueDate,
+    createdAt: createdAt.present ? createdAt.value : this.createdAt,
+    fileUrl: fileUrl.present ? fileUrl.value : this.fileUrl,
+    fileName: fileName.present ? fileName.value : this.fileName,
+  );
+  LocalHomework copyWithCompanion(LocalHomeworksCompanion data) {
+    return LocalHomework(
+      id: data.id.present ? data.id.value : this.id,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      lessonId: data.lessonId.present ? data.lessonId.value : this.lessonId,
+      title: data.title.present ? data.title.value : this.title,
+      description: data.description.present ? data.description.value : this.description,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      fileUrl: data.fileUrl.present ? data.fileUrl.value : this.fileUrl,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalHomework(')
+          ..write('id: $id, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('groupId: $groupId, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('fileUrl: $fileUrl, ')
+          ..write('fileName: $fileName')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, subjectId, groupId, lessonId, title, description, dueDate, createdAt, fileUrl, fileName);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalHomework &&
+          other.id == this.id &&
+          other.subjectId == this.subjectId &&
+          other.groupId == this.groupId &&
+          other.lessonId == this.lessonId &&
+          other.title == this.title &&
+          other.description == this.description &&
+          other.dueDate == this.dueDate &&
+          other.createdAt == this.createdAt &&
+          other.fileUrl == this.fileUrl &&
+          other.fileName == this.fileName);
+}
+
+class LocalHomeworksCompanion extends UpdateCompanion<LocalHomework> {
+  final Value<String> id;
+  final Value<String> subjectId;
+  final Value<String> groupId;
+  final Value<String?> lessonId;
+  final Value<String> title;
+  final Value<String?> description;
+  final Value<DateTime?> dueDate;
+  final Value<DateTime?> createdAt;
+  final Value<String?> fileUrl;
+  final Value<String?> fileName;
+  final Value<int> rowid;
+  const LocalHomeworksCompanion({
+    this.id = const Value.absent(),
+    this.subjectId = const Value.absent(),
+    this.groupId = const Value.absent(),
+    this.lessonId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.description = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.fileUrl = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalHomeworksCompanion.insert({
+    required String id,
+    required String subjectId,
+    required String groupId,
+    this.lessonId = const Value.absent(),
+    required String title,
+    this.description = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.fileUrl = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       subjectId = Value(subjectId),
+       groupId = Value(groupId),
+       title = Value(title);
+  static Insertable<LocalHomework> custom({
+    Expression<String>? id,
+    Expression<String>? subjectId,
+    Expression<String>? groupId,
+    Expression<String>? lessonId,
+    Expression<String>? title,
+    Expression<String>? description,
+    Expression<DateTime>? dueDate,
+    Expression<DateTime>? createdAt,
+    Expression<String>? fileUrl,
+    Expression<String>? fileName,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (groupId != null) 'group_id': groupId,
+      if (lessonId != null) 'lesson_id': lessonId,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (dueDate != null) 'due_date': dueDate,
+      if (createdAt != null) 'created_at': createdAt,
+      if (fileUrl != null) 'file_url': fileUrl,
+      if (fileName != null) 'file_name': fileName,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalHomeworksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? subjectId,
+    Value<String>? groupId,
+    Value<String?>? lessonId,
+    Value<String>? title,
+    Value<String?>? description,
+    Value<DateTime?>? dueDate,
+    Value<DateTime?>? createdAt,
+    Value<String?>? fileUrl,
+    Value<String?>? fileName,
+    Value<int>? rowid,
+  }) {
+    return LocalHomeworksCompanion(
+      id: id ?? this.id,
+      subjectId: subjectId ?? this.subjectId,
+      groupId: groupId ?? this.groupId,
+      lessonId: lessonId ?? this.lessonId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      dueDate: dueDate ?? this.dueDate,
+      createdAt: createdAt ?? this.createdAt,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<String>(subjectId.value);
+    }
+    if (groupId.present) {
+      map['group_id'] = Variable<String>(groupId.value);
+    }
+    if (lessonId.present) {
+      map['lesson_id'] = Variable<String>(lessonId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (fileUrl.present) {
+      map['file_url'] = Variable<String>(fileUrl.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalHomeworksCompanion(')
+          ..write('id: $id, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('groupId: $groupId, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('fileUrl: $fileUrl, ')
+          ..write('fileName: $fileName, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
+    with TableInfo<$LocalHomeworkStatusesTable, LocalHomeworkStatuse> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalHomeworkStatusesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _homeworkIdMeta = const VerificationMeta('homeworkId');
+  @override
+  late final GeneratedColumn<String> homeworkId = GeneratedColumn<String>(
+    'homework_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _studentIdMeta = const VerificationMeta('studentId');
+  @override
+  late final GeneratedColumn<String> studentId = GeneratedColumn<String>(
+    'student_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isCompletedMeta = const VerificationMeta('isCompleted');
+  @override
+  late final GeneratedColumn<bool> isCompleted = GeneratedColumn<bool>(
+    'is_completed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("is_completed" IN (0, 1))'),
+  );
+  static const VerificationMeta _studentCommentMeta = const VerificationMeta('studentComment');
+  @override
+  late final GeneratedColumn<String> studentComment = GeneratedColumn<String>(
+    'student_comment',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _teacherCommentMeta = const VerificationMeta('teacherComment');
+  @override
+  late final GeneratedColumn<String> teacherComment = GeneratedColumn<String>(
+    'teacher_comment',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fileUrlMeta = const VerificationMeta('fileUrl');
+  @override
+  late final GeneratedColumn<String> fileUrl = GeneratedColumn<String>(
+    'file_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta('fileName');
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    homeworkId,
+    studentId,
+    isCompleted,
+    studentComment,
+    teacherComment,
+    fileUrl,
+    fileName,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_homework_statuses';
+  @override
+  VerificationContext validateIntegrity(Insertable<LocalHomeworkStatuse> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('homework_id')) {
+      context.handle(_homeworkIdMeta, homeworkId.isAcceptableOrUnknown(data['homework_id']!, _homeworkIdMeta));
+    } else if (isInserting) {
+      context.missing(_homeworkIdMeta);
+    }
+    if (data.containsKey('student_id')) {
+      context.handle(_studentIdMeta, studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta));
+    } else if (isInserting) {
+      context.missing(_studentIdMeta);
+    }
+    if (data.containsKey('is_completed')) {
+      context.handle(_isCompletedMeta, isCompleted.isAcceptableOrUnknown(data['is_completed']!, _isCompletedMeta));
+    } else if (isInserting) {
+      context.missing(_isCompletedMeta);
+    }
+    if (data.containsKey('student_comment')) {
+      context.handle(
+        _studentCommentMeta,
+        studentComment.isAcceptableOrUnknown(data['student_comment']!, _studentCommentMeta),
+      );
+    }
+    if (data.containsKey('teacher_comment')) {
+      context.handle(
+        _teacherCommentMeta,
+        teacherComment.isAcceptableOrUnknown(data['teacher_comment']!, _teacherCommentMeta),
+      );
+    }
+    if (data.containsKey('file_url')) {
+      context.handle(_fileUrlMeta, fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta));
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(_fileNameMeta, fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta, updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalHomeworkStatuse map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalHomeworkStatuse(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      homeworkId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}homework_id'])!,
+      studentId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}student_id'])!,
+      isCompleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}is_completed'])!,
+      studentComment: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}student_comment']),
+      teacherComment: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}teacher_comment']),
+      fileUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}file_url']),
+      fileName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}file_name']),
+      updatedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $LocalHomeworkStatusesTable createAlias(String alias) {
+    return $LocalHomeworkStatusesTable(attachedDatabase, alias);
+  }
+}
+
+class LocalHomeworkStatuse extends DataClass implements Insertable<LocalHomeworkStatuse> {
+  final String id;
+  final String homeworkId;
+  final String studentId;
+  final bool isCompleted;
+  final String? studentComment;
+  final String? teacherComment;
+  final String? fileUrl;
+  final String? fileName;
+  final DateTime updatedAt;
+  const LocalHomeworkStatuse({
+    required this.id,
+    required this.homeworkId,
+    required this.studentId,
+    required this.isCompleted,
+    this.studentComment,
+    this.teacherComment,
+    this.fileUrl,
+    this.fileName,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['homework_id'] = Variable<String>(homeworkId);
+    map['student_id'] = Variable<String>(studentId);
+    map['is_completed'] = Variable<bool>(isCompleted);
+    if (!nullToAbsent || studentComment != null) {
+      map['student_comment'] = Variable<String>(studentComment);
+    }
+    if (!nullToAbsent || teacherComment != null) {
+      map['teacher_comment'] = Variable<String>(teacherComment);
+    }
+    if (!nullToAbsent || fileUrl != null) {
+      map['file_url'] = Variable<String>(fileUrl);
+    }
+    if (!nullToAbsent || fileName != null) {
+      map['file_name'] = Variable<String>(fileName);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LocalHomeworkStatusesCompanion toCompanion(bool nullToAbsent) {
+    return LocalHomeworkStatusesCompanion(
+      id: Value(id),
+      homeworkId: Value(homeworkId),
+      studentId: Value(studentId),
+      isCompleted: Value(isCompleted),
+      studentComment: studentComment == null && nullToAbsent ? const Value.absent() : Value(studentComment),
+      teacherComment: teacherComment == null && nullToAbsent ? const Value.absent() : Value(teacherComment),
+      fileUrl: fileUrl == null && nullToAbsent ? const Value.absent() : Value(fileUrl),
+      fileName: fileName == null && nullToAbsent ? const Value.absent() : Value(fileName),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LocalHomeworkStatuse.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalHomeworkStatuse(
+      id: serializer.fromJson<String>(json['id']),
+      homeworkId: serializer.fromJson<String>(json['homeworkId']),
+      studentId: serializer.fromJson<String>(json['studentId']),
+      isCompleted: serializer.fromJson<bool>(json['isCompleted']),
+      studentComment: serializer.fromJson<String?>(json['studentComment']),
+      teacherComment: serializer.fromJson<String?>(json['teacherComment']),
+      fileUrl: serializer.fromJson<String?>(json['fileUrl']),
+      fileName: serializer.fromJson<String?>(json['fileName']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'homeworkId': serializer.toJson<String>(homeworkId),
+      'studentId': serializer.toJson<String>(studentId),
+      'isCompleted': serializer.toJson<bool>(isCompleted),
+      'studentComment': serializer.toJson<String?>(studentComment),
+      'teacherComment': serializer.toJson<String?>(teacherComment),
+      'fileUrl': serializer.toJson<String?>(fileUrl),
+      'fileName': serializer.toJson<String?>(fileName),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LocalHomeworkStatuse copyWith({
+    String? id,
+    String? homeworkId,
+    String? studentId,
+    bool? isCompleted,
+    Value<String?> studentComment = const Value.absent(),
+    Value<String?> teacherComment = const Value.absent(),
+    Value<String?> fileUrl = const Value.absent(),
+    Value<String?> fileName = const Value.absent(),
+    DateTime? updatedAt,
+  }) => LocalHomeworkStatuse(
+    id: id ?? this.id,
+    homeworkId: homeworkId ?? this.homeworkId,
+    studentId: studentId ?? this.studentId,
+    isCompleted: isCompleted ?? this.isCompleted,
+    studentComment: studentComment.present ? studentComment.value : this.studentComment,
+    teacherComment: teacherComment.present ? teacherComment.value : this.teacherComment,
+    fileUrl: fileUrl.present ? fileUrl.value : this.fileUrl,
+    fileName: fileName.present ? fileName.value : this.fileName,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LocalHomeworkStatuse copyWithCompanion(LocalHomeworkStatusesCompanion data) {
+    return LocalHomeworkStatuse(
+      id: data.id.present ? data.id.value : this.id,
+      homeworkId: data.homeworkId.present ? data.homeworkId.value : this.homeworkId,
+      studentId: data.studentId.present ? data.studentId.value : this.studentId,
+      isCompleted: data.isCompleted.present ? data.isCompleted.value : this.isCompleted,
+      studentComment: data.studentComment.present ? data.studentComment.value : this.studentComment,
+      teacherComment: data.teacherComment.present ? data.teacherComment.value : this.teacherComment,
+      fileUrl: data.fileUrl.present ? data.fileUrl.value : this.fileUrl,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalHomeworkStatuse(')
+          ..write('id: $id, ')
+          ..write('homeworkId: $homeworkId, ')
+          ..write('studentId: $studentId, ')
+          ..write('isCompleted: $isCompleted, ')
+          ..write('studentComment: $studentComment, ')
+          ..write('teacherComment: $teacherComment, ')
+          ..write('fileUrl: $fileUrl, ')
+          ..write('fileName: $fileName, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, homeworkId, studentId, isCompleted, studentComment, teacherComment, fileUrl, fileName, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalHomeworkStatuse &&
+          other.id == this.id &&
+          other.homeworkId == this.homeworkId &&
+          other.studentId == this.studentId &&
+          other.isCompleted == this.isCompleted &&
+          other.studentComment == this.studentComment &&
+          other.teacherComment == this.teacherComment &&
+          other.fileUrl == this.fileUrl &&
+          other.fileName == this.fileName &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LocalHomeworkStatusesCompanion extends UpdateCompanion<LocalHomeworkStatuse> {
+  final Value<String> id;
+  final Value<String> homeworkId;
+  final Value<String> studentId;
+  final Value<bool> isCompleted;
+  final Value<String?> studentComment;
+  final Value<String?> teacherComment;
+  final Value<String?> fileUrl;
+  final Value<String?> fileName;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const LocalHomeworkStatusesCompanion({
+    this.id = const Value.absent(),
+    this.homeworkId = const Value.absent(),
+    this.studentId = const Value.absent(),
+    this.isCompleted = const Value.absent(),
+    this.studentComment = const Value.absent(),
+    this.teacherComment = const Value.absent(),
+    this.fileUrl = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalHomeworkStatusesCompanion.insert({
+    required String id,
+    required String homeworkId,
+    required String studentId,
+    required bool isCompleted,
+    this.studentComment = const Value.absent(),
+    this.teacherComment = const Value.absent(),
+    this.fileUrl = const Value.absent(),
+    this.fileName = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       homeworkId = Value(homeworkId),
+       studentId = Value(studentId),
+       isCompleted = Value(isCompleted),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalHomeworkStatuse> custom({
+    Expression<String>? id,
+    Expression<String>? homeworkId,
+    Expression<String>? studentId,
+    Expression<bool>? isCompleted,
+    Expression<String>? studentComment,
+    Expression<String>? teacherComment,
+    Expression<String>? fileUrl,
+    Expression<String>? fileName,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (homeworkId != null) 'homework_id': homeworkId,
+      if (studentId != null) 'student_id': studentId,
+      if (isCompleted != null) 'is_completed': isCompleted,
+      if (studentComment != null) 'student_comment': studentComment,
+      if (teacherComment != null) 'teacher_comment': teacherComment,
+      if (fileUrl != null) 'file_url': fileUrl,
+      if (fileName != null) 'file_name': fileName,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalHomeworkStatusesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? homeworkId,
+    Value<String>? studentId,
+    Value<bool>? isCompleted,
+    Value<String?>? studentComment,
+    Value<String?>? teacherComment,
+    Value<String?>? fileUrl,
+    Value<String?>? fileName,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalHomeworkStatusesCompanion(
+      id: id ?? this.id,
+      homeworkId: homeworkId ?? this.homeworkId,
+      studentId: studentId ?? this.studentId,
+      isCompleted: isCompleted ?? this.isCompleted,
+      studentComment: studentComment ?? this.studentComment,
+      teacherComment: teacherComment ?? this.teacherComment,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (homeworkId.present) {
+      map['homework_id'] = Variable<String>(homeworkId.value);
+    }
+    if (studentId.present) {
+      map['student_id'] = Variable<String>(studentId.value);
+    }
+    if (isCompleted.present) {
+      map['is_completed'] = Variable<bool>(isCompleted.value);
+    }
+    if (studentComment.present) {
+      map['student_comment'] = Variable<String>(studentComment.value);
+    }
+    if (teacherComment.present) {
+      map['teacher_comment'] = Variable<String>(teacherComment.value);
+    }
+    if (fileUrl.present) {
+      map['file_url'] = Variable<String>(fileUrl.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalHomeworkStatusesCompanion(')
+          ..write('id: $id, ')
+          ..write('homeworkId: $homeworkId, ')
+          ..write('studentId: $studentId, ')
+          ..write('isCompleted: $isCompleted, ')
+          ..write('studentComment: $studentComment, ')
+          ..write('teacherComment: $teacherComment, ')
+          ..write('fileUrl: $fileUrl, ')
+          ..write('fileName: $fileName, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1982,6 +2973,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalSchedulesTable localSchedules = $LocalSchedulesTable(this);
   late final $LocalUsersTable localUsers = $LocalUsersTable(this);
   late final $LocalGradesTable localGrades = $LocalGradesTable(this);
+  late final $LocalHomeworksTable localHomeworks = $LocalHomeworksTable(this);
+  late final $LocalHomeworkStatusesTable localHomeworkStatuses = $LocalHomeworkStatusesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
@@ -1992,6 +2985,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localSchedules,
     localUsers,
     localGrades,
+    localHomeworks,
+    localHomeworkStatuses,
   ];
 }
 
@@ -3433,6 +4428,453 @@ typedef $$LocalGradesTableProcessedTableManager =
       LocalGrade,
       PrefetchHooks Function()
     >;
+typedef $$LocalHomeworksTableCreateCompanionBuilder =
+    LocalHomeworksCompanion Function({
+      required String id,
+      required String subjectId,
+      required String groupId,
+      Value<String?> lessonId,
+      required String title,
+      Value<String?> description,
+      Value<DateTime?> dueDate,
+      Value<DateTime?> createdAt,
+      Value<String?> fileUrl,
+      Value<String?> fileName,
+      Value<int> rowid,
+    });
+typedef $$LocalHomeworksTableUpdateCompanionBuilder =
+    LocalHomeworksCompanion Function({
+      Value<String> id,
+      Value<String> subjectId,
+      Value<String> groupId,
+      Value<String?> lessonId,
+      Value<String> title,
+      Value<String?> description,
+      Value<DateTime?> dueDate,
+      Value<DateTime?> createdAt,
+      Value<String?> fileUrl,
+      Value<String?> fileName,
+      Value<int> rowid,
+    });
+
+class $$LocalHomeworksTableFilterComposer extends Composer<_$AppDatabase, $LocalHomeworksTable> {
+  $$LocalHomeworksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectId =>
+      $composableBuilder(column: $table.subjectId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lessonId =>
+      $composableBuilder(column: $table.lessonId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description =>
+      $composableBuilder(column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fileUrl =>
+      $composableBuilder(column: $table.fileUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => ColumnFilters(column));
+}
+
+class $$LocalHomeworksTableOrderingComposer extends Composer<_$AppDatabase, $LocalHomeworksTable> {
+  $$LocalHomeworksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectId =>
+      $composableBuilder(column: $table.subjectId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lessonId =>
+      $composableBuilder(column: $table.lessonId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description =>
+      $composableBuilder(column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fileUrl =>
+      $composableBuilder(column: $table.fileUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LocalHomeworksTableAnnotationComposer extends Composer<_$AppDatabase, $LocalHomeworksTable> {
+  $$LocalHomeworksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectId => $composableBuilder(column: $table.subjectId, builder: (column) => column);
+
+  GeneratedColumn<String> get groupId => $composableBuilder(column: $table.groupId, builder: (column) => column);
+
+  GeneratedColumn<String> get lessonId => $composableBuilder(column: $table.lessonId, builder: (column) => column);
+
+  GeneratedColumn<String> get title => $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get description =>
+      $composableBuilder(column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dueDate => $composableBuilder(column: $table.dueDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get fileUrl => $composableBuilder(column: $table.fileUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName => $composableBuilder(column: $table.fileName, builder: (column) => column);
+}
+
+class $$LocalHomeworksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalHomeworksTable,
+          LocalHomework,
+          $$LocalHomeworksTableFilterComposer,
+          $$LocalHomeworksTableOrderingComposer,
+          $$LocalHomeworksTableAnnotationComposer,
+          $$LocalHomeworksTableCreateCompanionBuilder,
+          $$LocalHomeworksTableUpdateCompanionBuilder,
+          (LocalHomework, BaseReferences<_$AppDatabase, $LocalHomeworksTable, LocalHomework>),
+          LocalHomework,
+          PrefetchHooks Function()
+        > {
+  $$LocalHomeworksTableTableManager(_$AppDatabase db, $LocalHomeworksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$LocalHomeworksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$LocalHomeworksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$LocalHomeworksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> subjectId = const Value.absent(),
+                Value<String> groupId = const Value.absent(),
+                Value<String?> lessonId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
+                Value<DateTime?> createdAt = const Value.absent(),
+                Value<String?> fileUrl = const Value.absent(),
+                Value<String?> fileName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalHomeworksCompanion(
+                id: id,
+                subjectId: subjectId,
+                groupId: groupId,
+                lessonId: lessonId,
+                title: title,
+                description: description,
+                dueDate: dueDate,
+                createdAt: createdAt,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String subjectId,
+                required String groupId,
+                Value<String?> lessonId = const Value.absent(),
+                required String title,
+                Value<String?> description = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
+                Value<DateTime?> createdAt = const Value.absent(),
+                Value<String?> fileUrl = const Value.absent(),
+                Value<String?> fileName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalHomeworksCompanion.insert(
+                id: id,
+                subjectId: subjectId,
+                groupId: groupId,
+                lessonId: lessonId,
+                title: title,
+                description: description,
+                dueDate: dueDate,
+                createdAt: createdAt,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalHomeworksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalHomeworksTable,
+      LocalHomework,
+      $$LocalHomeworksTableFilterComposer,
+      $$LocalHomeworksTableOrderingComposer,
+      $$LocalHomeworksTableAnnotationComposer,
+      $$LocalHomeworksTableCreateCompanionBuilder,
+      $$LocalHomeworksTableUpdateCompanionBuilder,
+      (LocalHomework, BaseReferences<_$AppDatabase, $LocalHomeworksTable, LocalHomework>),
+      LocalHomework,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalHomeworkStatusesTableCreateCompanionBuilder =
+    LocalHomeworkStatusesCompanion Function({
+      required String id,
+      required String homeworkId,
+      required String studentId,
+      required bool isCompleted,
+      Value<String?> studentComment,
+      Value<String?> teacherComment,
+      Value<String?> fileUrl,
+      Value<String?> fileName,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalHomeworkStatusesTableUpdateCompanionBuilder =
+    LocalHomeworkStatusesCompanion Function({
+      Value<String> id,
+      Value<String> homeworkId,
+      Value<String> studentId,
+      Value<bool> isCompleted,
+      Value<String?> studentComment,
+      Value<String?> teacherComment,
+      Value<String?> fileUrl,
+      Value<String?> fileName,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalHomeworkStatusesTableFilterComposer extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
+  $$LocalHomeworkStatusesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get homeworkId =>
+      $composableBuilder(column: $table.homeworkId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get studentId =>
+      $composableBuilder(column: $table.studentId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isCompleted =>
+      $composableBuilder(column: $table.isCompleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get studentComment =>
+      $composableBuilder(column: $table.studentComment, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get teacherComment =>
+      $composableBuilder(column: $table.teacherComment, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fileUrl =>
+      $composableBuilder(column: $table.fileUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$LocalHomeworkStatusesTableOrderingComposer extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
+  $$LocalHomeworkStatusesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get homeworkId =>
+      $composableBuilder(column: $table.homeworkId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get studentId =>
+      $composableBuilder(column: $table.studentId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isCompleted =>
+      $composableBuilder(column: $table.isCompleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get studentComment =>
+      $composableBuilder(column: $table.studentComment, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get teacherComment =>
+      $composableBuilder(column: $table.teacherComment, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fileUrl =>
+      $composableBuilder(column: $table.fileUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LocalHomeworkStatusesTableAnnotationComposer extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
+  $$LocalHomeworkStatusesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get homeworkId => $composableBuilder(column: $table.homeworkId, builder: (column) => column);
+
+  GeneratedColumn<String> get studentId => $composableBuilder(column: $table.studentId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCompleted => $composableBuilder(column: $table.isCompleted, builder: (column) => column);
+
+  GeneratedColumn<String> get studentComment =>
+      $composableBuilder(column: $table.studentComment, builder: (column) => column);
+
+  GeneratedColumn<String> get teacherComment =>
+      $composableBuilder(column: $table.teacherComment, builder: (column) => column);
+
+  GeneratedColumn<String> get fileUrl => $composableBuilder(column: $table.fileUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName => $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt => $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LocalHomeworkStatusesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalHomeworkStatusesTable,
+          LocalHomeworkStatuse,
+          $$LocalHomeworkStatusesTableFilterComposer,
+          $$LocalHomeworkStatusesTableOrderingComposer,
+          $$LocalHomeworkStatusesTableAnnotationComposer,
+          $$LocalHomeworkStatusesTableCreateCompanionBuilder,
+          $$LocalHomeworkStatusesTableUpdateCompanionBuilder,
+          (LocalHomeworkStatuse, BaseReferences<_$AppDatabase, $LocalHomeworkStatusesTable, LocalHomeworkStatuse>),
+          LocalHomeworkStatuse,
+          PrefetchHooks Function()
+        > {
+  $$LocalHomeworkStatusesTableTableManager(_$AppDatabase db, $LocalHomeworkStatusesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$LocalHomeworkStatusesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$LocalHomeworkStatusesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$LocalHomeworkStatusesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> homeworkId = const Value.absent(),
+                Value<String> studentId = const Value.absent(),
+                Value<bool> isCompleted = const Value.absent(),
+                Value<String?> studentComment = const Value.absent(),
+                Value<String?> teacherComment = const Value.absent(),
+                Value<String?> fileUrl = const Value.absent(),
+                Value<String?> fileName = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalHomeworkStatusesCompanion(
+                id: id,
+                homeworkId: homeworkId,
+                studentId: studentId,
+                isCompleted: isCompleted,
+                studentComment: studentComment,
+                teacherComment: teacherComment,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String homeworkId,
+                required String studentId,
+                required bool isCompleted,
+                Value<String?> studentComment = const Value.absent(),
+                Value<String?> teacherComment = const Value.absent(),
+                Value<String?> fileUrl = const Value.absent(),
+                Value<String?> fileName = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalHomeworkStatusesCompanion.insert(
+                id: id,
+                homeworkId: homeworkId,
+                studentId: studentId,
+                isCompleted: isCompleted,
+                studentComment: studentComment,
+                teacherComment: teacherComment,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalHomeworkStatusesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalHomeworkStatusesTable,
+      LocalHomeworkStatuse,
+      $$LocalHomeworkStatusesTableFilterComposer,
+      $$LocalHomeworkStatusesTableOrderingComposer,
+      $$LocalHomeworkStatusesTableAnnotationComposer,
+      $$LocalHomeworkStatusesTableCreateCompanionBuilder,
+      $$LocalHomeworkStatusesTableUpdateCompanionBuilder,
+      (LocalHomeworkStatuse, BaseReferences<_$AppDatabase, $LocalHomeworkStatusesTable, LocalHomeworkStatuse>),
+      LocalHomeworkStatuse,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3443,4 +4885,7 @@ class $AppDatabaseManager {
   $$LocalSchedulesTableTableManager get localSchedules => $$LocalSchedulesTableTableManager(_db, _db.localSchedules);
   $$LocalUsersTableTableManager get localUsers => $$LocalUsersTableTableManager(_db, _db.localUsers);
   $$LocalGradesTableTableManager get localGrades => $$LocalGradesTableTableManager(_db, _db.localGrades);
+  $$LocalHomeworksTableTableManager get localHomeworks => $$LocalHomeworksTableTableManager(_db, _db.localHomeworks);
+  $$LocalHomeworkStatusesTableTableManager get localHomeworkStatuses =>
+      $$LocalHomeworkStatusesTableTableManager(_db, _db.localHomeworkStatuses);
 }
