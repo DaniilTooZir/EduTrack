@@ -27,6 +27,9 @@ class AuthResult {
 }
 
 class AuthService {
+  static const _studentSelect = '*, groups(name, institution_id, institutions(name))';
+  static const _defaultSelect = '*, institutions(name)';
+
   static Future<AppResult<AuthResult?>> login(String login, String password) async {
     try {
       var result = await _checkUser(table: 'education_heads', role: 'admin', login: login, password: password);
@@ -48,52 +51,63 @@ class AuthService {
     }
   }
 
+  static Future<AuthResult?> fetchById(String userId, String role) async {
+    final table = switch (role) {
+      'admin' => 'education_heads',
+      'teacher' => 'teachers',
+      'student' => 'students',
+      'schedule_operator' => 'schedule_operators',
+      _ => '',
+    };
+    if (table.isEmpty) return null;
+    try {
+      final selectStr = role == 'student' ? _studentSelect : _defaultSelect;
+      final data = await SupabaseConnection.client.from(table).select(selectStr).eq('id', userId).maybeSingle();
+      return data == null ? null : _parseResult(data, role);
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<AuthResult?> _checkUser({
     required String table,
     required String role,
     required String login,
     required String password,
   }) async {
-    final client = SupabaseConnection.client;
-    Map<String, dynamic>? data;
+    final selectStr = role == 'student' ? _studentSelect : _defaultSelect;
+    final data = await SupabaseConnection.client.from(table).select(selectStr).eq('login', login).maybeSingle();
+    if (data == null || data['password'] != password) return null;
+    return _parseResult(data, role);
+  }
+
+  static AuthResult _parseResult(Map<String, dynamic> data, String role) {
+    final String instId;
+    final String? instName;
+    final String? gName;
+
     if (role == 'student') {
-      final response =
-          await client
-              .from(table)
-              .select('*, groups(name, institution_id, institutions(name))')
-              .eq('login', login)
-              .maybeSingle();
-      data = response;
+      final groupData = data['groups'] as Map<String, dynamic>?;
+      instId = groupData?['institution_id']?.toString() ?? '';
+      instName = groupData?['institutions']?['name']?.toString();
+      gName = groupData?['name']?.toString();
     } else {
-      final response = await client.from(table).select('*, institutions(name)').eq('login', login).maybeSingle();
-      data = response;
+      instId = data['institution_id'].toString();
+      instName = data['institutions']?['name'];
+      gName = null;
     }
-    if (data != null && data['password'] == password) {
-      String instId;
-      String? instName;
-      String? gName;
-      if (role == 'student') {
-        final groupData = data['groups'] as Map<String, dynamic>?;
-        instId = groupData?['institution_id']?.toString() ?? '';
-        instName = groupData?['institutions']?['name']?.toString();
-        gName = groupData?['name']?.toString();
-      } else {
-        instId = data['institution_id'].toString();
-        instName = data['institutions']?['name'];
-      }
-      return AuthResult(
-        role: role,
-        userId: data['id'].toString(),
-        institutionId: instId,
-        groupId: data['group_id']?.toString(),
-        name: data['name']?.toString(),
-        surname: data['surname']?.toString(),
-        email: data['email'],
-        avatarUrl: data['avatar_url'],
-        institutionName: instName,
-        groupName: gName,
-      );
-    }
-    return null;
+
+    return AuthResult(
+      role: role,
+      userId: data['id'].toString(),
+      institutionId: instId,
+      groupId: data['group_id']?.toString(),
+      name: data['name']?.toString(),
+      surname: data['surname']?.toString(),
+      email: data['email'],
+      avatarUrl: data['avatar_url'],
+      institutionName: instName,
+      groupName: gName,
+    );
   }
 }

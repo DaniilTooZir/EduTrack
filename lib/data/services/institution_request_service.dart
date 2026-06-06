@@ -32,18 +32,20 @@ class InstitutionRequestService {
         final status = existingRequest['status'];
         if (status == 'approved') {
           return AppResult.failure('Заявка с таким email уже одобрена. Проверьте статус.');
+        } else if (status == 'failed') {
+          return AppResult.failure('Предыдущая заявка завершилась с технической ошибкой. Обратитесь к администратору.');
         } else {
           return AppResult.failure('Заявка с таким email уже находится на рассмотрении.');
         }
       }
       final dataToInsert = {
-        'name': name.trim(),
-        'address': address.trim(),
-        'head_name': headName.trim(),
-        'head_surname': headSurname.trim(),
-        'email': email.trim(),
-        'phone': phone?.trim(),
-        'comment': comment?.trim(),
+        'name': name,
+        'address': address,
+        'head_name': headName,
+        'head_surname': headSurname,
+        'email': cleanEmail,
+        'phone': phone,
+        'comment': comment,
         'status': 'pending',
       };
       await _client.from('institution_requests').insert(dataToInsert).select().single();

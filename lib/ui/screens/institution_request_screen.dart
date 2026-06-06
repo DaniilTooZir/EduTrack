@@ -41,6 +41,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
       comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
     );
 
+    if (!mounted) return;
     setState(() => _isSubmitting = false);
 
     if (result.isFailure) {

@@ -41,5 +41,6 @@ class SessionService {
     await prefs.remove('userId');
     await prefs.remove('role');
     await prefs.remove('institutionId');
+    await prefs.remove('groupId');
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/repositories/homework_repository.dart';
 import 'package:edu_track/data/repositories/user_repository.dart';
 import 'package:edu_track/data/services/academic_period_service.dart';
@@ -95,30 +94,15 @@ class UserProvider with ChangeNotifier {
 
   Future<bool> _fetchFullProfile() async {
     if (_userId == null || _role == null) return false;
-    final client = SupabaseConnection.client;
-    final String table = switch (_role) {
-      'admin' => 'education_heads',
-      'teacher' => 'teachers',
-      'student' => 'students',
-      'schedule_operator' => 'schedule_operators',
-      _ => '',
-    };
-    if (table.isEmpty) return false;
     try {
-      final selectString = _role == 'student' ? '*, groups(name, institutions(name))' : '*, institutions(name)';
-      final data = await client.from(table).select(selectString).eq('id', _userId!).maybeSingle();
-      if (data == null) return false;
-      _userName = data['name']?.toString();
-      _userSurname = data['surname']?.toString();
-      _userEmail = data['email']?.toString();
-      _avatarUrl = data['avatar_url']?.toString();
-      if (_role == 'student') {
-        final groupData = data['groups'] as Map<String, dynamic>?;
-        _groupName = groupData?['name']?.toString();
-        _institutionName = groupData?['institutions']?['name']?.toString();
-      } else {
-        _institutionName = data['institutions']?['name']?.toString();
-      }
+      final auth = await AuthService.fetchById(_userId!, _role!);
+      if (auth == null) return false;
+      _userName = auth.name;
+      _userSurname = auth.surname;
+      _userEmail = auth.email;
+      _avatarUrl = auth.avatarUrl;
+      _groupName = auth.groupName;
+      _institutionName = auth.institutionName;
       return true;
     } catch (e) {
       debugPrint('Ошибка fetchFullProfile: $e');

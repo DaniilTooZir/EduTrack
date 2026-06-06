@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
     final login = _loginController.text.trim();
-    final password = _passwordController.text.trim();
+    final password = _passwordController.text;
     final result = await AuthService.login(login, password);
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
@@ -72,7 +72,6 @@ class _LoginScreenState extends State<LoginScreen> {
         context.go(AppRoutes.welcome);
         break;
     }
-    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
