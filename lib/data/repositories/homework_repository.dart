@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/models/homework.dart';
@@ -86,19 +87,36 @@ class HomeworkRepository {
     deleteFile: deleteFile,
   );
 
-  Future<AppResult<void>> deleteHomework(String id) => _remote.deleteHomework(id);
+  Future<AppResult<void>> deleteHomework(String id) async {
+    final result = await _remote.deleteHomework(id);
+    if (result.isSuccess) unawaited(_local.deleteHomeworkFromCache(id));
+    return result;
+  }
 
   Future<AppResult<void>> evaluateHomework({
     required String homeworkId,
     required String studentId,
     required bool isCompleted,
     String? teacherComment,
-  }) => _remote.evaluateHomework(
-    homeworkId: homeworkId,
-    studentId: studentId,
-    isCompleted: isCompleted,
-    teacherComment: teacherComment,
-  );
+  }) async {
+    final result = await _remote.evaluateHomework(
+      homeworkId: homeworkId,
+      studentId: studentId,
+      isCompleted: isCompleted,
+      teacherComment: teacherComment,
+    );
+    if (result.isSuccess) {
+      unawaited(
+        _local.patchHomeworkStatusByKey(
+          homeworkId: homeworkId,
+          studentId: studentId,
+          isCompleted: isCompleted,
+          teacherComment: Value(teacherComment),
+        ),
+      );
+    }
+    return result;
+  }
 
   Future<AppResult<void>> submitHomework({
     required String homeworkId,
@@ -106,16 +124,45 @@ class HomeworkRepository {
     String? comment,
     String? fileUrl,
     String? fileName,
-  }) => _remote.submitHomework(
-    homeworkId: homeworkId,
-    studentId: studentId,
-    comment: comment,
-    fileUrl: fileUrl,
-    fileName: fileName,
-  );
+  }) async {
+    final result = await _remote.submitHomework(
+      homeworkId: homeworkId,
+      studentId: studentId,
+      comment: comment,
+      fileUrl: fileUrl,
+      fileName: fileName,
+    );
+    if (result.isSuccess) {
+      unawaited(
+        _local.patchHomeworkStatusByKey(
+          homeworkId: homeworkId,
+          studentId: studentId,
+          isCompleted: false,
+          studentComment: Value(comment),
+          fileUrl: Value(fileUrl),
+          fileName: Value(fileName),
+        ),
+      );
+    }
+    return result;
+  }
 
-  Future<AppResult<void>> cancelSubmission({required String homeworkId, required String studentId}) =>
-      _remote.cancelSubmission(homeworkId: homeworkId, studentId: studentId);
+  Future<AppResult<void>> cancelSubmission({required String homeworkId, required String studentId}) async {
+    final result = await _remote.cancelSubmission(homeworkId: homeworkId, studentId: studentId);
+    if (result.isSuccess) {
+      unawaited(
+        _local.patchHomeworkStatusByKey(
+          homeworkId: homeworkId,
+          studentId: studentId,
+          isCompleted: false,
+          studentComment: const Value(null),
+          fileUrl: const Value(null),
+          fileName: const Value(null),
+        ),
+      );
+    }
+    return result;
+  }
 
   Future<AppResult<List<HomeworkStatus>>> getStatusesByHomeworkId(String homeworkId) =>
       _remote.getStatusesByHomeworkId(homeworkId);

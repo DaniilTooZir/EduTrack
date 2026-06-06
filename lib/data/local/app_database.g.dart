@@ -4486,6 +4486,182 @@ class LocalInstitutionsCompanion extends UpdateCompanion<LocalInstitution> {
   }
 }
 
+class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable, LocalLesson> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalLessonsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scheduleIdMeta = const VerificationMeta('scheduleId');
+  @override
+  late final GeneratedColumn<String> scheduleId = GeneratedColumn<String>(
+    'schedule_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, scheduleId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_lessons';
+  @override
+  VerificationContext validateIntegrity(Insertable<LocalLesson> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('schedule_id')) {
+      context.handle(_scheduleIdMeta, scheduleId.isAcceptableOrUnknown(data['schedule_id']!, _scheduleIdMeta));
+    } else if (isInserting) {
+      context.missing(_scheduleIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalLesson map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalLesson(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      scheduleId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}schedule_id'])!,
+    );
+  }
+
+  @override
+  $LocalLessonsTable createAlias(String alias) {
+    return $LocalLessonsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalLesson extends DataClass implements Insertable<LocalLesson> {
+  final String id;
+  final String scheduleId;
+  const LocalLesson({required this.id, required this.scheduleId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['schedule_id'] = Variable<String>(scheduleId);
+    return map;
+  }
+
+  LocalLessonsCompanion toCompanion(bool nullToAbsent) {
+    return LocalLessonsCompanion(id: Value(id), scheduleId: Value(scheduleId));
+  }
+
+  factory LocalLesson.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalLesson(
+      id: serializer.fromJson<String>(json['id']),
+      scheduleId: serializer.fromJson<String>(json['scheduleId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{'id': serializer.toJson<String>(id), 'scheduleId': serializer.toJson<String>(scheduleId)};
+  }
+
+  LocalLesson copyWith({String? id, String? scheduleId}) =>
+      LocalLesson(id: id ?? this.id, scheduleId: scheduleId ?? this.scheduleId);
+  LocalLesson copyWithCompanion(LocalLessonsCompanion data) {
+    return LocalLesson(
+      id: data.id.present ? data.id.value : this.id,
+      scheduleId: data.scheduleId.present ? data.scheduleId.value : this.scheduleId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalLesson(')
+          ..write('id: $id, ')
+          ..write('scheduleId: $scheduleId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, scheduleId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is LocalLesson && other.id == this.id && other.scheduleId == this.scheduleId);
+}
+
+class LocalLessonsCompanion extends UpdateCompanion<LocalLesson> {
+  final Value<String> id;
+  final Value<String> scheduleId;
+  final Value<int> rowid;
+  const LocalLessonsCompanion({
+    this.id = const Value.absent(),
+    this.scheduleId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalLessonsCompanion.insert({required String id, required String scheduleId, this.rowid = const Value.absent()})
+    : id = Value(id),
+      scheduleId = Value(scheduleId);
+  static Insertable<LocalLesson> custom({
+    Expression<String>? id,
+    Expression<String>? scheduleId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (scheduleId != null) 'schedule_id': scheduleId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalLessonsCompanion copyWith({Value<String>? id, Value<String>? scheduleId, Value<int>? rowid}) {
+    return LocalLessonsCompanion(
+      id: id ?? this.id,
+      scheduleId: scheduleId ?? this.scheduleId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (scheduleId.present) {
+      map['schedule_id'] = Variable<String>(scheduleId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalLessonsCompanion(')
+          ..write('id: $id, ')
+          ..write('scheduleId: $scheduleId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4501,6 +4677,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalGroupDetailsTable localGroupDetails = $LocalGroupDetailsTable(this);
   late final $LocalTeacherProfilesTable localTeacherProfiles = $LocalTeacherProfilesTable(this);
   late final $LocalInstitutionsTable localInstitutions = $LocalInstitutionsTable(this);
+  late final $LocalLessonsTable localLessons = $LocalLessonsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
@@ -4517,6 +4694,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localGroupDetails,
     localTeacherProfiles,
     localInstitutions,
+    localLessons,
   ];
 }
 
@@ -7132,6 +7310,104 @@ typedef $$LocalInstitutionsTableProcessedTableManager =
       LocalInstitution,
       PrefetchHooks Function()
     >;
+typedef $$LocalLessonsTableCreateCompanionBuilder =
+    LocalLessonsCompanion Function({required String id, required String scheduleId, Value<int> rowid});
+typedef $$LocalLessonsTableUpdateCompanionBuilder =
+    LocalLessonsCompanion Function({Value<String> id, Value<String> scheduleId, Value<int> rowid});
+
+class $$LocalLessonsTableFilterComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
+  $$LocalLessonsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get scheduleId =>
+      $composableBuilder(column: $table.scheduleId, builder: (column) => ColumnFilters(column));
+}
+
+class $$LocalLessonsTableOrderingComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
+  $$LocalLessonsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get scheduleId =>
+      $composableBuilder(column: $table.scheduleId, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LocalLessonsTableAnnotationComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
+  $$LocalLessonsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get scheduleId => $composableBuilder(column: $table.scheduleId, builder: (column) => column);
+}
+
+class $$LocalLessonsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalLessonsTable,
+          LocalLesson,
+          $$LocalLessonsTableFilterComposer,
+          $$LocalLessonsTableOrderingComposer,
+          $$LocalLessonsTableAnnotationComposer,
+          $$LocalLessonsTableCreateCompanionBuilder,
+          $$LocalLessonsTableUpdateCompanionBuilder,
+          (LocalLesson, BaseReferences<_$AppDatabase, $LocalLessonsTable, LocalLesson>),
+          LocalLesson,
+          PrefetchHooks Function()
+        > {
+  $$LocalLessonsTableTableManager(_$AppDatabase db, $LocalLessonsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$LocalLessonsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$LocalLessonsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$LocalLessonsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> scheduleId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalLessonsCompanion(id: id, scheduleId: scheduleId, rowid: rowid),
+          createCompanionCallback:
+              ({required String id, required String scheduleId, Value<int> rowid = const Value.absent()}) =>
+                  LocalLessonsCompanion.insert(id: id, scheduleId: scheduleId, rowid: rowid),
+          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalLessonsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalLessonsTable,
+      LocalLesson,
+      $$LocalLessonsTableFilterComposer,
+      $$LocalLessonsTableOrderingComposer,
+      $$LocalLessonsTableAnnotationComposer,
+      $$LocalLessonsTableCreateCompanionBuilder,
+      $$LocalLessonsTableUpdateCompanionBuilder,
+      (LocalLesson, BaseReferences<_$AppDatabase, $LocalLessonsTable, LocalLesson>),
+      LocalLesson,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7152,4 +7428,5 @@ class $AppDatabaseManager {
       $$LocalTeacherProfilesTableTableManager(_db, _db.localTeacherProfiles);
   $$LocalInstitutionsTableTableManager get localInstitutions =>
       $$LocalInstitutionsTableTableManager(_db, _db.localInstitutions);
+  $$LocalLessonsTableTableManager get localLessons => $$LocalLessonsTableTableManager(_db, _db.localLessons);
 }

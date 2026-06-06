@@ -208,6 +208,18 @@ class GradeService {
     }
   }
 
+  Future<AppResult<Map<String, String>>> getLessonScheduleMapping(List<String> lessonIds) async {
+    try {
+      if (lessonIds.isEmpty) return AppResult.success({});
+      final raw = await _supabase.from('lessons').select('id, schedule_id').inFilter('id', lessonIds);
+      return AppResult.success({for (final l in raw as List) l['id'].toString(): l['schedule_id'].toString()});
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке уроков: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось загрузить данные уроков.');
+    }
+  }
+
   Future<AppResult<void>> clearJournalCell({required String studentId, required String lessonId}) async {
     try {
       await Future.wait([

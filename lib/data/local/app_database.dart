@@ -172,6 +172,15 @@ class LocalInstitutions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// Уроки: связь lessonId > scheduleId для вычисления аналитики из кэша
+class LocalLessons extends Table {
+  TextColumn get id => text()();
+  TextColumn get scheduleId => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LocalSchedules,
@@ -186,13 +195,14 @@ class LocalInstitutions extends Table {
     LocalGroupDetails,
     LocalTeacherProfiles,
     LocalInstitutions,
+    LocalLessons,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -217,6 +227,7 @@ class AppDatabase extends _$AppDatabase {
     await delete(localGroupDetails).go();
     await delete(localTeacherProfiles).go();
     await delete(localInstitutions).go();
+    await delete(localLessons).go();
   }
 
   Future<void> saveSchedules(List<Schedule> schedules) async {
@@ -415,6 +426,51 @@ class AppDatabase extends _$AppDatabase {
     return rows.map((r) => Grade(id: r.id, lessonId: r.lessonId, studentId: r.studentId, value: r.value)).toList();
   }
 
+  Future<void> saveGrade(Grade grade) async {
+    if (grade.id == null) return;
+    await into(localGrades).insertOnConflictUpdate(
+      LocalGradesCompanion.insert(
+        id: grade.id!,
+        lessonId: grade.lessonId,
+        studentId: grade.studentId,
+        value: grade.value,
+      ),
+    );
+  }
+
+  Future<void> deleteGradeByLessonAndStudent(String lessonId, String studentId) async {
+    await (delete(localGrades)..where((t) => t.lessonId.equals(lessonId) & t.studentId.equals(studentId))).go();
+  }
+
+  Future<void> saveLessons(Map<String, String> lessonIdToScheduleId) async {
+    await transaction(() async {
+      for (final e in lessonIdToScheduleId.entries) {
+        await into(localLessons).insertOnConflictUpdate(LocalLessonsCompanion.insert(id: e.key, scheduleId: e.value));
+      }
+    });
+  }
+
+  Future<Map<String, String>> getLessonScheduleMap(List<String> lessonIds) async {
+    if (lessonIds.isEmpty) return {};
+    final rows = await (select(localLessons)..where((t) => t.id.isIn(lessonIds))).get();
+    return {for (final r in rows) r.id: r.scheduleId};
+  }
+
+  Future<Map<String, ({String subjectId, DateTime? date})>> getScheduleSubjectDateMap(List<String> scheduleIds) async {
+    if (scheduleIds.isEmpty) return {};
+    final rows = await (select(localSchedules)..where((t) => t.id.isIn(scheduleIds))).get();
+    return {for (final r in rows) r.id: (subjectId: r.subjectId, date: r.date)};
+  }
+
+  Future<Map<String, Subject>> getSubjectsByIds(List<String> ids) async {
+    if (ids.isEmpty) return {};
+    final rows = await (select(localSubjects)..where((t) => t.id.isIn(ids))).get();
+    return {
+      for (final r in rows)
+        r.id: Subject(id: r.id, name: r.name, institutionId: r.institutionId, createdAt: DateTime.now()),
+    };
+  }
+
   Future<void> saveHomeworks(List<Homework> homeworks) async {
     await transaction(() async {
       for (final h in homeworks) {
@@ -499,6 +555,32 @@ class AppDatabase extends _$AppDatabase {
           ),
         )
         .toList();
+  }
+
+  Future<void> patchHomeworkStatusByKey({
+    required String homeworkId,
+    required String studentId,
+    bool? isCompleted,
+    Value<String?> studentComment = const Value.absent(),
+    Value<String?> teacherComment = const Value.absent(),
+    Value<String?> fileUrl = const Value.absent(),
+    Value<String?> fileName = const Value.absent(),
+  }) async {
+    await (update(localHomeworkStatuses)
+      ..where((t) => t.homeworkId.equals(homeworkId) & t.studentId.equals(studentId))).write(
+      LocalHomeworkStatusesCompanion(
+        isCompleted: isCompleted != null ? Value(isCompleted) : const Value.absent(),
+        studentComment: studentComment,
+        teacherComment: teacherComment,
+        fileUrl: fileUrl,
+        fileName: fileName,
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> deleteHomeworkFromCache(String id) async {
+    await (delete(localHomeworks)..where((t) => t.id.equals(id))).go();
   }
 
   Future<void> saveStudents(List<Student> students) async {
