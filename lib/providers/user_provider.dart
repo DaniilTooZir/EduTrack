@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/data/repositories/homework_repository.dart';
 import 'package:edu_track/data/repositories/user_repository.dart';
 import 'package:edu_track/data/services/academic_period_service.dart';
 import 'package:edu_track/data/services/auth_service.dart';
-import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/notification_service.dart';
 import 'package:edu_track/data/services/realtime_listener.dart';
 import 'package:edu_track/data/services/session_service.dart';
@@ -13,8 +13,11 @@ import 'package:flutter/foundation.dart';
 
 class UserProvider with ChangeNotifier {
   final UserRepository _userRepository;
+  final HomeworkRepository _homeworkRepository;
 
-  UserProvider({required UserRepository userRepository}) : _userRepository = userRepository;
+  UserProvider({required UserRepository userRepository, required HomeworkRepository homeworkRepository})
+    : _userRepository = userRepository,
+      _homeworkRepository = homeworkRepository;
 
   String? _userId;
   String? _role;
@@ -150,7 +153,7 @@ class UserProvider with ChangeNotifier {
 
   Future<void> _scheduleHomeworkReminders() async {
     if (_role != 'student' || _userId == null) return;
-    final result = await HomeworkService().getHomeworksByStudentGroup(_userId!);
+    final result = await _homeworkRepository.getHomeworksForStudentGroup(_userId!, _groupId ?? '');
     if (result.isFailure) return;
     final notificationService = NotificationService();
     await notificationService.cancelAllScheduled();

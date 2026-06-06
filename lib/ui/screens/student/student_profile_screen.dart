@@ -1,4 +1,7 @@
-﻿import 'package:edu_track/data/services/avatar_service.dart';
+﻿import 'dart:async';
+
+import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/services/avatar_service.dart';
 import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/data/services/student_service.dart';
@@ -35,6 +38,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   bool _isPasswordVisible = false;
   late final StudentService _studentService;
   late final InstitutionService _institutionService;
+  late final AppDatabase _db;
   final _avatarService = AvatarService();
   Student? _student;
   Institution? _institution;
@@ -44,6 +48,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     super.initState();
     _studentService = StudentService();
     _institutionService = InstitutionService();
+    _db = Provider.of<AppDatabase>(context, listen: false);
     _loadStudentData();
   }
 
@@ -54,17 +59,40 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     final userId = userProvider.userId;
     final institutionId = userProvider.institutionId;
     if (userId == null) return;
+
+    final cachedStudent = await _db.getStudentById(userId);
+    final cachedInstitution = institutionId != null ? await _db.getInstitutionById(institutionId) : null;
+    if (cachedStudent != null && mounted) {
+      setState(() {
+        _student = cachedStudent;
+        _institution = cachedInstitution;
+        _fillControllers();
+        _isLoading = false;
+      });
+      unawaited(_refreshStudentFromNetwork(userId, institutionId));
+      return;
+    }
+    await _refreshStudentFromNetwork(userId, institutionId);
+  }
+
+  Future<void> _refreshStudentFromNetwork(String userId, String? institutionId) async {
     final studentResult = await _studentService.getStudentById(userId);
     if (studentResult.isFailure || studentResult.data == null) {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
     final student = studentResult.data!;
+    unawaited(_db.saveStudent(student));
+
     Institution? inst;
     if (institutionId != null) {
       final instResult = await _institutionService.getInstitutionById(institutionId);
-      if (instResult.isSuccess) inst = instResult.data;
+      if (instResult.isSuccess && instResult.data != null) {
+        inst = instResult.data;
+        unawaited(_db.saveInstitution(inst!));
+      }
     }
+
     Map<String, dynamic>? curator;
     if (student.groupId != null) {
       try {
@@ -80,8 +108,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     if (mounted) {
       setState(() {
         _student = student;
-        _institution = inst;
-        _curatorInfo = curator;
+        _institution = inst ?? _institution;
+        _curatorInfo = curator ?? _curatorInfo;
         _fillControllers();
         _isLoading = false;
       });
@@ -104,6 +132,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       MessengerHelper.showError(updateResult.errorMessage);
     } else {
       MessengerHelper.showSuccess('Фото профиля обновлено');
+      unawaited(_db.saveStudent(_student!.copyWith(avatarUrl: uploadResult.data)));
       await _loadStudentData();
     }
     setState(() => _isSaving = false);
@@ -149,6 +178,16 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       MessengerHelper.showError(result.errorMessage);
     } else {
       MessengerHelper.showSuccess('Профиль обновлён');
+      unawaited(
+        _db.saveStudent(
+          _student!.copyWith(
+            name: _nameController.text.trim(),
+            surname: _surnameController.text.trim(),
+            email: _emailController.text.trim(),
+            login: _loginController.text.trim(),
+          ),
+        ),
+      );
       setState(() {
         _isEditing = false;
         _passwordController.clear();

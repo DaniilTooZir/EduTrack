@@ -1,5 +1,5 @@
-﻿import 'package:edu_track/data/services/file_service.dart';
-import 'package:edu_track/data/services/homework_service.dart';
+﻿import 'package:edu_track/data/repositories/homework_repository.dart';
+import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
@@ -20,7 +20,7 @@ class StudentHomeworkScreen extends StatefulWidget {
 }
 
 class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
-  final _homeworkService = HomeworkService();
+  HomeworkRepository get _homeworkRepository => Provider.of<HomeworkRepository>(context, listen: false);
   final _fileService = FileService();
   bool _isLoading = true;
   List<Homework> _homeworks = [];
@@ -33,16 +33,18 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
   }
 
   Future<void> _loadHomework() async {
-    final studentId = Provider.of<UserProvider>(context, listen: false).userId;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final studentId = userProvider.userId;
+    final groupId = userProvider.groupId;
     if (studentId == null) return;
     if (_homeworks.isEmpty) setState(() => _isLoading = true);
-    final homeworksResult = await _homeworkService.getHomeworksByStudentGroup(studentId);
+    final homeworksResult = await _homeworkRepository.getHomeworksForStudentGroup(studentId, groupId ?? '');
     if (homeworksResult.isFailure) {
       if (mounted) setState(() => _isLoading = false);
       MessengerHelper.showError(homeworksResult.errorMessage);
       return;
     }
-    final statusesResult = await _homeworkService.getHomeworkStatusesForStudent(studentId);
+    final statusesResult = await _homeworkRepository.getStatusesForStudent(studentId);
     if (statusesResult.isFailure) {
       if (mounted) setState(() => _isLoading = false);
       MessengerHelper.showError(statusesResult.errorMessage);
@@ -69,7 +71,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
             homework: hw,
             status: _statuses[hw.id],
             studentId: studentId,
-            homeworkService: _homeworkService,
+            homeworkRepository: _homeworkRepository,
             fileService: _fileService,
           ),
     );
@@ -301,13 +303,13 @@ class _HomeworkSubmissionSheet extends StatefulWidget {
   final Homework homework;
   final HomeworkStatus? status;
   final String studentId;
-  final HomeworkService homeworkService;
+  final HomeworkRepository homeworkRepository;
   final FileService fileService;
   const _HomeworkSubmissionSheet({
     required this.homework,
     required this.status,
     required this.studentId,
-    required this.homeworkService,
+    required this.homeworkRepository,
     required this.fileService,
   });
 
@@ -385,7 +387,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
       fileUrl = uploadResult.data;
       fileName = fileToUpload.name;
     }
-    final submitResult = await widget.homeworkService.submitHomework(
+    final submitResult = await widget.homeworkRepository.submitHomework(
       homeworkId: widget.homework.id,
       studentId: widget.studentId,
       comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
@@ -404,7 +406,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
 
   Future<void> _cancelSubmission() async {
     setState(() => _isSubmitting = true);
-    final result = await widget.homeworkService.cancelSubmission(
+    final result = await widget.homeworkRepository.cancelSubmission(
       homeworkId: widget.homework.id,
       studentId: widget.studentId,
     );

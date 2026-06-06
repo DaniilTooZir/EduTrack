@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/avatar_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/data/services/teacher_service.dart';
@@ -34,6 +37,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
   late final TeacherService _teacherService;
   late final InstitutionService _institutionService;
+  late final AppDatabase _db;
   final _avatarService = AvatarService();
 
   Teacher? _teacher;
@@ -44,23 +48,47 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     super.initState();
     _teacherService = TeacherService();
     _institutionService = InstitutionService();
+    _db = Provider.of<AppDatabase>(context, listen: false);
     _loadTeacherData();
   }
 
   Future<void> _loadTeacherData() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId == null) return;
+    final cachedTeacher = await _db.getTeacherProfileById(userId);
+    final cachedInstitution = cachedTeacher != null ? await _db.getInstitutionById(cachedTeacher.institutionId) : null;
+    if (cachedTeacher != null && mounted) {
+      setState(() {
+        _teacher = cachedTeacher;
+        _institution = cachedInstitution;
+        _fillControllers();
+        _isLoading = false;
+      });
+      unawaited(_refreshTeacherFromNetwork(userId));
+      return;
+    }
+    await _refreshTeacherFromNetwork(userId);
+  }
+
+  Future<void> _refreshTeacherFromNetwork(String userId) async {
     final teacherResult = await _teacherService.getTeacherById(userId);
     if (teacherResult.isFailure || teacherResult.data == null) {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
     final teacher = teacherResult.data!;
+    unawaited(_db.saveTeacherProfile(teacher));
+
+    Institution? inst;
     final instResult = await _institutionService.getInstitutionById(teacher.institutionId);
+    if (instResult.isSuccess && instResult.data != null) {
+      inst = instResult.data;
+      unawaited(_db.saveInstitution(inst!));
+    }
     if (mounted) {
       setState(() {
         _teacher = teacher;
-        _institution = instResult.isSuccess ? instResult.data : null;
+        _institution = inst ?? _institution;
         _fillControllers();
         _isLoading = false;
       });
@@ -85,6 +113,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       return;
     }
     MessengerHelper.showSuccess('Фото профиля обновлено');
+    unawaited(_db.saveTeacherProfile(_teacher!.copyWith(avatarUrl: uploadResult.data)));
     await _loadTeacherData();
   }
 
@@ -135,6 +164,17 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       return;
     }
     MessengerHelper.showSuccess('Профиль обновлён');
+    unawaited(
+      _db.saveTeacherProfile(
+        _teacher!.copyWith(
+          name: _nameController.text.trim(),
+          surname: _surnameController.text.trim(),
+          email: _emailController.text.trim(),
+          login: _loginController.text.trim(),
+          department: _departmentController.text.trim().isEmpty ? null : _departmentController.text.trim(),
+        ),
+      ),
+    );
     setState(() {
       _isEditing = false;
       _passwordController.clear();

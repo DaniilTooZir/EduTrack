@@ -7,7 +7,9 @@ import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
+import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/schedule.dart';
+import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:path/path.dart' as p;
@@ -115,6 +117,61 @@ class LocalHomeworkStatuses extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// Полные профили студентов (для экрана профиля и списка группы)
+class LocalStudents extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get surname => text()();
+  TextColumn get email => text()();
+  TextColumn get login => text()();
+  TextColumn get groupId => text().nullable()();
+  BoolColumn get isHeadman => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+  TextColumn get avatarUrl => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// Полные данные группы (включая curatorId — нужен для поиска группы куратора)
+class LocalGroupDetails extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get institutionId => text()();
+  TextColumn get curatorId => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// Полные профили преподавателей (для экрана профиля преподавателя)
+class LocalTeacherProfiles extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get surname => text()();
+  TextColumn get email => text()();
+  TextColumn get login => text()();
+  TextColumn get institutionId => text()();
+  TextColumn get department => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  TextColumn get avatarUrl => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// Учреждения (для экранов профиля)
+class LocalInstitutions extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get address => text()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(
   tables: [
     LocalSchedules,
@@ -125,13 +182,17 @@ class LocalHomeworkStatuses extends Table {
     LocalGrades,
     LocalHomeworks,
     LocalHomeworkStatuses,
+    LocalStudents,
+    LocalGroupDetails,
+    LocalTeacherProfiles,
+    LocalInstitutions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -152,6 +213,10 @@ class AppDatabase extends _$AppDatabase {
     await delete(localGrades).go();
     await delete(localHomeworks).go();
     await delete(localHomeworkStatuses).go();
+    await delete(localStudents).go();
+    await delete(localGroupDetails).go();
+    await delete(localTeacherProfiles).go();
+    await delete(localInstitutions).go();
   }
 
   Future<void> saveSchedules(List<Schedule> schedules) async {
@@ -434,6 +499,130 @@ class AppDatabase extends _$AppDatabase {
           ),
         )
         .toList();
+  }
+
+  Future<void> saveStudents(List<Student> students) async {
+    await transaction(() async {
+      for (final s in students) {
+        await into(localStudents).insertOnConflictUpdate(
+          LocalStudentsCompanion.insert(
+            id: s.id,
+            name: s.name,
+            surname: s.surname,
+            email: s.email,
+            login: s.login,
+            groupId: Value(s.groupId),
+            isHeadman: Value(s.isHeadman),
+            createdAt: s.createdAt,
+            avatarUrl: Value(s.avatarUrl),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> saveStudent(Student student) => saveStudents([student]);
+
+  Future<Student?> getStudentById(String id) async {
+    final row = await (select(localStudents)..where((t) => t.id.equals(id))).getSingleOrNull();
+    return row == null ? null : _rowToStudent(row);
+  }
+
+  Future<List<Student>> getStudentsByGroupId(String groupId) async {
+    final rows =
+        await (select(localStudents)
+              ..where((t) => t.groupId.equals(groupId))
+              ..orderBy([(t) => OrderingTerm(expression: t.surname)]))
+            .get();
+    return rows.map(_rowToStudent).toList();
+  }
+
+  Student _rowToStudent(LocalStudent row) => Student(
+    id: row.id,
+    name: row.name,
+    surname: row.surname,
+    email: row.email,
+    login: row.login,
+    password: '',
+    groupId: row.groupId,
+    isHeadman: row.isHeadman,
+    createdAt: row.createdAt,
+    avatarUrl: row.avatarUrl,
+  );
+
+  Future<void> saveGroupDetail(Group group) async {
+    if (group.id == null) return;
+    await into(localGroupDetails).insertOnConflictUpdate(
+      LocalGroupDetailsCompanion.insert(
+        id: group.id!,
+        name: group.name,
+        institutionId: group.institutionId,
+        curatorId: Value(group.curatorId),
+        createdAt: Value(group.createdAt),
+      ),
+    );
+  }
+
+  Future<Group?> getGroupByCuratorId(String curatorId) async {
+    final row = await (select(localGroupDetails)..where((t) => t.curatorId.equals(curatorId))).getSingleOrNull();
+    if (row == null) return null;
+    return Group(
+      id: row.id,
+      name: row.name,
+      institutionId: row.institutionId,
+      curatorId: row.curatorId,
+      createdAt: row.createdAt,
+    );
+  }
+
+  Future<void> saveTeacherProfile(Teacher teacher) async {
+    await into(localTeacherProfiles).insertOnConflictUpdate(
+      LocalTeacherProfilesCompanion.insert(
+        id: teacher.id,
+        name: teacher.name,
+        surname: teacher.surname,
+        email: teacher.email,
+        login: teacher.login,
+        institutionId: teacher.institutionId,
+        department: Value(teacher.department),
+        createdAt: teacher.createdAt,
+        avatarUrl: Value(teacher.avatarUrl),
+      ),
+    );
+  }
+
+  Future<Teacher?> getTeacherProfileById(String id) async {
+    final row = await (select(localTeacherProfiles)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (row == null) return null;
+    return Teacher(
+      id: row.id,
+      name: row.name,
+      surname: row.surname,
+      email: row.email,
+      login: row.login,
+      password: '',
+      institutionId: row.institutionId,
+      department: row.department,
+      createdAt: row.createdAt,
+      avatarUrl: row.avatarUrl,
+    );
+  }
+
+  Future<void> saveInstitution(Institution institution) async {
+    await into(localInstitutions).insertOnConflictUpdate(
+      LocalInstitutionsCompanion.insert(
+        id: institution.id,
+        name: institution.name,
+        address: institution.address,
+        createdAt: institution.createdAt,
+      ),
+    );
+  }
+
+  Future<Institution?> getInstitutionById(String id) async {
+    final row = await (select(localInstitutions)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (row == null) return null;
+    return Institution(id: row.id, name: row.name, address: row.address, createdAt: row.createdAt);
   }
 
   Future<List<Subject>> getSubjectsByTeacher(String teacherId) async {

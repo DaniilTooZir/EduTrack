@@ -1,6 +1,5 @@
+import 'package:edu_track/data/repositories/group_repository.dart';
 import 'package:edu_track/data/services/chat_service.dart';
-import 'package:edu_track/data/services/group_service.dart';
-import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -20,8 +19,7 @@ class TeacherMyGroupScreen extends StatefulWidget {
 }
 
 class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
-  final _groupService = GroupService();
-  final _studentService = StudentService();
+  GroupRepository get _groupRepository => Provider.of<GroupRepository>(context, listen: false);
 
   bool _isLoading = true;
   Group? _myGroup;
@@ -40,14 +38,14 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
-    final groupResult = await _groupService.getGroupByCurator(teacherId);
+    final groupResult = await _groupRepository.getGroupByCurator(teacherId);
     if (groupResult.isFailure) {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
     _myGroup = groupResult.data;
     if (_myGroup != null && _myGroup!.id != null) {
-      final studentsResult = await _studentService.getStudentsByGroupId(_myGroup!.id!);
+      final studentsResult = await _groupRepository.getStudentsByGroupId(_myGroup!.id!);
       if (studentsResult.isSuccess) _students = studentsResult.data;
     }
     if (mounted) setState(() => _isLoading = false);
@@ -74,7 +72,7 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
             );
           }).toList();
     });
-    final result = await _studentService.setHeadman(_myGroup!.id!, student.id);
+    final result = await _groupRepository.setHeadman(_myGroup!.id!, student.id);
     if (!mounted) return;
     if (result.isFailure) {
       setState(() => _students = previousStudents);
