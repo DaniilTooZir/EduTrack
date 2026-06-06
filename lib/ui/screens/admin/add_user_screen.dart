@@ -94,7 +94,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       'surname': _surnameController.text.trim(),
       'email': _emailController.text.trim(),
       'login': _loginController.text.trim(),
-      'password': _passwordController.text.trim(),
+      'password': _passwordController.text,
       'institution_id': institutionId,
     };
 

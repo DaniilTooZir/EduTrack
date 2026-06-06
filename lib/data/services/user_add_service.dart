@@ -39,11 +39,17 @@ class UserAddService {
   Future<AppResult<void>> _checkLoginEmailUnique(String login, String email) async {
     const tables = ['education_heads', 'teachers', 'students', 'schedule_operators'];
     try {
-      for (final table in tables) {
-        final byLogin = await _client.from(table).select('id').eq('login', login).maybeSingle();
-        if (byLogin != null) return AppResult.failure('Логин "$login" уже занят.');
-        final byEmail = await _client.from(table).select('id').eq('email', email).maybeSingle();
-        if (byEmail != null) return AppResult.failure('Email "$email" уже используется.');
+      final loginResults = await Future.wait(
+        tables.map((t) => _client.from(t).select('id').eq('login', login).maybeSingle()),
+      );
+      if (loginResults.any((r) => r != null)) {
+        return AppResult.failure('Логин "$login" уже занят.');
+      }
+      final emailResults = await Future.wait(
+        tables.map((t) => _client.from(t).select('id').eq('email', email).maybeSingle()),
+      );
+      if (emailResults.any((r) => r != null)) {
+        return AppResult.failure('Email "$email" уже используется.');
       }
       return AppResult.success(null);
     } on PostgrestException catch (e) {

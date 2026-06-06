@@ -48,27 +48,26 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
     if (institutionId == null) return;
     setState(() => _isLoading = true);
 
-    final groupsResult = await _service.getGroups(institutionId);
+    final (groupsResult, teachersResult) =
+        await (_service.getGroups(institutionId), _teacherService.getTeachers(institutionId)).wait;
+
     if (groupsResult.isFailure) {
       MessengerHelper.showError(groupsResult.errorMessage);
       if (mounted) setState(() => _isLoading = false);
       return;
     }
-
-    final teachersResult = await _teacherService.getTeachers(institutionId);
     if (teachersResult.isFailure) {
       MessengerHelper.showError(teachersResult.errorMessage);
       if (mounted) setState(() => _isLoading = false);
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        _groups = groupsResult.data;
-        _teachers = teachersResult.data;
-        _isLoading = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _groups = groupsResult.data;
+      _teachers = teachersResult.data;
+      _isLoading = false;
+    });
   }
 
   String _getTeacherName(String? id) {
@@ -104,13 +103,12 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
 
     MessengerHelper.showSuccess('Группа добавлена');
     _nameController.clear();
-    if (mounted) {
-      setState(() {
-        _selectedCuratorId = null;
-        _isAdding = false;
-        _autovalidateMode = AutovalidateMode.disabled;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _selectedCuratorId = null;
+      _isAdding = false;
+      _autovalidateMode = AutovalidateMode.disabled;
+    });
     await _loadData();
   }
 
@@ -118,7 +116,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
     final editController = TextEditingController(text: group.name);
     final editFormKey = GlobalKey<FormState>();
     String? editCuratorId = group.curatorId;
-    await showDialog(
+    await showDialog<void>(
       context: context,
       builder:
           (ctx) => StatefulBuilder(
@@ -188,6 +186,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
             },
           ),
     );
+    editController.dispose();
   }
 
   Future<void> _deleteGroup(Group group) async {
@@ -215,6 +214,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
         return;
       }
       MessengerHelper.showSuccess('Группа удалена');
+      if (!mounted) return;
       await _loadData();
     }
   }

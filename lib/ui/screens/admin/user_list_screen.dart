@@ -38,39 +38,34 @@ class _UserListScreenState extends State<UserListScreen> {
     setState(() => _isLoading = true);
     final service = UsersFetchService();
 
-    final teachersResult = await service.fetchTeachers(institutionId);
-    if (teachersResult.isFailure) {
-      MessengerHelper.showError(teachersResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
+    final results = await Future.wait([
+      service.fetchTeachers(institutionId),
+      service.fetchStudents(institutionId),
+      service.fetchScheduleOperators(institutionId),
+    ]);
+    final teachersResult = results[0];
+    final studentsResult = results[1];
+    final operatorsResult = results[2];
+
+    for (final result in results) {
+      if (result.isFailure) {
+        MessengerHelper.showError(result.errorMessage);
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
     }
 
-    final studentsResult = await service.fetchStudents(institutionId);
-    if (studentsResult.isFailure) {
-      MessengerHelper.showError(studentsResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
-    final operatorsResult = await service.fetchScheduleOperators(institutionId);
-    if (operatorsResult.isFailure) {
-      MessengerHelper.showError(operatorsResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _allTeachers = teachersResult.data;
-        _allStudents = studentsResult.data;
-        _allOperators = operatorsResult.data;
-        _applyFilters();
-        _isLoading = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _allTeachers = teachersResult.data;
+      _allStudents = studentsResult.data;
+      _allOperators = operatorsResult.data;
+      _filteredUsers = _computeFiltered();
+      _isLoading = false;
+    });
   }
 
-  void _applyFilters() {
+  List<Map<String, dynamic>> _computeFiltered() {
     List<Map<String, dynamic>> combined = [];
     if (_selectedRole == 'teacher' || _selectedRole == 'all') {
       combined += _allTeachers.map((t) => {...t, 'role': 'teacher'}).toList();
@@ -81,7 +76,6 @@ class _UserListScreenState extends State<UserListScreen> {
     if (_selectedRole == 'student' || _selectedRole == 'all') {
       combined += _allStudents.map((s) => {...s, 'role': 'student'}).toList();
     }
-
     if (_searchQuery.isNotEmpty) {
       combined =
           combined.where((user) {
@@ -97,12 +91,17 @@ class _UserListScreenState extends State<UserListScreen> {
       final sb = '${b['surname']} ${b['name']}'.toLowerCase();
       return _sortAsc ? sa.compareTo(sb) : sb.compareTo(sa);
     });
-    setState(() => _filteredUsers = combined);
+    return combined;
+  }
+
+  void _applyFilters() {
+    setState(() => _filteredUsers = _computeFiltered());
   }
 
   Future<void> _deleteUser(String id, String role) async {
     final service = UsersFetchService();
     final result = await service.deleteUserById(id, role);
+    if (!mounted) return;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
       return;
@@ -208,7 +207,7 @@ class _UserListScreenState extends State<UserListScreen> {
                   tooltip: _sortAsc ? 'А–Я (нажмите для Я–А)' : 'Я–А (нажмите для А–Я)',
                   icon: Icon(_sortAsc ? Icons.arrow_upward : Icons.arrow_downward, color: colors.primary),
                   onPressed: () {
-                    setState(() => _sortAsc = !_sortAsc);
+                    _sortAsc = !_sortAsc;
                     _applyFilters();
                   },
                 ),
@@ -232,7 +231,7 @@ class _UserListScreenState extends State<UserListScreen> {
         fontWeight: selected ? FontWeight.bold : FontWeight.normal,
       ),
       onSelected: (_) {
-        setState(() => _selectedRole = value);
+        _selectedRole = value;
         _applyFilters();
       },
     );

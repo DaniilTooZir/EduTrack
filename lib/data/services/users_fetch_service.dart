@@ -43,11 +43,7 @@ class UsersFetchService {
       return AppResult.success(
         students.map((student) {
           final group = (student['groups'] as Map<String, dynamic>?);
-          return {
-            ...student,
-            'group_name': group != null ? group['name'] : 'Без группы',
-            'class_number': student['group_id'],
-          };
+          return {...student, 'group_name': group != null ? group['name'] : 'Без группы'};
         }).toList(),
       );
     } on PostgrestException catch (e) {
