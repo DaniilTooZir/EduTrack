@@ -8,6 +8,7 @@ import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/subject_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
@@ -168,13 +169,69 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0, colors),
-            _buildDrawerItem(Icons.people_alt_rounded, 'Пользователи', 1, colors),
-            _buildDrawerItem(Icons.person_add_alt_1_rounded, 'Добавить пользователя', 2, colors),
-            _buildDrawerItem(Icons.menu_book_rounded, 'Предметы', 3, colors),
-            _buildDrawerItem(Icons.groups_rounded, 'Группы', 4, colors),
-            _buildDrawerItem(Icons.calendar_month_rounded, 'Учебные периоды', 5, colors),
-            _buildDrawerItem(Icons.person_rounded, 'Профиль', 6, colors),
+            DrawerNavItem(
+              icon: Icons.dashboard_rounded,
+              title: 'Главная',
+              selected: _selectedIndex == 0,
+              onTap: () {
+                _navigateToTab(0);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.people_alt_rounded,
+              title: 'Пользователи',
+              selected: _selectedIndex == 1,
+              onTap: () {
+                _navigateToTab(1);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.person_add_alt_1_rounded,
+              title: 'Добавить пользователя',
+              selected: _selectedIndex == 2,
+              onTap: () {
+                _navigateToTab(2);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.menu_book_rounded,
+              title: 'Предметы',
+              selected: _selectedIndex == 3,
+              onTap: () {
+                _navigateToTab(3);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.groups_rounded,
+              title: 'Группы',
+              selected: _selectedIndex == 4,
+              onTap: () {
+                _navigateToTab(4);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.calendar_month_rounded,
+              title: 'Учебные периоды',
+              selected: _selectedIndex == 5,
+              onTap: () {
+                _navigateToTab(5);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.person_rounded,
+              title: 'Профиль',
+              selected: _selectedIndex == 6,
+              onTap: () {
+                _navigateToTab(6);
+                Navigator.of(context).pop();
+              },
+            ),
             const Divider(),
             ListTile(
               leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
@@ -193,26 +250,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: bodyContent,
       ),
-    );
-  }
-
-  Widget _buildDrawerItem(IconData icon, String title, int index, ColorScheme colors) {
-    final bool selected = _selectedIndex == index;
-    return ListTile(
-      leading: Icon(icon, color: selected ? colors.primary : colors.onSurfaceVariant),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: selected ? colors.primary : colors.onSurface,
-          fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-        ),
-      ),
-      selected: selected,
-      selectedTileColor: colors.primaryContainer.withValues(alpha: 0.3),
-      onTap: () {
-        _navigateToTab(index);
-        Navigator.of(context).pop();
-      },
     );
   }
 

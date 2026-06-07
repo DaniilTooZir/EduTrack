@@ -17,6 +17,7 @@ import 'package:edu_track/ui/screens/teacher/teacher_my_group_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
@@ -305,10 +306,42 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.dashboard_rounded, 'Главная', 0, colors),
-            _buildDrawerItem(Icons.assignment_rounded, 'Домашние задания', 1, colors),
-            _buildDrawerItem(Icons.checklist_rtl_rounded, 'Проверка ДЗ', 5, colors),
-            _buildDrawerItem(Icons.supervised_user_circle_rounded, 'Моя группа', 6, colors),
+            DrawerNavItem(
+              icon: Icons.dashboard_rounded,
+              title: 'Главная',
+              selected: _selectedIndex == 0,
+              onTap: () {
+                _navigateToTab(0);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.assignment_rounded,
+              title: 'Домашние задания',
+              selected: _selectedIndex == 1,
+              onTap: () {
+                _navigateToTab(1);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.checklist_rtl_rounded,
+              title: 'Проверка ДЗ',
+              selected: _selectedIndex == 5,
+              onTap: () {
+                _navigateToTab(5);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.supervised_user_circle_rounded,
+              title: 'Моя группа',
+              selected: _selectedIndex == 6,
+              onTap: () {
+                _navigateToTab(6);
+                Navigator.of(context).pop();
+              },
+            ),
             ListTile(
               leading: Icon(
                 Icons.table_chart_rounded,
@@ -325,11 +358,51 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               selectedTileColor: colors.primaryContainer.withValues(alpha: 0.3),
               onTap: _openJournalSelector,
             ),
-            _buildDrawerItem(Icons.warning_amber_rounded, 'Задолженности', 9, colors),
-            _buildDrawerItem(Icons.message_rounded, 'Сообщения', 7, colors),
-            _buildDrawerItem(Icons.menu_book_rounded, 'Мои занятия', 2, colors),
-            _buildDrawerItem(Icons.calendar_month_rounded, 'Расписание', 3, colors),
-            _buildDrawerItem(Icons.person_rounded, 'Профиль', 4, colors),
+            DrawerNavItem(
+              icon: Icons.warning_amber_rounded,
+              title: 'Задолженности',
+              selected: _selectedIndex == 9,
+              onTap: () {
+                _navigateToTab(9);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.message_rounded,
+              title: 'Сообщения',
+              selected: _selectedIndex == 7,
+              onTap: () {
+                _navigateToTab(7);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.menu_book_rounded,
+              title: 'Мои занятия',
+              selected: _selectedIndex == 2,
+              onTap: () {
+                _navigateToTab(2);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.calendar_month_rounded,
+              title: 'Расписание',
+              selected: _selectedIndex == 3,
+              onTap: () {
+                _navigateToTab(3);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.person_rounded,
+              title: 'Профиль',
+              selected: _selectedIndex == 4,
+              onTap: () {
+                _navigateToTab(4);
+                Navigator.of(context).pop();
+              },
+            ),
             const Divider(),
             ListTile(
               leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
@@ -348,26 +421,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: bodyContent,
       ),
-    );
-  }
-
-  Widget _buildDrawerItem(IconData icon, String title, int index, ColorScheme colors) {
-    final bool selected = _selectedIndex == index;
-    return ListTile(
-      leading: Icon(icon, color: selected ? colors.primary : colors.onSurfaceVariant),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: selected ? colors.primary : colors.onSurface,
-          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      selected: selected,
-      selectedTileColor: colors.primaryContainer.withValues(alpha: 0.3),
-      onTap: () {
-        _navigateToTab(index);
-        Navigator.of(context).pop();
-      },
     );
   }
 

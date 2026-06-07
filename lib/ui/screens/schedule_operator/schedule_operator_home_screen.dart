@@ -4,6 +4,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
@@ -115,8 +116,24 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.dashboard, 'Главная', 0, colors),
-            _buildDrawerItem(Icons.edit_calendar, 'Редактор расписания', 1, colors),
+            DrawerNavItem(
+              icon: Icons.dashboard,
+              title: 'Главная',
+              selected: _selectedIndex == 0,
+              onTap: () {
+                _navigateToTab(0);
+                Navigator.of(context).pop();
+              },
+            ),
+            DrawerNavItem(
+              icon: Icons.edit_calendar,
+              title: 'Редактор расписания',
+              selected: _selectedIndex == 1,
+              onTap: () {
+                _navigateToTab(1);
+                Navigator.of(context).pop();
+              },
+            ),
             const Divider(),
             ListTile(
               leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
@@ -135,27 +152,6 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: bodyContent,
       ),
-    );
-  }
-
-  Widget _buildDrawerItem(IconData icon, String title, int index, ColorScheme colors) {
-    final bool selected = _selectedIndex == index;
-    return ListTile(
-      leading: Icon(icon, color: selected ? colors.primary : colors.onSurfaceVariant),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: selected ? colors.primary : colors.onSurface,
-          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      selected: selected,
-      selectedTileColor: colors.primary.withValues(alpha: 0.1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
-      onTap: () {
-        _navigateToTab(index);
-        Navigator.of(context).pop();
-      },
     );
   }
 
