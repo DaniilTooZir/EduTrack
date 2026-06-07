@@ -1,5 +1,5 @@
+import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
-import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -20,7 +20,7 @@ class StudentLessonScreen extends StatefulWidget {
 }
 
 class _StudentLessonScreenState extends State<StudentLessonScreen> {
-  final LessonService _lessonService = LessonService();
+  LessonRepository get _lessonRepository => Provider.of<LessonRepository>(context, listen: false);
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
 
   bool _loading = true;
@@ -80,16 +80,11 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
       if (mounted) setState(() => _loading = false);
       return;
     }
-    final List<Lesson> allLessons = [];
-    final Map<String, Schedule> cache = {};
-    for (final schedule in schedulesResult.data) {
-      cache[schedule.id] = schedule;
-      final lessonsResult = await _lessonService.getLessonsByScheduleId(schedule.id);
-      if (lessonsResult.isSuccess) allLessons.addAll(lessonsResult.data);
-    }
+    final cache = {for (final s in schedulesResult.data) s.id: s};
+    final lessonsResult = await _lessonRepository.getLessonsByScheduleIds(cache.keys.toList());
     if (mounted) {
       setState(() {
-        _lessons = allLessons;
+        _lessons = lessonsResult.isSuccess ? lessonsResult.data : [];
         _scheduleCache = cache;
         _loading = false;
       });

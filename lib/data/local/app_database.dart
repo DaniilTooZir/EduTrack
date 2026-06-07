@@ -8,6 +8,7 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/models/institution.dart';
+import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject.dart';
@@ -172,10 +173,11 @@ class LocalInstitutions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-// Уроки: связь lessonId > scheduleId для вычисления аналитики из кэша
 class LocalLessons extends Table {
   TextColumn get id => text()();
   TextColumn get scheduleId => text()();
+  TextColumn get topic => text().nullable()();
+  TextColumn get attendanceStatus => text().withDefault(const Constant('pending'))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -202,7 +204,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -440,6 +442,35 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteGradeByLessonAndStudent(String lessonId, String studentId) async {
     await (delete(localGrades)..where((t) => t.lessonId.equals(lessonId) & t.studentId.equals(studentId))).go();
+  }
+
+  Future<void> saveLessonsData(List<Lesson> lessons) async {
+    await transaction(() async {
+      for (final l in lessons) {
+        if (l.id == null || l.id!.isEmpty) continue;
+        await into(localLessons).insertOnConflictUpdate(
+          LocalLessonsCompanion.insert(
+            id: l.id!,
+            scheduleId: l.scheduleId,
+            topic: Value(l.topic),
+            attendanceStatus: Value(l.attendanceStatus),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<List<Lesson>> getLessonsCachedByScheduleIds(List<String> scheduleIds) async {
+    if (scheduleIds.isEmpty) return [];
+    final rows = await (select(localLessons)..where((t) => t.scheduleId.isIn(scheduleIds))).get();
+    return rows
+        .map((r) => Lesson(id: r.id, scheduleId: r.scheduleId, topic: r.topic, attendanceStatus: r.attendanceStatus))
+        .toList();
+  }
+
+  Future<void> deleteLessonsForSchedules(List<String> scheduleIds) async {
+    if (scheduleIds.isEmpty) return;
+    await (delete(localLessons)..where((t) => t.scheduleId.isIn(scheduleIds))).go();
   }
 
   Future<void> saveLessons(Map<String, String> lessonIdToScheduleId) async {

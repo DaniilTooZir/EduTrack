@@ -1,6 +1,6 @@
+import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/group_service.dart';
-import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/lesson.dart';
@@ -26,7 +26,7 @@ class TeacherLessonScreen extends StatefulWidget {
 }
 
 class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
-  final LessonService _lessonService = LessonService();
+  LessonRepository get _lessonRepository => Provider.of<LessonRepository>(context, listen: false);
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   final SubjectService _subjectService = SubjectService();
   final GroupService _groupService = GroupService();
@@ -92,23 +92,21 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   Future<void> _loadData() async {
     if (teacherId == null || institutionId == null) return;
     setState(() => _isLoading = true);
-    final groupsResult = await _groupService.getGroups(institutionId!);
-    final subjectsResult = await _subjectService.getSubjectsByTeacherId(teacherId!);
-    final schedulesResult = await _scheduleService.getScheduleForTeacher(teacherId!);
+    final groupsFuture = _groupService.getGroups(institutionId!);
+    final subjectsFuture = _subjectService.getSubjectsByTeacherId(teacherId!);
+    final schedulesFuture = _scheduleService.getScheduleForTeacher(teacherId!);
+    final groupsResult = await groupsFuture;
+    final subjectsResult = await subjectsFuture;
+    final schedulesResult = await schedulesFuture;
 
-    final List<Lesson> allLessons = [];
-    final Map<String, Schedule> cache = {};
-    for (final schedule in schedulesResult.data) {
-      cache[schedule.id] = schedule;
-      final lessonsResult = await _lessonService.getLessonsByScheduleId(schedule.id);
-      if (lessonsResult.isSuccess) allLessons.addAll(lessonsResult.data);
-    }
+    final cache = {for (final s in schedulesResult.data) s.id: s};
+    final lessonsResult = await _lessonRepository.getLessonsByScheduleIds(cache.keys.toList());
 
     if (mounted) {
       setState(() {
         if (groupsResult.isSuccess) _groups = groupsResult.data;
         if (subjectsResult.isSuccess) _subjects = subjectsResult.data;
-        _lessons = allLessons;
+        _lessons = lessonsResult.isSuccess ? lessonsResult.data : [];
         _scheduleCache = cache;
         _isLoading = false;
       });
@@ -284,7 +282,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                       attendanceStatus: 'pending',
                     );
                     final navigator = Navigator.of(context);
-                    final result = await _lessonService.addLesson(lesson);
+                    final result = await _lessonRepository.addLesson(lesson);
                     if (!mounted) return;
                     if (result.isFailure) {
                       MessengerHelper.showError(result.errorMessage);

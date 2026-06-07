@@ -4509,8 +4509,27 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _topicMeta = const VerificationMeta('topic');
   @override
-  List<GeneratedColumn> get $columns => [id, scheduleId];
+  late final GeneratedColumn<String> topic = GeneratedColumn<String>(
+    'topic',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _attendanceStatusMeta = const VerificationMeta('attendanceStatus');
+  @override
+  late final GeneratedColumn<String> attendanceStatus = GeneratedColumn<String>(
+    'attendance_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, scheduleId, topic, attendanceStatus];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4530,6 +4549,15 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
     } else if (isInserting) {
       context.missing(_scheduleIdMeta);
     }
+    if (data.containsKey('topic')) {
+      context.handle(_topicMeta, topic.isAcceptableOrUnknown(data['topic']!, _topicMeta));
+    }
+    if (data.containsKey('attendance_status')) {
+      context.handle(
+        _attendanceStatusMeta,
+        attendanceStatus.isAcceptableOrUnknown(data['attendance_status']!, _attendanceStatusMeta),
+      );
+    }
     return context;
   }
 
@@ -4541,6 +4569,9 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
     return LocalLesson(
       id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       scheduleId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}schedule_id'])!,
+      topic: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}topic']),
+      attendanceStatus:
+          attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}attendance_status'])!,
     );
   }
 
@@ -4553,17 +4584,28 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
 class LocalLesson extends DataClass implements Insertable<LocalLesson> {
   final String id;
   final String scheduleId;
-  const LocalLesson({required this.id, required this.scheduleId});
+  final String? topic;
+  final String attendanceStatus;
+  const LocalLesson({required this.id, required this.scheduleId, this.topic, required this.attendanceStatus});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['schedule_id'] = Variable<String>(scheduleId);
+    if (!nullToAbsent || topic != null) {
+      map['topic'] = Variable<String>(topic);
+    }
+    map['attendance_status'] = Variable<String>(attendanceStatus);
     return map;
   }
 
   LocalLessonsCompanion toCompanion(bool nullToAbsent) {
-    return LocalLessonsCompanion(id: Value(id), scheduleId: Value(scheduleId));
+    return LocalLessonsCompanion(
+      id: Value(id),
+      scheduleId: Value(scheduleId),
+      topic: topic == null && nullToAbsent ? const Value.absent() : Value(topic),
+      attendanceStatus: Value(attendanceStatus),
+    );
   }
 
   factory LocalLesson.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
@@ -4571,20 +4613,38 @@ class LocalLesson extends DataClass implements Insertable<LocalLesson> {
     return LocalLesson(
       id: serializer.fromJson<String>(json['id']),
       scheduleId: serializer.fromJson<String>(json['scheduleId']),
+      topic: serializer.fromJson<String?>(json['topic']),
+      attendanceStatus: serializer.fromJson<String>(json['attendanceStatus']),
     );
   }
   @override
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{'id': serializer.toJson<String>(id), 'scheduleId': serializer.toJson<String>(scheduleId)};
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'scheduleId': serializer.toJson<String>(scheduleId),
+      'topic': serializer.toJson<String?>(topic),
+      'attendanceStatus': serializer.toJson<String>(attendanceStatus),
+    };
   }
 
-  LocalLesson copyWith({String? id, String? scheduleId}) =>
-      LocalLesson(id: id ?? this.id, scheduleId: scheduleId ?? this.scheduleId);
+  LocalLesson copyWith({
+    String? id,
+    String? scheduleId,
+    Value<String?> topic = const Value.absent(),
+    String? attendanceStatus,
+  }) => LocalLesson(
+    id: id ?? this.id,
+    scheduleId: scheduleId ?? this.scheduleId,
+    topic: topic.present ? topic.value : this.topic,
+    attendanceStatus: attendanceStatus ?? this.attendanceStatus,
+  );
   LocalLesson copyWithCompanion(LocalLessonsCompanion data) {
     return LocalLesson(
       id: data.id.present ? data.id.value : this.id,
       scheduleId: data.scheduleId.present ? data.scheduleId.value : this.scheduleId,
+      topic: data.topic.present ? data.topic.value : this.topic,
+      attendanceStatus: data.attendanceStatus.present ? data.attendanceStatus.value : this.attendanceStatus,
     );
   }
 
@@ -4592,46 +4652,74 @@ class LocalLesson extends DataClass implements Insertable<LocalLesson> {
   String toString() {
     return (StringBuffer('LocalLesson(')
           ..write('id: $id, ')
-          ..write('scheduleId: $scheduleId')
+          ..write('scheduleId: $scheduleId, ')
+          ..write('topic: $topic, ')
+          ..write('attendanceStatus: $attendanceStatus')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, scheduleId);
+  int get hashCode => Object.hash(id, scheduleId, topic, attendanceStatus);
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || (other is LocalLesson && other.id == this.id && other.scheduleId == this.scheduleId);
+      identical(this, other) ||
+      (other is LocalLesson &&
+          other.id == this.id &&
+          other.scheduleId == this.scheduleId &&
+          other.topic == this.topic &&
+          other.attendanceStatus == this.attendanceStatus);
 }
 
 class LocalLessonsCompanion extends UpdateCompanion<LocalLesson> {
   final Value<String> id;
   final Value<String> scheduleId;
+  final Value<String?> topic;
+  final Value<String> attendanceStatus;
   final Value<int> rowid;
   const LocalLessonsCompanion({
     this.id = const Value.absent(),
     this.scheduleId = const Value.absent(),
+    this.topic = const Value.absent(),
+    this.attendanceStatus = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  LocalLessonsCompanion.insert({required String id, required String scheduleId, this.rowid = const Value.absent()})
-    : id = Value(id),
-      scheduleId = Value(scheduleId);
+  LocalLessonsCompanion.insert({
+    required String id,
+    required String scheduleId,
+    this.topic = const Value.absent(),
+    this.attendanceStatus = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       scheduleId = Value(scheduleId);
   static Insertable<LocalLesson> custom({
     Expression<String>? id,
     Expression<String>? scheduleId,
+    Expression<String>? topic,
+    Expression<String>? attendanceStatus,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (scheduleId != null) 'schedule_id': scheduleId,
+      if (topic != null) 'topic': topic,
+      if (attendanceStatus != null) 'attendance_status': attendanceStatus,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  LocalLessonsCompanion copyWith({Value<String>? id, Value<String>? scheduleId, Value<int>? rowid}) {
+  LocalLessonsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? scheduleId,
+    Value<String?>? topic,
+    Value<String>? attendanceStatus,
+    Value<int>? rowid,
+  }) {
     return LocalLessonsCompanion(
       id: id ?? this.id,
       scheduleId: scheduleId ?? this.scheduleId,
+      topic: topic ?? this.topic,
+      attendanceStatus: attendanceStatus ?? this.attendanceStatus,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4645,6 +4733,12 @@ class LocalLessonsCompanion extends UpdateCompanion<LocalLesson> {
     if (scheduleId.present) {
       map['schedule_id'] = Variable<String>(scheduleId.value);
     }
+    if (topic.present) {
+      map['topic'] = Variable<String>(topic.value);
+    }
+    if (attendanceStatus.present) {
+      map['attendance_status'] = Variable<String>(attendanceStatus.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4656,6 +4750,8 @@ class LocalLessonsCompanion extends UpdateCompanion<LocalLesson> {
     return (StringBuffer('LocalLessonsCompanion(')
           ..write('id: $id, ')
           ..write('scheduleId: $scheduleId, ')
+          ..write('topic: $topic, ')
+          ..write('attendanceStatus: $attendanceStatus, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7311,9 +7407,21 @@ typedef $$LocalInstitutionsTableProcessedTableManager =
       PrefetchHooks Function()
     >;
 typedef $$LocalLessonsTableCreateCompanionBuilder =
-    LocalLessonsCompanion Function({required String id, required String scheduleId, Value<int> rowid});
+    LocalLessonsCompanion Function({
+      required String id,
+      required String scheduleId,
+      Value<String?> topic,
+      Value<String> attendanceStatus,
+      Value<int> rowid,
+    });
 typedef $$LocalLessonsTableUpdateCompanionBuilder =
-    LocalLessonsCompanion Function({Value<String> id, Value<String> scheduleId, Value<int> rowid});
+    LocalLessonsCompanion Function({
+      Value<String> id,
+      Value<String> scheduleId,
+      Value<String?> topic,
+      Value<String> attendanceStatus,
+      Value<int> rowid,
+    });
 
 class $$LocalLessonsTableFilterComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
   $$LocalLessonsTableFilterComposer({
@@ -7327,6 +7435,12 @@ class $$LocalLessonsTableFilterComposer extends Composer<_$AppDatabase, $LocalLe
 
   ColumnFilters<String> get scheduleId =>
       $composableBuilder(column: $table.scheduleId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get topic =>
+      $composableBuilder(column: $table.topic, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get attendanceStatus =>
+      $composableBuilder(column: $table.attendanceStatus, builder: (column) => ColumnFilters(column));
 }
 
 class $$LocalLessonsTableOrderingComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
@@ -7341,6 +7455,12 @@ class $$LocalLessonsTableOrderingComposer extends Composer<_$AppDatabase, $Local
 
   ColumnOrderings<String> get scheduleId =>
       $composableBuilder(column: $table.scheduleId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get topic =>
+      $composableBuilder(column: $table.topic, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get attendanceStatus =>
+      $composableBuilder(column: $table.attendanceStatus, builder: (column) => ColumnOrderings(column));
 }
 
 class $$LocalLessonsTableAnnotationComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
@@ -7354,6 +7474,11 @@ class $$LocalLessonsTableAnnotationComposer extends Composer<_$AppDatabase, $Loc
   GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get scheduleId => $composableBuilder(column: $table.scheduleId, builder: (column) => column);
+
+  GeneratedColumn<String> get topic => $composableBuilder(column: $table.topic, builder: (column) => column);
+
+  GeneratedColumn<String> get attendanceStatus =>
+      $composableBuilder(column: $table.attendanceStatus, builder: (column) => column);
 }
 
 class $$LocalLessonsTableTableManager
@@ -7383,11 +7508,30 @@ class $$LocalLessonsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> scheduleId = const Value.absent(),
+                Value<String?> topic = const Value.absent(),
+                Value<String> attendanceStatus = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => LocalLessonsCompanion(id: id, scheduleId: scheduleId, rowid: rowid),
+              }) => LocalLessonsCompanion(
+                id: id,
+                scheduleId: scheduleId,
+                topic: topic,
+                attendanceStatus: attendanceStatus,
+                rowid: rowid,
+              ),
           createCompanionCallback:
-              ({required String id, required String scheduleId, Value<int> rowid = const Value.absent()}) =>
-                  LocalLessonsCompanion.insert(id: id, scheduleId: scheduleId, rowid: rowid),
+              ({
+                required String id,
+                required String scheduleId,
+                Value<String?> topic = const Value.absent(),
+                Value<String> attendanceStatus = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalLessonsCompanion.insert(
+                id: id,
+                scheduleId: scheduleId,
+                topic: topic,
+                attendanceStatus: attendanceStatus,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
           prefetchHooksCallback: null,
         ),

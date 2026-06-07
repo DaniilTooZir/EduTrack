@@ -35,6 +35,24 @@ class LessonService {
     }
   }
 
+  Future<AppResult<List<Lesson>>> getLessonsByScheduleIds(List<String> scheduleIds) async {
+    if (scheduleIds.isEmpty) return AppResult.success([]);
+    try {
+      final response = await _client
+          .from('lessons')
+          .select()
+          .inFilter('schedule_id', scheduleIds)
+          .order('id', ascending: true);
+      return AppResult.success(
+        (response as List<dynamic>).map((e) => Lesson.fromMap(e as Map<String, dynamic>)).toList(),
+      );
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке уроков: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось загрузить уроки.');
+    }
+  }
+
   Future<AppResult<Lesson?>> getLessonById(String id) async {
     try {
       final response = await _client.from('lessons').select().eq('id', id).maybeSingle();
