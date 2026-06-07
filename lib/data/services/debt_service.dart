@@ -38,12 +38,13 @@ class DebtService {
     DateTime? endDate,
   }) async {
     try {
-      final studentsRaw = await _client
-          .from('students')
-          .select()
-          .eq('group_id', groupId)
-          .order('surname', ascending: true);
+      final (studentsRaw, hwRaw) =
+          await (
+            _client.from('students').select().eq('group_id', groupId).order('surname', ascending: true),
+            _client.from('homework').select('id, title').eq('group_id', groupId),
+          ).wait;
       final students = (studentsRaw as List).map((s) => Student.fromMap(s as Map<String, dynamic>)).toList();
+      final hwList = (hwRaw as List).map((h) => (id: h['id'].toString(), title: h['title'].toString())).toList();
       if (students.isEmpty) return AppResult.success([]);
       final studentIds = students.map((s) => s.id).toList();
       final gradesRaw = await _client.from('grade').select().inFilter('student_id', studentIds);
@@ -66,9 +67,6 @@ class DebtService {
           }
         }
       }
-
-      final hwRaw = await _client.from('homework').select('id, title').eq('group_id', groupId);
-      final hwList = (hwRaw as List).map((h) => (id: h['id'].toString(), title: h['title'].toString())).toList();
 
       final Map<String, Map<String, bool>> hwStatusMap = {};
       if (hwList.isNotEmpty) {

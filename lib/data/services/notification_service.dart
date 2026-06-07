@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-const _kNotificationsKey = 'notifications_enabled';
+const kNotificationsKey = 'notifications_enabled';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -19,7 +19,7 @@ class NotificationService {
 
   Future<bool> _isEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_kNotificationsKey) ?? true;
+    return prefs.getBool(kNotificationsKey) ?? true;
   }
 
   Future<void> init() async {

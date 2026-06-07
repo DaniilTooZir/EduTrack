@@ -9,19 +9,7 @@ class AttendanceService {
 
   Future<AppResult<bool>> addOrUpdateAttendance(LessonAttendance attendance) async {
     try {
-      final existing =
-          await _client
-              .from('lesson_attendances')
-              .select('id')
-              .eq('lesson_id', attendance.lessonId)
-              .eq('student_id', attendance.studentId)
-              .maybeSingle();
-      if (existing != null) {
-        final id = existing['id'] as int;
-        await _client.from('lesson_attendances').update({'status': attendance.status}).eq('id', id);
-      } else {
-        await _client.from('lesson_attendances').insert(attendance.toMap());
-      }
+      await _client.from('lesson_attendances').upsert(attendance.toMap(), onConflict: 'lesson_id, student_id');
       return AppResult.success(true);
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при сохранении посещаемости: ${e.message}');

@@ -77,7 +77,7 @@ class RealtimeListener {
                 final val = payload.newRecord['value'];
                 final isUpdate = payload.eventType == PostgresChangeEvent.update;
                 _notificationService.showNotification(
-                  id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                  id: DateTime.now().millisecondsSinceEpoch % 2147483647,
                   title: isUpdate ? 'Оценка изменена' : 'Новая оценка!',
                   body: 'Оценка: $val',
                 );
@@ -98,7 +98,7 @@ class RealtimeListener {
               callback: (payload) {
                 final title = payload.newRecord['title']?.toString() ?? 'Домашнее задание';
                 _notificationService.showNotification(
-                  id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                  id: DateTime.now().millisecondsSinceEpoch % 2147483647,
                   title: 'Новое домашнее задание',
                   body: title,
                 );
@@ -136,7 +136,7 @@ class RealtimeListener {
               callback: (payload) {
                 final startTime = payload.newRecord['start_time'] ?? '';
                 _notificationService.showNotification(
-                  id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                  id: DateTime.now().millisecondsSinceEpoch % 2147483647,
                   title: 'Изменение в расписании',
                   body: startTime.isNotEmpty ? 'Занятие в $startTime было изменено' : 'Одно из занятий было изменено',
                 );
@@ -173,7 +173,7 @@ class RealtimeListener {
                         ? 'Прикреплён файл: $fileName'
                         : 'Новое сообщение';
                 _notificationService.showNotification(
-                  id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                  id: DateTime.now().millisecondsSinceEpoch % 2147483647,
                   title: 'Новое сообщение',
                   body: body,
                 );
@@ -201,7 +201,7 @@ class RealtimeListener {
                 if (!hasContent) return;
                 final isResubmission = eventType == PostgresChangeEvent.update;
                 _notificationService.showNotification(
-                  id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                  id: DateTime.now().millisecondsSinceEpoch % 2147483647,
                   title: isResubmission ? 'Студент обновил решение' : 'Студент сдал домашнее задание',
                   body: 'Новый ответ ожидает проверки',
                 );
@@ -226,13 +226,13 @@ class RealtimeListener {
 
                 if (isCompleted) {
                   _notificationService.showNotification(
-                    id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                    id: DateTime.now().millisecondsSinceEpoch % 2147483647,
                     title: 'Работа принята!',
                     body: teacherComment?.isNotEmpty == true ? teacherComment! : 'Преподаватель принял вашу работу',
                   );
                 } else if (teacherComment?.isNotEmpty == true) {
                   _notificationService.showNotification(
-                    id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                    id: DateTime.now().millisecondsSinceEpoch % 2147483647,
                     title: 'Работа возвращена на доработку',
                     body: teacherComment!,
                   );

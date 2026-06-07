@@ -146,25 +146,13 @@ class HomeworkService {
     String? teacherComment,
   }) async {
     try {
-      final data = {
+      await _client.from('homework_status').upsert({
         'homework_id': homeworkId,
         'student_id': studentId,
         'is_completed': isCompleted,
         'teacher_comment': teacherComment,
         'updated_at': DateTime.now().toIso8601String(),
-      };
-      final existing =
-          await _client
-              .from('homework_status')
-              .select('id')
-              .eq('homework_id', homeworkId)
-              .eq('student_id', studentId)
-              .maybeSingle();
-      if (existing != null) {
-        await _client.from('homework_status').update(data).eq('id', existing['id']);
-      } else {
-        await _client.from('homework_status').insert(data);
-      }
+      }, onConflict: 'homework_id, student_id');
       return AppResult.success(null);
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при оценке задания: ${e.message}');
@@ -208,14 +196,7 @@ class HomeworkService {
     String? fileName,
   }) async {
     try {
-      final existing =
-          await _client
-              .from('homework_status')
-              .select('id')
-              .eq('homework_id', homeworkId)
-              .eq('student_id', studentId)
-              .maybeSingle();
-      final data = {
+      await _client.from('homework_status').upsert({
         'homework_id': homeworkId,
         'student_id': studentId,
         'is_completed': false,
@@ -223,12 +204,7 @@ class HomeworkService {
         'student_comment': comment,
         'file_url': fileUrl,
         'file_name': fileName,
-      };
-      if (existing != null) {
-        await _client.from('homework_status').update(data).eq('id', existing['id']);
-      } else {
-        await _client.from('homework_status').insert(data);
-      }
+      }, onConflict: 'homework_id, student_id');
       return AppResult.success(null);
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при отправке домашнего задания: ${e.message}');

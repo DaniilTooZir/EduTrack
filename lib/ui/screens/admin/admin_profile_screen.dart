@@ -50,32 +50,32 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     setState(() => _isLoading = true);
 
     final adminResult = await _headService.getHeadById(userId);
+    if (!mounted) return;
     if (adminResult.isFailure) {
       MessengerHelper.showError(adminResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       return;
     }
     final admin = adminResult.data;
     if (admin == null) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       return;
     }
 
     final instResult = await _institutionService.getInstitutionById(admin.institutionId);
+    if (!mounted) return;
     if (instResult.isFailure) {
       MessengerHelper.showError(instResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       return;
     }
 
-    if (mounted) {
-      setState(() {
-        _admin = admin;
-        _institution = instResult.data;
-        _fillControllers();
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _admin = admin;
+      _institution = instResult.data;
+      _fillControllers();
+      _isLoading = false;
+    });
   }
 
   Future<void> _updateAvatar() async {
@@ -90,22 +90,24 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     setState(() => _isSaving = true);
 
     final uploadResult = await _avatarService.uploadAvatar(file: file, userId: _admin!.id);
+    if (!mounted) return;
     if (uploadResult.isFailure) {
       MessengerHelper.showError(uploadResult.errorMessage);
-      if (mounted) setState(() => _isSaving = false);
+      setState(() => _isSaving = false);
       return;
     }
 
     final url = uploadResult.data;
     final updateResult = await _headService.updateHeadData(_admin!.id, {'avatar_url': url});
+    if (!mounted) return;
     if (updateResult.isFailure) {
       MessengerHelper.showError(updateResult.errorMessage);
-      if (mounted) setState(() => _isSaving = false);
+      setState(() => _isSaving = false);
       return;
     }
 
     MessengerHelper.showSuccess('Фото профиля обновлено');
-    if (mounted) setState(() => _isSaving = false);
+    setState(() => _isSaving = false);
     await _loadAdminData();
   }
 
@@ -145,22 +147,21 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     }
 
     final result = await _headService.updateHeadData(_admin!.id, updatedData);
+    if (!mounted) return;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
-      if (mounted) setState(() => _isSaving = false);
+      setState(() => _isSaving = false);
       return;
     }
 
-    if (mounted) {
-      MessengerHelper.showSuccess('Профиль обновлён');
-      setState(() {
-        _isEditing = false;
-        _isSaving = false;
-        _passwordController.clear();
-        _confirmPasswordController.clear();
-      });
-      await _loadAdminData();
-    }
+    MessengerHelper.showSuccess('Профиль обновлён');
+    setState(() {
+      _isEditing = false;
+      _isSaving = false;
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+    });
+    await _loadAdminData();
   }
 
   void _resetChanges() {

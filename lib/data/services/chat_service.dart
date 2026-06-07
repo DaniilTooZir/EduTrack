@@ -205,8 +205,12 @@ class ChatService {
   }
 
   Future<void> _syncGroupMembers(String chatId, String groupId) async {
-    final students = await _client.from('students').select('id').eq('group_id', groupId);
-    final group = await _client.from('groups').select('curator_id').eq('id', groupId).single();
+    final (students, group, existingResponse) =
+        await (
+          _client.from('students').select('id').eq('group_id', groupId),
+          _client.from('groups').select('curator_id').eq('id', groupId).single(),
+          _client.from('chat_members').select('user_id').eq('chat_id', chatId),
+        ).wait;
     final expected = <String, String>{};
     for (final s in students) {
       expected[s['id'] as String] = 'student';
@@ -214,7 +218,6 @@ class ChatService {
     if (group['curator_id'] != null) {
       expected[group['curator_id'] as String] = 'teacher';
     }
-    final existingResponse = await _client.from('chat_members').select('user_id').eq('chat_id', chatId);
     final existingIds = (existingResponse as List).map((e) => e['user_id'] as String).toSet();
     final toAdd =
         expected.entries

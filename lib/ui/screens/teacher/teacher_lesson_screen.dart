@@ -98,10 +98,13 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     final groupsResult = await groupsFuture;
     final subjectsResult = await subjectsFuture;
     final schedulesResult = await schedulesFuture;
-
+    if (!mounted) return;
+    if (schedulesResult.isFailure) {
+      setState(() => _isLoading = false);
+      return;
+    }
     final cache = {for (final s in schedulesResult.data) s.id: s};
     final lessonsResult = await _lessonRepository.getLessonsByScheduleIds(cache.keys.toList());
-
     if (mounted) {
       setState(() {
         if (groupsResult.isSuccess) _groups = groupsResult.data;

@@ -121,9 +121,10 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     if (pickResult.isFailure || pickResult.data == null) return;
     setState(() => _isSaving = true);
     final uploadResult = await _avatarService.uploadAvatar(file: pickResult.data!, userId: _student!.id);
+    if (!mounted) return;
     if (uploadResult.isFailure) {
       MessengerHelper.showError(uploadResult.errorMessage);
-      if (mounted) setState(() => _isSaving = false);
+      setState(() => _isSaving = false);
       return;
     }
     final updateResult = await _studentService.updateStudentData(_student!.id, {'avatar_url': uploadResult.data});
@@ -334,18 +335,16 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       otherId: _curatorInfo!['id'] as String,
       otherRole: 'teacher',
     );
+    if (!mounted) return;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
       return;
     }
-    if (mounted) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder:
-              (_) => ChatScreen(chatId: result.data, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),
-        ),
-      );
-    }
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(chatId: result.data, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),
+      ),
+    );
   }
 
   Widget _buildAvatar(ColorScheme colors) {

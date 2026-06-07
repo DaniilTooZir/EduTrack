@@ -95,34 +95,36 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final userId = userProvider.userId!;
     final institutionId = userProvider.institutionId!;
-    final subjectsResult = await _subjectService.getSubjectsByTeacherId(userId);
+    final (subjectsResult, groupsResult, homeworksResult) =
+        await (
+          _subjectService.getSubjectsByTeacherId(userId),
+          _groupService.getGroups(institutionId),
+          _homeworkService.getHomeworkByTeacherId(userId),
+        ).wait;
+    if (!mounted) return;
     if (subjectsResult.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       MessengerHelper.showError(subjectsResult.errorMessage);
       return;
     }
-    final groupsResult = await _groupService.getGroups(institutionId);
     if (groupsResult.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       MessengerHelper.showError(groupsResult.errorMessage);
       return;
     }
-    final homeworksResult = await _homeworkService.getHomeworkByTeacherId(userId);
     if (homeworksResult.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       MessengerHelper.showError(homeworksResult.errorMessage);
       return;
     }
-    if (mounted) {
-      setState(() {
-        _subjects = subjectsResult.data;
-        _groups = groupsResult.data;
-        _homeworks = homeworksResult.data;
-        if (_selectedSubjectId == null && _subjects.isNotEmpty) _selectedSubjectId = _subjects.first.id;
-        if (_selectedGroupId == null && _groups.isNotEmpty) _selectedGroupId = _groups.first.id;
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _subjects = subjectsResult.data;
+      _groups = groupsResult.data;
+      _homeworks = homeworksResult.data;
+      if (_selectedSubjectId == null && _subjects.isNotEmpty) _selectedSubjectId = _subjects.first.id;
+      if (_selectedGroupId == null && _groups.isNotEmpty) _selectedGroupId = _groups.first.id;
+      _isLoading = false;
+    });
   }
 
   Future<void> _selectDueDate() async {

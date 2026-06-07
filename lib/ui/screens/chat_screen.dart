@@ -67,9 +67,10 @@ class _ChatScreenState extends State<ChatScreen> {
     String? fileName;
     if (_selectedFile != null) {
       final uploadResult = await _fileService.uploadFile(file: _selectedFile!, folderName: 'chat_files');
+      if (!mounted) return;
       if (uploadResult.isFailure) {
         MessengerHelper.showError(uploadResult.errorMessage);
-        if (mounted) setState(() => _isSending = false);
+        setState(() => _isSending = false);
         return;
       }
       fileUrl = uploadResult.data;
@@ -85,9 +86,10 @@ class _ChatScreenState extends State<ChatScreen> {
       fileName: fileName,
     );
 
+    if (!mounted) return;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
-    } else if (mounted) {
+    } else {
       _messageController.clear();
       setState(() => _selectedFile = null);
     }

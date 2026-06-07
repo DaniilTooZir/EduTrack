@@ -26,6 +26,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   final _finalGradeService = FinalGradeService();
 
   bool _isLoading = true;
+  bool _initialized = false;
   String? _error;
   List<SubjectAnalytics> _analytics = [];
   Map<String, String> _commentMap = {};
@@ -56,7 +57,8 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final period = Provider.of<UserProvider>(context).selectedPeriod;
-    if (period != _loadedPeriod) {
+    if (!_initialized || period != _loadedPeriod) {
+      _initialized = true;
       _loadedPeriod = period;
       _load();
     }
@@ -116,6 +118,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
       _commentMap = commentsResult.isSuccess ? commentsResult.data : {};
       _finalGradeMap = finalGradeMap;
       _isLoading = false;
+      _error = null;
     });
   }
 
@@ -212,6 +215,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
                         onRefresh: _load,
                         color: colors.primary,
                         child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                           itemCount: sorted.length,
                           itemBuilder:
@@ -241,6 +245,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
     final withGrades = subjects.where((s) => s.gradeSeries.isNotEmpty).toList();
     if (withGrades.isEmpty) {
       return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(
             height: 300,
@@ -259,6 +264,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
       );
     }
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       itemCount: withGrades.length,
       itemBuilder:

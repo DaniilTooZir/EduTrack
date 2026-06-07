@@ -7,8 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _kNotificationsKey = 'notifications_enabled';
-
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -28,14 +26,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadNotificationPref() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
-      setState(() => _notificationsEnabled = prefs.getBool(_kNotificationsKey) ?? true);
+      setState(() => _notificationsEnabled = prefs.getBool(kNotificationsKey) ?? true);
     }
   }
 
   Future<void> _toggleNotifications(bool value) async {
     setState(() => _notificationsEnabled = value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kNotificationsKey, value);
+    await prefs.setBool(kNotificationsKey, value);
     if (!value) {
       await NotificationService().cancelAllScheduled();
     }

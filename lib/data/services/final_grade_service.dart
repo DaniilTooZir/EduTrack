@@ -48,29 +48,14 @@ class FinalGradeService {
 
   Future<AppResult<String>> setFinalGrade(FinalGrade grade) async {
     try {
-      final existing =
+      final map = grade.toMap()..remove('id');
+      final data =
           await _supabase
               .from('final_grade')
+              .upsert(map, onConflict: 'student_id, subject_id, period_id')
               .select('id')
-              .eq('student_id', grade.studentId)
-              .eq('subject_id', grade.subjectId)
-              .eq('period_id', grade.periodId)
-              .maybeSingle();
-      if (existing != null) {
-        final id = existing['id'].toString();
-        await _supabase
-            .from('final_grade')
-            .update({
-              'value': grade.value,
-              'is_manual': grade.isManual,
-              if (grade.teacherId != null) 'teacher_id': grade.teacherId,
-            })
-            .eq('id', id);
-        return AppResult.success(id);
-      } else {
-        final inserted = await _supabase.from('final_grade').insert(grade.toMap()).select('id').single();
-        return AppResult.success(inserted['id'].toString());
-      }
+              .single();
+      return AppResult.success(data['id'].toString());
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при сохранении итоговой оценки: ${e.message}');
     } catch (e) {

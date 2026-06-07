@@ -52,32 +52,34 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final teacherId = userProvider.userId!;
     final institutionId = userProvider.institutionId!;
-    final subjectsResult = await _subjectService.getSubjectsByTeacherId(teacherId);
+    final (subjectsResult, groupsResult, homeworksResult) =
+        await (
+          _subjectService.getSubjectsByTeacherId(teacherId),
+          _groupService.getGroups(institutionId),
+          _homeworkService.getHomeworkByTeacherId(teacherId),
+        ).wait;
+    if (!mounted) return;
     if (subjectsResult.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       MessengerHelper.showError(subjectsResult.errorMessage);
       return;
     }
-    final groupsResult = await _groupService.getGroups(institutionId);
     if (groupsResult.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       MessengerHelper.showError(groupsResult.errorMessage);
       return;
     }
-    final homeworksResult = await _homeworkService.getHomeworkByTeacherId(teacherId);
     if (homeworksResult.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       MessengerHelper.showError(homeworksResult.errorMessage);
       return;
     }
-    if (mounted) {
-      setState(() {
-        _subjects = subjectsResult.data;
-        _groups = groupsResult.data;
-        _allHomeworks = homeworksResult.data;
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _subjects = subjectsResult.data;
+      _groups = groupsResult.data;
+      _allHomeworks = homeworksResult.data;
+      _isLoading = false;
+    });
   }
 
   List<Homework> get _filteredHomeworks {
@@ -236,8 +238,11 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
   }
 
   Future<void> _loadDetails() async {
-    final studentsResult = await widget.studentService.getStudentsByGroupId(widget.homework.groupId);
-    final statusesResult = await widget.homeworkService.getStatusesByHomeworkId(widget.homework.id);
+    final (studentsResult, statusesResult) =
+        await (
+          widget.studentService.getStudentsByGroupId(widget.homework.groupId),
+          widget.homeworkService.getStatusesByHomeworkId(widget.homework.id),
+        ).wait;
     if (!mounted) return;
     if (studentsResult.isFailure || statusesResult.isFailure) {
       setState(() => _isLoading = false);

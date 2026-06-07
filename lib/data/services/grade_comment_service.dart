@@ -37,20 +37,12 @@ class GradeCommentService {
     required String message,
   }) async {
     try {
-      final existing = await _supabase.from('grade_comments').select('id').eq('grade_id', gradeId).maybeSingle();
-      if (existing != null) {
-        await _supabase
-            .from('grade_comments')
-            .update({'message': message, 'timestamp': DateTime.now().toIso8601String()})
-            .eq('grade_id', gradeId);
-      } else {
-        await _supabase.from('grade_comments').insert({
-          'grade_id': gradeId,
-          'sender_teacher_id': teacherId,
-          'message': message,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-      }
+      await _supabase.from('grade_comments').upsert({
+        'grade_id': gradeId,
+        'sender_teacher_id': teacherId,
+        'message': message,
+        'timestamp': DateTime.now().toIso8601String(),
+      }, onConflict: 'grade_id');
       return AppResult.success(null);
     } catch (_) {
       return AppResult.failure('Не удалось сохранить комментарий.');

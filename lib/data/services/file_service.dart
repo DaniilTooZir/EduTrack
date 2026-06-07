@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FileService {
   final _supabase = SupabaseConnection.client;
@@ -25,12 +26,14 @@ class FileService {
       final safeName = _sanitizeFileName(file.name);
       final uniqueName = '${DateTime.now().millisecondsSinceEpoch}_$safeName';
       final path = '$folderName/$uniqueName';
-      final fileBytes = file.path != null ? File(file.path!) : null;
-      if (fileBytes == null) {
+      final localFile = file.path != null ? File(file.path!) : null;
+      if (localFile == null) {
         return AppResult.failure('Не удалось прочитать файл. Попробуйте выбрать его заново.');
       }
-      await _supabase.storage.from('homework_files').upload(path, fileBytes);
+      await _supabase.storage.from('homework_files').upload(path, localFile);
       return AppResult.success(_supabase.storage.from('homework_files').getPublicUrl(path));
+    } on StorageException catch (e) {
+      return AppResult.failure('Ошибка загрузки файла: ${e.message}');
     } catch (e) {
       return AppResult.failure('Не удалось загрузить файл. Проверьте соединение и попробуйте снова.');
     }

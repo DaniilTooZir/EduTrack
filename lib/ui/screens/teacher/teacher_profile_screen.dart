@@ -100,8 +100,9 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     if (fileResult.isFailure || fileResult.data == null) return;
     setState(() => _isSaving = true);
     final uploadResult = await _avatarService.uploadAvatar(file: fileResult.data!, userId: _teacher!.id);
+    if (!mounted) return;
     if (uploadResult.isFailure) {
-      if (mounted) setState(() => _isSaving = false);
+      setState(() => _isSaving = false);
       MessengerHelper.showError(uploadResult.errorMessage);
       return;
     }

@@ -38,25 +38,27 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
     final groupId = userProvider.groupId;
     if (studentId == null) return;
     if (_homeworks.isEmpty) setState(() => _isLoading = true);
-    final homeworksResult = await _homeworkRepository.getHomeworksForStudentGroup(studentId, groupId ?? '');
+    final (homeworksResult, statusesResult) =
+        await (
+          _homeworkRepository.getHomeworksForStudentGroup(studentId, groupId ?? ''),
+          _homeworkRepository.getStatusesForStudent(studentId),
+        ).wait;
+    if (!mounted) return;
     if (homeworksResult.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       MessengerHelper.showError(homeworksResult.errorMessage);
       return;
     }
-    final statusesResult = await _homeworkRepository.getStatusesForStudent(studentId);
     if (statusesResult.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
       MessengerHelper.showError(statusesResult.errorMessage);
       return;
     }
-    if (mounted) {
-      setState(() {
-        _homeworks = homeworksResult.data;
-        _statuses = {for (final s in statusesResult.data) s.homeworkId: s};
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _homeworks = homeworksResult.data;
+      _statuses = {for (final s in statusesResult.data) s.homeworkId: s};
+      _isLoading = false;
+    });
   }
 
   void _openHomeworkSheet(Homework hw) async {
@@ -75,6 +77,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
             fileService: _fileService,
           ),
     );
+    if (!mounted) return;
     await _loadHomework();
   }
 
