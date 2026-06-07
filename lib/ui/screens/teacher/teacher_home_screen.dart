@@ -21,6 +21,7 @@ import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/ui/widgets/welcome_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -425,6 +426,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 
   Widget _buildDashboard(ColorScheme colors) {
+    final firstName = Provider.of<UserProvider>(context, listen: false).userName ?? 'преподаватель';
     return RefreshIndicator(
       onRefresh: () async {
         _refreshDashboard();
@@ -437,7 +439,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWelcomeCard(colors),
+            WelcomeCard(
+              title: 'С возвращением, $firstName!',
+              subtitle: 'Готовы начать учебный день? Проверьте расписание или создайте новые задания.',
+              useSecondaryGradient: true,
+            ),
             const SizedBox(height: 16),
             if (_nextLesson != null) ...[
               Text(
@@ -536,40 +542,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeCard(ColorScheme colors) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final firstName = userProvider.userName ?? 'преподаватель';
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [colors.secondary, colors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: colors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'С возвращением, $firstName!',
-            style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Готовы начать учебный день? Проверьте расписание или создайте новые задания.',
-            style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 14),
-          ),
-        ],
       ),
     );
   }

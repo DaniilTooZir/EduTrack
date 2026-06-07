@@ -17,6 +17,7 @@ import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/ui/widgets/welcome_card.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -305,38 +306,17 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [colors.primary.withValues(alpha: 0.8), colors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(color: colors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Привет, $firstName!',
-                    style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Builder(
-                    builder: (context) {
-                      final groupName = Provider.of<UserProvider>(context, listen: false).groupName;
-                      return Text(
-                        groupName != null ? 'Твоя группа: $groupName' : 'Добро пожаловать в EduTrack',
-                        style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.9), fontSize: 16),
-                      );
-                    },
-                  ),
-                ],
+            WelcomeCard(
+              title: 'Привет, $firstName!',
+              subtitleWidget: Builder(
+                builder: (ctx) {
+                  final groupName = Provider.of<UserProvider>(ctx, listen: false).groupName;
+                  final onPrimary = Theme.of(ctx).colorScheme.onPrimary;
+                  return Text(
+                    groupName != null ? 'Твоя группа: $groupName' : 'Добро пожаловать в EduTrack',
+                    style: TextStyle(color: onPrimary.withValues(alpha: 0.9), fontSize: 16),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 16),

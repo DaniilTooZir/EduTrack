@@ -7,6 +7,7 @@ import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/ui/widgets/welcome_card.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -193,7 +194,12 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWelcomeCard(colors),
+            const WelcomeCard(
+              title: 'Панель управления',
+              subtitle:
+                  'Добро пожаловать, Оператор. Здесь вы можете просматривать и корректировать учебное расписание.',
+              useSecondaryGradient: true,
+            ),
             const SizedBox(height: 24),
             Text('Действия', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary)),
             const SizedBox(height: 12),
@@ -233,38 +239,6 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
               Column(children: grouped.entries.map((e) => _buildDayScheduleCard(e.key, e.value, colors)).toList()),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeCard(ColorScheme colors) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [colors.secondary, colors.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: colors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Панель управления',
-            style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Добро пожаловать, Оператор. Здесь вы можете просматривать и корректировать учебное расписание.',
-            style: TextStyle(color: colors.onPrimary.withValues(alpha: 0.8), fontSize: 14),
-          ),
-        ],
       ),
     );
   }
