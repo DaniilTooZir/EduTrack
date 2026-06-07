@@ -57,6 +57,9 @@ class SubjectService {
       await _client.from('subjects').update({'name': name}).eq('id', id);
       return AppResult.success(null);
     } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        return AppResult.failure('Предмет с таким названием уже существует.');
+      }
       return AppResult.failure('Ошибка при обновлении предмета: ${e.message}');
     } catch (e) {
       return AppResult.failure('Не удалось обновить предмет.');

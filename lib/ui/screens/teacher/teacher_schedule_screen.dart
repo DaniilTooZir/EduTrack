@@ -33,6 +33,10 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
     if (teacherId == null) return;
     setState(() => _isLoading = true);
     final result = await _scheduleService.getScheduleForTeacher(teacherId);
+    if (result.isFailure) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
     final list = result.data;
     list.sort((a, b) {
       if (a.date == null && b.date != null) return -1;

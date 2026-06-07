@@ -72,12 +72,11 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
     }
     MessengerHelper.showSuccess('Предмет успешно добавлен');
     _nameController.clear();
-    if (mounted) {
-      setState(() {
-        _isAdding = false;
-        _autovalidateMode = AutovalidateMode.disabled;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _isAdding = false;
+      _autovalidateMode = AutovalidateMode.disabled;
+    });
     await _loadData();
   }
 
@@ -118,6 +117,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                         return;
                       }
                       MessengerHelper.showSuccess('Предмет обновлён');
+                      if (!mounted) return;
                       await _loadData();
                     },
                     child: const Text('Сохранить'),
@@ -127,6 +127,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
             },
           ),
     );
+    editNameController.dispose();
   }
 
   Future<void> _deleteSubject(Subject subject) async {
@@ -157,6 +158,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
         return;
       }
       MessengerHelper.showSuccess('Предмет удалён');
+      if (!mounted) return;
       await _loadData();
     }
   }

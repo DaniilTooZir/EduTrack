@@ -25,7 +25,7 @@ class AcademicPeriodService {
 
   Future<AppResult<void>> addPeriod(AcademicPeriod period) async {
     if (!period.startDate.isBefore(period.endDate)) {
-      return AppResult.failure('Дата начала не может быть позже даты окончания');
+      return AppResult.failure('Дата начала должна быть раньше даты окончания');
     }
     try {
       final map = period.toMap()..remove('id');
@@ -43,7 +43,7 @@ class AcademicPeriodService {
 
   Future<AppResult<void>> updatePeriod(AcademicPeriod period) async {
     if (!period.startDate.isBefore(period.endDate)) {
-      return AppResult.failure('Дата начала не может быть позже даты окончания');
+      return AppResult.failure('Дата начала должна быть раньше даты окончания');
     }
     try {
       await _client

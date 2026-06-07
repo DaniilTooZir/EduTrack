@@ -74,6 +74,9 @@ class ScheduleService {
       await _client.from('schedule').delete().eq('id', id);
       return AppResult.success(null);
     } on PostgrestException catch (e) {
+      if (e.code == '23503') {
+        return AppResult.failure('Нельзя удалить урок: на него есть ссылки в оценках или посещаемости.');
+      }
       return AppResult.failure('Ошибка при удалении записи расписания: ${e.message}');
     } catch (e) {
       return AppResult.failure('Не удалось удалить запись расписания.');

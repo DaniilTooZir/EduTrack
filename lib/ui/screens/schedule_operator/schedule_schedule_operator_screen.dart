@@ -308,15 +308,15 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
             ],
           ),
     );
-    if (confirmed == true) {
-      final result = await _scheduleService.deleteScheduleEntry(id);
-      if (result.isFailure) {
-        MessengerHelper.showError(result.errorMessage);
-        return;
-      }
-      MessengerHelper.showSuccess('Запись удалена');
-      await _loadSchedule();
+    if (confirmed != true || !mounted) return;
+    final result = await _scheduleService.deleteScheduleEntry(id);
+    if (!mounted) return;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return;
     }
+    MessengerHelper.showSuccess('Запись удалена');
+    await _loadSchedule();
   }
 
   Future<void> _showEditDialog(Schedule lesson) async {
@@ -332,7 +332,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
             scheduleService: _scheduleService,
           ),
     );
-    if (updated == true) await _loadSchedule();
+    if (updated == true && mounted) await _loadSchedule();
   }
 
   void _scheduleConflictValidation() {

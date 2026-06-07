@@ -126,14 +126,24 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
                 ),
                 actions: [
                   TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
-                  FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Сохранить')),
+                  FilledButton(
+                    onPressed: () {
+                      if (nameCtrl.text.trim().isEmpty || startDate == null || endDate == null) {
+                        MessengerHelper.showError('Заполните все поля');
+                        return;
+                      }
+                      Navigator.pop(ctx, true);
+                    },
+                    child: const Text('Сохранить'),
+                  ),
                 ],
               );
             },
           ),
     );
-    if (confirmed != true || !mounted) return;
     final name = nameCtrl.text.trim();
+    nameCtrl.dispose();
+    if (confirmed != true || !mounted) return;
     if (name.isEmpty || startDate == null || endDate == null) {
       MessengerHelper.showError('Заполните все поля');
       return;

@@ -72,8 +72,8 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
       return;
     }
     final groupId = scheduleResult.data!.groupId;
-    final studentsResult = await _studentService.getStudentsByGroupId(groupId);
-    final gradesResult = await _gradeService.getGradesByLesson(lesson.id!);
+    final (studentsResult, gradesResult) =
+        await (_studentService.getStudentsByGroupId(groupId), _gradeService.getGradesByLesson(lesson.id!)).wait;
     if (!mounted) return;
     if (studentsResult.isFailure || gradesResult.isFailure) {
       setState(() => _isLoading = false);
@@ -114,18 +114,19 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
       );
       if (confirmed != true) return;
     }
-    for (final entry in _grades.entries) {
-      final gradeValue = entry.value;
-      if (gradeValue != null && lesson.id != null) {
-        final grade = Grade(lessonId: lesson.id!, studentId: entry.key, value: gradeValue);
-        final result = await _gradeService.addOrUpdateGrade(grade);
-        if (result.isFailure) {
-          MessengerHelper.showError(result.errorMessage);
-          return;
-        }
-      }
-    }
     if (!mounted) return;
+    final gradesToSave =
+        _grades.entries
+            .where((e) => e.value != null && lesson.id != null)
+            .map((e) => Grade(lessonId: lesson.id!, studentId: e.key, value: e.value!))
+            .toList();
+    final results = await Future.wait(gradesToSave.map((g) => _gradeService.addOrUpdateGrade(g)));
+    if (!mounted) return;
+    final failures = results.where((r) => r.isFailure);
+    if (failures.isNotEmpty) {
+      MessengerHelper.showError(failures.first.errorMessage);
+      return;
+    }
     MessengerHelper.showSuccess('Оценки сохранены');
     Navigator.pop(context);
   }

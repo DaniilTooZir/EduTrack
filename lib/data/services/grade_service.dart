@@ -14,21 +14,13 @@ class GradeService {
 
   Future<AppResult<String>> addOrUpdateGrade(Grade grade) async {
     try {
-      final existing =
+      final data =
           await _supabase
               .from('grade')
+              .upsert(grade.toMap(), onConflict: 'lessons_id, student_id')
               .select('id')
-              .eq('lessons_id', grade.lessonId)
-              .eq('student_id', grade.studentId)
-              .maybeSingle();
-      if (existing != null) {
-        final id = existing['id'].toString();
-        await _supabase.from('grade').update({'value': grade.value}).eq('id', id);
-        return AppResult.success(id);
-      } else {
-        final inserted = await _supabase.from('grade').insert(grade.toMap()).select('id').single();
-        return AppResult.success(inserted['id'].toString());
-      }
+              .single();
+      return AppResult.success(data['id'].toString());
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при сохранении оценки: ${e.message}');
     } catch (e) {
