@@ -14,9 +14,12 @@ import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
 import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
+import 'package:edu_track/ui/widgets/next_lesson_card.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
+import 'package:edu_track/ui/widgets/quick_action_card.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/ui/widgets/stat_card.dart';
 import 'package:edu_track/ui/widgets/welcome_card.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
@@ -327,7 +330,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
               ),
               const SizedBox(height: 8),
-              _buildNextLessonCard(_nextLesson!, colors),
+              NextLessonCard(
+                lesson: _nextLesson!,
+                dateLabel: _lessonDateLabel(_nextLesson!),
+                detailIcon: Icons.person_outline,
+                detailText: _nextLesson!.teacherName,
+              ),
               const SizedBox(height: 16),
             ],
             Text(
@@ -340,11 +348,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  _buildQuickActionCard(Icons.assignment, 'Мои задания', () => _onItemTapped(1), colors),
-                  _buildQuickActionCard(Icons.calendar_month, 'Расписание', () => _onItemTapped(3), colors),
-                  _buildQuickActionCard(Icons.menu_book, 'Уроки', () => _onItemTapped(2), colors),
-                  _buildQuickActionCard(Icons.bar_chart_rounded, 'Аналитика', () => _onItemTapped(6), colors),
-                  _buildQuickActionCard(Icons.forum, 'Чат группы', () => _openGroupChat(context), colors),
+                  QuickActionCard(icon: Icons.assignment, label: 'Мои задания', onTap: () => _onItemTapped(1)),
+                  QuickActionCard(icon: Icons.calendar_month, label: 'Расписание', onTap: () => _onItemTapped(3)),
+                  QuickActionCard(icon: Icons.menu_book, label: 'Уроки', onTap: () => _onItemTapped(2)),
+                  QuickActionCard(icon: Icons.bar_chart_rounded, label: 'Аналитика', onTap: () => _onItemTapped(6)),
+                  QuickActionCard(icon: Icons.forum, label: 'Чат группы', onTap: () => _openGroupChat(context)),
                 ],
               ),
             ),
@@ -361,31 +369,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             else
               Column(
                 children: [
-                  _buildStatCard(
+                  StatCard(
                     icon: Icons.assignment,
                     title: 'Всего заданий',
                     value: '$_totalHomework',
                     iconColor: colors.primary,
                     bgColor: colors.primaryContainer,
-                    colors: colors,
                   ),
                   const SizedBox(height: 12),
-                  _buildStatCard(
+                  StatCard(
                     icon: Icons.check_circle,
                     title: 'Выполнено',
                     value: '$_completedHomework',
                     iconColor: Colors.green,
                     bgColor: Colors.green.withValues(alpha: 0.2),
-                    colors: colors,
                   ),
                   const SizedBox(height: 12),
-                  _buildStatCard(
+                  StatCard(
                     icon: Icons.pending_actions,
                     title: 'Осталось',
                     value: '$_pendingHomework',
                     iconColor: Colors.orange,
                     bgColor: Colors.orange.withValues(alpha: 0.2),
-                    colors: colors,
                   ),
                 ],
               ),
@@ -430,81 +435,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color iconColor,
-    required Color bgColor,
-    required ColorScheme colors,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colors.surface.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, size: 32, color: iconColor),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colors.onSurface)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard(IconData icon, String label, VoidCallback onTap, ColorScheme colors) {
-    return Container(
-      width: 110,
-      margin: const EdgeInsets.only(right: 12),
-      child: Material(
-        color: colors.surface,
-        elevation: 2,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: colors.primary, size: 32),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.onSurface),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -564,76 +494,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     if (diff == 1) return 'Завтра';
     const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     return '${days[s.date!.weekday - 1]}, ${s.date!.day.toString().padLeft(2, '0')}.${s.date!.month.toString().padLeft(2, '0')}';
-  }
-
-  Widget _buildNextLessonCard(Schedule lesson, ColorScheme colors) {
-    final label = _lessonDateLabel(lesson);
-    final isToday = label == 'Сегодня';
-    final accentColor = isToday ? colors.primary : colors.secondary;
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 5, color: accentColor),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: accentColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            label,
-                            style: TextStyle(color: accentColor, fontSize: 12, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const Spacer(),
-                        Icon(Icons.access_time_rounded, size: 15, color: colors.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${lesson.startTime.substring(0, 5)} – ${lesson.endTime.substring(0, 5)}',
-                          style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      lesson.subjectName ?? 'Предмет',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: colors.onSurface),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.person_outline, size: 15, color: colors.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            lesson.teacherName,
-                            style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildDashboardSkeleton(ColorScheme colors) {

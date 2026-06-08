@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/academic_period_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
@@ -216,20 +217,7 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
 
   Widget _buildBody(ColorScheme colors) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: colors.error),
-            const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: colors.error), textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton.icon(onPressed: _load, icon: const Icon(Icons.refresh), label: const Text('Повторить')),
-          ],
-        ),
-      );
-    }
+    if (_error != null) return AppErrorView(message: _error!, onRetry: _load);
     if (_periods.isEmpty) {
       return Center(
         child: Padding(

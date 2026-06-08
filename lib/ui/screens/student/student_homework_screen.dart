@@ -6,6 +6,7 @@ import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_bottom_sheet.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -64,10 +65,9 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
   void _openHomeworkSheet(Homework hw) async {
     final studentId = Provider.of<UserProvider>(context, listen: false).userId;
     if (studentId == null) return;
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    await showAppBottomSheet(
+      context,
+      transparentBackground: true,
       builder:
           (context) => _HomeworkSubmissionSheet(
             homework: hw,

@@ -17,11 +17,15 @@ import 'package:edu_track/ui/screens/teacher/teacher_my_group_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_profile_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
+import 'package:edu_track/ui/widgets/next_lesson_card.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
+import 'package:edu_track/ui/widgets/quick_action_card.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/ui/widgets/welcome_card.dart';
+import 'package:edu_track/utils/app_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -147,10 +151,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Future<void> _showJournalSelectorSheet({bool switchToTab = false}) async {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
-    final result = await showModalBottomSheet<Map<String, String>>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    final result = await showAppBottomSheet<Map<String, String>>(
+      context,
       builder: (ctx) => _JournalSelectorSheet(teacherId: teacherId),
     );
     if (result != null && mounted) {
@@ -184,7 +186,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             _isLoading
                 ? _buildTeacherHomeSkeleton()
                 : _hasError
-                ? _buildErrorState(colors)
+                ? AppErrorView(message: 'Не удалось загрузить данные', onRetry: _loadData)
                 : _buildDashboard(colors);
         break;
       case 1:
@@ -451,7 +453,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
               ),
               const SizedBox(height: 8),
-              _buildNextLessonCard(_nextLesson!, colors),
+              NextLessonCard(
+                lesson: _nextLesson!,
+                dateLabel: _lessonDateLabel(_nextLesson!),
+                detailIcon: Icons.group_outlined,
+                detailText: _nextLesson!.groupName ?? 'Группа',
+              ),
               const SizedBox(height: 16),
             ],
             Text(
@@ -464,12 +471,16 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  _buildQuickActionCard(Icons.add_task, 'Выдать ДЗ', () => _navigateToTab(1), colors),
-                  _buildQuickActionCard(Icons.checklist, 'Проверить ДЗ', () => _navigateToTab(5), colors),
-                  _buildQuickActionCard(Icons.warning_amber_rounded, 'Задолжники', () => _navigateToTab(9), colors),
-                  _buildQuickActionCard(Icons.group, 'Моя группа', () => _navigateToTab(6), colors),
-                  _buildQuickActionCard(Icons.play_lesson, 'Начать урок', () => _navigateToTab(2), colors),
-                  _buildQuickActionCard(Icons.calendar_today, 'Расписание', () => _navigateToTab(3), colors),
+                  QuickActionCard(icon: Icons.add_task, label: 'Выдать ДЗ', onTap: () => _navigateToTab(1)),
+                  QuickActionCard(icon: Icons.checklist, label: 'Проверить ДЗ', onTap: () => _navigateToTab(5)),
+                  QuickActionCard(
+                    icon: Icons.warning_amber_rounded,
+                    label: 'Задолжники',
+                    onTap: () => _navigateToTab(9),
+                  ),
+                  QuickActionCard(icon: Icons.group, label: 'Моя группа', onTap: () => _navigateToTab(6)),
+                  QuickActionCard(icon: Icons.play_lesson, label: 'Начать урок', onTap: () => _navigateToTab(2)),
+                  QuickActionCard(icon: Icons.calendar_today, label: 'Расписание', onTap: () => _navigateToTab(3)),
                 ],
               ),
             ),
@@ -546,52 +557,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     );
   }
 
-  Widget _buildQuickActionCard(IconData icon, String label, VoidCallback onTap, ColorScheme colors) {
-    return Container(
-      width: 110,
-      margin: const EdgeInsets.only(right: 12),
-      child: Material(
-        color: colors.surface,
-        elevation: 2,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: colors.primary, size: 32),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.onSurface),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState(ColorScheme colors) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 48, color: colors.error),
-          const SizedBox(height: 16),
-          Text('Не удалось загрузить данные', style: TextStyle(fontSize: 16, color: colors.error)),
-          const SizedBox(height: 8),
-          TextButton.icon(onPressed: _loadData, icon: const Icon(Icons.refresh), label: const Text('Повторить')),
-        ],
-      ),
-    );
-  }
-
   Schedule? _findNextLesson(List<Schedule> schedules) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -626,76 +591,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     if (diff == 1) return 'Завтра';
     const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     return '${days[s.date!.weekday - 1]}, ${s.date!.day.toString().padLeft(2, '0')}.${s.date!.month.toString().padLeft(2, '0')}';
-  }
-
-  Widget _buildNextLessonCard(Schedule lesson, ColorScheme colors) {
-    final label = _lessonDateLabel(lesson);
-    final isToday = label == 'Сегодня';
-    final accentColor = isToday ? colors.primary : colors.secondary;
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 5, color: accentColor),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: accentColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            label,
-                            style: TextStyle(color: accentColor, fontSize: 12, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const Spacer(),
-                        Icon(Icons.access_time_rounded, size: 15, color: colors.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${lesson.startTime.substring(0, 5)} – ${lesson.endTime.substring(0, 5)}',
-                          style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      lesson.subjectName ?? 'Предмет',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: colors.onSurface),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.group_outlined, size: 15, color: colors.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            lesson.groupName ?? 'Группа',
-                            style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildTeacherHomeSkeleton() {

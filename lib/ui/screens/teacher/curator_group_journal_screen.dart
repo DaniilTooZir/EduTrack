@@ -2,6 +2,8 @@ import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/app_error_view.dart';
+import 'package:edu_track/utils/app_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -41,10 +43,8 @@ class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
   }
 
   void _openStudentGrades(Student student) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    showAppBottomSheet(
+      context,
       builder: (_) => _StudentGradesSheet(student: student),
     );
   }
@@ -284,23 +284,7 @@ class _StudentGradesSheetState extends State<_StudentGradesSheet> {
 
   Widget _buildBody(ColorScheme colors) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: colors.error),
-              const SizedBox(height: 12),
-              Text(_error!, style: TextStyle(color: colors.error), textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton(onPressed: _load, child: const Text('Повторить')),
-            ],
-          ),
-        ),
-      );
-    }
+    if (_error != null) return AppErrorView(message: _error!, onRetry: _load);
     if (_analytics.isEmpty) {
       return Center(
         child: Column(

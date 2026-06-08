@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/debt_service.dart';
 import 'package:edu_track/models/student_debt_info.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -108,20 +109,7 @@ class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
     if (_isLoadingGroups) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null && _groups.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: colors.error),
-            const SizedBox(height: 16),
-            Text(_error!, style: TextStyle(color: colors.error), textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            TextButton.icon(onPressed: _loadGroups, icon: const Icon(Icons.refresh), label: const Text('Повторить')),
-          ],
-        ),
-      );
-    }
+    if (_error != null && _groups.isEmpty) return AppErrorView(message: _error!, onRetry: _loadGroups);
     if (_groups.isEmpty) {
       return Center(
         child: Column(
@@ -150,23 +138,7 @@ class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
           if (_isLoadingDebts)
             const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
           else if (_error != null)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 48, color: colors.error),
-                    const SizedBox(height: 16),
-                    Text(_error!, style: TextStyle(color: colors.error), textAlign: TextAlign.center),
-                    TextButton.icon(
-                      onPressed: _loadDebts,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Повторить'),
-                    ),
-                  ],
-                ),
-              ),
-            )
+            SliverFillRemaining(child: AppErrorView(message: _error!, onRetry: _loadDebts))
           else
             ..._buildBody(colors),
         ],

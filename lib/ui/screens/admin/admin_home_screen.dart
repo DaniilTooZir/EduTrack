@@ -11,6 +11,7 @@ import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/ui/widgets/stat_card.dart';
 import 'package:edu_track/ui/widgets/welcome_card.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
@@ -287,21 +288,33 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     spacing: 16,
                     runSpacing: 16,
                     children: [
-                      _statCard(
-                        'Преподаватели',
-                        (_stats['teachers'] ?? 0).toString(),
-                        Icons.school,
-                        Colors.orange,
-                        colors,
+                      StatCard(
+                        title: 'Преподаватели',
+                        value: (_stats['teachers'] ?? 0).toString(),
+                        icon: Icons.school,
+                        iconColor: Colors.orange,
+                        compact: true,
                       ),
-                      _statCard('Студенты', (_stats['students'] ?? 0).toString(), Icons.people, Colors.blue, colors),
-                      _statCard('Группы', (_stats['groups'] ?? 0).toString(), Icons.groups, Colors.green, colors),
-                      _statCard(
-                        'Предметы',
-                        (_stats['subjects'] ?? 0).toString(),
-                        Icons.menu_book,
-                        Colors.purple,
-                        colors,
+                      StatCard(
+                        title: 'Студенты',
+                        value: (_stats['students'] ?? 0).toString(),
+                        icon: Icons.people,
+                        iconColor: Colors.blue,
+                        compact: true,
+                      ),
+                      StatCard(
+                        title: 'Группы',
+                        value: (_stats['groups'] ?? 0).toString(),
+                        icon: Icons.groups,
+                        iconColor: Colors.green,
+                        compact: true,
+                      ),
+                      StatCard(
+                        title: 'Предметы',
+                        value: (_stats['subjects'] ?? 0).toString(),
+                        icon: Icons.menu_book,
+                        iconColor: Colors.purple,
+                        compact: true,
                       ),
                     ],
                   ),
@@ -386,39 +399,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _statCard(String title, String value, IconData icon, Color badgeColor, ColorScheme colors) {
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.surface.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: badgeColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: badgeColor, size: 24),
-              ),
-              Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: badgeColor)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: colors.onSurface)),
-        ],
       ),
     );
   }

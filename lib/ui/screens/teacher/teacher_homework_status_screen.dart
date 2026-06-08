@@ -8,6 +8,7 @@ import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/app_bottom_sheet.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -92,10 +93,9 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
   }
 
   void _openHomeworkDetails(Homework hw) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+    showAppBottomSheet(
+      context,
+      transparentBackground: true,
       builder:
           (context) =>
               _HomeworkDetailSheet(homework: hw, studentService: _studentService, homeworkService: _homeworkService),

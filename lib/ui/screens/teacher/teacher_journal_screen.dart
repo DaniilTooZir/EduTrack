@@ -10,7 +10,9 @@ import 'package:edu_track/models/lesson_attendance.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_bottom_sheet.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/journal_pdf_exporter.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
@@ -197,10 +199,8 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   Future<void> _onCellTap(Student student, Lesson lesson) async {
     final key = '${student.id}|${lesson.id!}';
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId ?? '';
-    final result = await showModalBottomSheet<Object?>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    final result = await showAppBottomSheet<Object?>(
+      context,
       builder:
           (_) => _CellEditSheet(
             studentName: '${student.surname} ${student.name}',
@@ -272,10 +272,8 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
     final avg = _computeAvg(student);
     final currentFinalGrade = _finalGradeMap[student.id];
 
-    final result = await showModalBottomSheet<Object?>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    final result = await showAppBottomSheet<Object?>(
+      context,
       builder:
           (_) => _FinalGradeSheet(
             studentName: '${student.surname} ${student.name}',
@@ -337,7 +335,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
           _isLoading
               ? _buildSkeleton()
               : _errorMessage != null
-              ? _buildError(colors)
+              ? AppErrorView(message: _errorMessage!, onRetry: _loadJournal)
               : (_lessons.isEmpty || _students.isEmpty)
               ? _buildEmpty(colors)
               : _buildJournal(colors),
@@ -618,21 +616,6 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildError(ColorScheme colors) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 48, color: colors.error),
-          const SizedBox(height: 16),
-          Text(_errorMessage!, style: TextStyle(color: colors.error, fontSize: 15)),
-          const SizedBox(height: 8),
-          TextButton.icon(onPressed: _loadJournal, icon: const Icon(Icons.refresh), label: const Text('Повторить')),
-        ],
       ),
     );
   }
