@@ -46,3 +46,4 @@ app.*.map.json
 
 # Environment secrets (не коммитим)
 .env
+config.json

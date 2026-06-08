@@ -32,7 +32,7 @@ class SupabaseConnection {
     final url = AppConfig.supabaseUrl;
     final anonKey = AppConfig.supabaseAnonKey;
     if (url.isEmpty || anonKey.isEmpty) {
-      throw Exception('Ошибка конфигурации: ключи доступа не найдены в .env файле.');
+      throw Exception('Ошибка конфигурации: ключи доступа не найдены.');
     }
 
     try {

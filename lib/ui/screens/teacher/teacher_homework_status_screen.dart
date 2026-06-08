@@ -264,13 +264,18 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
             status: status,
             homework: widget.homework,
             onUpdate: (isCompleted, comment) async {
-              await widget.homeworkService.evaluateHomework(
+              final result = await widget.homeworkService.evaluateHomework(
                 homeworkId: widget.homework.id,
                 studentId: student.id,
                 isCompleted: isCompleted,
                 teacherComment: comment,
               );
+              if (result.isFailure) {
+                MessengerHelper.showError(result.errorMessage);
+                return false;
+              }
               await _loadDetails();
+              return true;
             },
           ),
     );
@@ -397,7 +402,7 @@ class _EvaluationDialog extends StatefulWidget {
   final Student student;
   final HomeworkStatus? status;
   final Homework homework;
-  final Function(bool, String?) onUpdate;
+  final Future<bool> Function(bool, String?) onUpdate;
 
   const _EvaluationDialog({
     required this.student,
@@ -412,6 +417,7 @@ class _EvaluationDialog extends StatefulWidget {
 
 class _EvaluationDialogState extends State<_EvaluationDialog> {
   late TextEditingController _feedbackController;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -498,22 +504,51 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+        TextButton(onPressed: _isSubmitting ? null : () => Navigator.pop(context), child: const Text('Отмена')),
         ElevatedButton.icon(
-          onPressed: () {
-            widget.onUpdate(true, _feedbackController.text.trim());
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.check),
+          onPressed:
+              _isSubmitting
+                  ? null
+                  : () async {
+                    final navigator = Navigator.of(context);
+                    setState(() => _isSubmitting = true);
+                    final comment = _feedbackController.text.trim();
+                    final success = await widget.onUpdate(true, comment.isEmpty ? null : comment);
+                    if (!mounted) return;
+                    if (success) {
+                      navigator.pop();
+                    } else {
+                      setState(() => _isSubmitting = false);
+                    }
+                  },
+          icon:
+              _isSubmitting
+                  ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                  : const Icon(Icons.check),
           label: const Text('Принять'),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
         ),
         if (hasAnswer)
           TextButton.icon(
-            onPressed: () {
-              widget.onUpdate(false, _feedbackController.text.trim());
-              Navigator.pop(context);
-            },
+            onPressed:
+                _isSubmitting
+                    ? null
+                    : () async {
+                      final navigator = Navigator.of(context);
+                      setState(() => _isSubmitting = true);
+                      final comment = _feedbackController.text.trim();
+                      final success = await widget.onUpdate(false, comment.isEmpty ? null : comment);
+                      if (!mounted) return;
+                      if (success) {
+                        navigator.pop();
+                      } else {
+                        setState(() => _isSubmitting = false);
+                      }
+                    },
             icon: const Icon(Icons.refresh, size: 18),
             label: const Text('На доработку'),
             style: TextButton.styleFrom(foregroundColor: colors.error),
