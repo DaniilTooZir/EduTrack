@@ -4,6 +4,7 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
@@ -151,7 +152,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.l),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600),
               child: Card(
@@ -184,7 +185,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                 validator: (val) => Validators.validateName(val, 'Имя'),
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: AppSpacing.l),
                             Expanded(
                               child: TextFormField(
                                 controller: _surnameController,
@@ -198,7 +199,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.l),
                         TextFormField(
                           controller: _emailController,
                           decoration: const InputDecoration(
@@ -209,7 +210,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           keyboardType: TextInputType.emailAddress,
                           validator: Validators.validateEmail,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.l),
                         TextFormField(
                           controller: _loginController,
                           decoration: const InputDecoration(
@@ -221,7 +222,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._-]'))],
                           validator: (val) => Validators.requiredField(val, fieldName: 'Логин'),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.l),
                         TextFormField(
                           controller: _passwordController,
                           decoration: InputDecoration(
@@ -241,7 +242,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.l),
                         DropdownButtonFormField<String>(
                           initialValue: _selectedRole,
                           decoration: const InputDecoration(
@@ -262,7 +263,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                               }),
                         ),
                         if (_selectedRole == 'student') ...[
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.l),
                           DropdownButtonFormField<Group>(
                             initialValue: _selectedGroup,
                             decoration: const InputDecoration(
@@ -314,7 +315,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.l),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600),
               child: Card(
@@ -330,17 +331,17 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       const Row(
                         children: [
                           Expanded(child: Skeleton(height: 56)),
-                          SizedBox(width: 16),
+                          SizedBox(width: AppSpacing.l),
                           Expanded(child: Skeleton(height: 56)),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.l),
                       const Skeleton(height: 56),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.l),
                       const Skeleton(height: 56),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.l),
                       const Skeleton(height: 56),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.l),
                       const Skeleton(height: 56),
                       const SizedBox(height: 24),
                       const Skeleton(height: 48),

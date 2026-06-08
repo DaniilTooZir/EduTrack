@@ -5,6 +5,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
@@ -184,7 +185,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                                             size: 64,
                                             color: colors.onSurfaceVariant.withValues(alpha: 0.5),
                                           ),
-                                          const SizedBox(height: 16),
+                                          const SizedBox(height: AppSpacing.l),
                                           Text(
                                             'У вас пока нет диалогов',
                                             style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
@@ -212,7 +213,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               )
                               : ListView.builder(
                                 physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.all(AppSpacing.l),
                                 itemCount: _filteredChats.length,
                                 itemBuilder: (context, index) => _buildChatTile(_filteredChats[index], colors),
                               ),
@@ -227,7 +228,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final isGroup = preview.chat.type == 'group';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       elevation: 2,
       color: colors.surface,
       child: ListTile(
@@ -289,11 +290,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget _buildSkeleton(ColorScheme colors) {
     return ListView.builder(
       itemCount: 7,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.l),
       itemBuilder:
           (context, index) => Card(
             margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
             elevation: 2,
             color: colors.surface,
             child: Padding(
@@ -301,7 +302,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               child: Row(
                 children: [
                   const Skeleton(height: 56, width: 56, borderRadius: 28),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.l),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

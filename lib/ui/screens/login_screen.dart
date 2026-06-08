@@ -1,8 +1,9 @@
-import 'package:edu_track/data/services/auth_service.dart';
+﻿import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -118,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: maxWidth),
                     child: Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                       elevation: 6,
                       child: Padding(
                         padding: const EdgeInsets.all(24),
@@ -129,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.lock_outline, size: 48, color: colors.primary),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: AppSpacing.l),
                               Text(
                                 'Вход в систему',
                                 style: TextStyle(
@@ -153,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   return null;
                                 },
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: AppSpacing.l),
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: !_isPasswordVisible,
@@ -203,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               if (_errorMessage != null) ...[
-                                const SizedBox(height: 16),
+                                const SizedBox(height: AppSpacing.l),
                                 Text(
                                   _errorMessage!,
                                   style: TextStyle(color: colors.error, fontWeight: FontWeight.bold),

@@ -1,4 +1,5 @@
-import 'package:edu_track/models/schedule.dart';
+﻿import 'package:edu_track/models/schedule.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 
 class NextLessonCard extends StatelessWidget {
@@ -23,7 +24,7 @@ class NextLessonCard extends StatelessWidget {
     return Card(
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
         child: Row(

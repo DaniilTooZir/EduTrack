@@ -1,7 +1,8 @@
-import 'package:edu_track/data/services/users_fetch_service.dart';
+﻿import 'package:edu_track/data/services/users_fetch_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -125,7 +126,7 @@ class _UserListScreenState extends State<UserListScreen> {
             child: Column(
               children: [
                 _buildFilters(colors),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.l),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadUsers,
@@ -167,7 +168,7 @@ class _UserListScreenState extends State<UserListScreen> {
   Widget _buildFilters(ColorScheme colors) {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(
@@ -184,7 +185,7 @@ class _UserListScreenState extends State<UserListScreen> {
                 _applyFilters();
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.m),
             Row(
               children: [
                 Expanded(
@@ -303,7 +304,7 @@ class _UserListScreenState extends State<UserListScreen> {
   Widget _buildUserSkeleton() {
     return ListView.builder(
       itemCount: 8,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.l),
       itemBuilder:
           (context, index) => ListTile(
             leading: const Skeleton(height: 48, width: 48, borderRadius: 24),

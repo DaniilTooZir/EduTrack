@@ -3,6 +3,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/data_loading_mixin.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
@@ -161,14 +162,14 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadin
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.l),
             child: Column(
               children: [
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.l),
                     child: Form(
                       key: _formKey,
                       autovalidateMode: _autovalidateMode,
@@ -184,7 +185,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadin
                             inputFormatters: [FilteringTextInputFormatter.allow(_subjectNameAllowList)],
                             validator: (val) => Validators.requiredField(val, fieldName: 'Название'),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.l),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -215,7 +216,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadin
                   'Список предметов',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: colors.primary),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.m),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadData,
@@ -314,7 +315,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadin
               child: Row(
                 children: [
                   const Skeleton(height: 40, width: 40, borderRadius: 20),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.l),
                   const Expanded(child: Skeleton(height: 14)),
                 ],
               ),

@@ -1,4 +1,4 @@
-﻿import 'package:edu_track/data/repositories/grade_repository.dart';
+import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/data/repositories/homework_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/chat_service.dart';
@@ -13,14 +13,14 @@ import 'package:edu_track/ui/screens/student/student_lesson_screen.dart';
 import 'package:edu_track/ui/screens/student/student_profile_screen.dart';
 import 'package:edu_track/ui/screens/student/student_schedule_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
-import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
+import 'package:edu_track/ui/widgets/app_drawer.dart';
 import 'package:edu_track/ui/widgets/next_lesson_card.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/quick_action_card.dart';
-import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/ui/widgets/stat_card.dart';
 import 'package:edu_track/ui/widgets/welcome_card.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/schedule_utils.dart';
 import 'package:flutter/material.dart';
@@ -194,100 +194,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [colors.secondary, colors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  'Меню студента',
-                  style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            DrawerNavItem(
-              icon: Icons.dashboard_rounded,
-              title: 'Главная',
-              selected: _selectedIndex == 0,
-              onTap: () {
-                _onItemTapped(0);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.assignment_rounded,
-              title: 'Домашние задания',
-              selected: _selectedIndex == 1,
-              onTap: () {
-                _onItemTapped(1);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.menu_book_rounded,
-              title: 'Уроки',
-              selected: _selectedIndex == 2,
-              onTap: () {
-                _onItemTapped(2);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.calendar_month_rounded,
-              title: 'Расписание',
-              selected: _selectedIndex == 3,
-              onTap: () {
-                _onItemTapped(3);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.message_rounded,
-              title: 'Сообщения',
-              selected: _selectedIndex == 5,
-              onTap: () {
-                _onItemTapped(5);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.bar_chart_rounded,
-              title: 'Аналитика',
-              selected: _selectedIndex == 6,
-              onTap: () {
-                _onItemTapped(6);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.person_rounded,
-              title: 'Профиль',
-              selected: _selectedIndex == 4,
-              onTap: () {
-                _onItemTapped(4);
-                Navigator.of(context).pop();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
-              title: Text('Настройки', style: TextStyle(color: colors.onSurface)),
-              onTap: () {
-                Navigator.pop(context);
-                showSettingsSheet(context);
-              },
-            ),
-          ],
-        ),
+      drawer: AppDrawer(
+        title: 'Меню студента',
+        selectedIndex: _selectedIndex,
+        onNavigate: _onItemTapped,
+        items: const [
+          AppDrawerItem(icon: Icons.dashboard_rounded, title: 'Главная', tabIndex: 0),
+          AppDrawerItem(icon: Icons.assignment_rounded, title: 'Домашние задания', tabIndex: 1),
+          AppDrawerItem(icon: Icons.menu_book_rounded, title: 'Уроки', tabIndex: 2),
+          AppDrawerItem(icon: Icons.calendar_month_rounded, title: 'Расписание', tabIndex: 3),
+          AppDrawerItem(icon: Icons.message_rounded, title: 'Сообщения', tabIndex: 5),
+          AppDrawerItem(icon: Icons.bar_chart_rounded, title: 'Аналитика', tabIndex: 6),
+          AppDrawerItem(icon: Icons.person_rounded, title: 'Профиль', tabIndex: 4),
+        ],
       ),
       body: Container(
         width: double.infinity,
@@ -323,7 +242,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.l),
             _buildDebtBanner(colors),
             if (_nextLesson != null) ...[
               Text(
@@ -337,13 +256,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 detailIcon: Icons.person_outline,
                 detailText: _nextLesson!.teacherName,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.l),
             ],
             Text(
               'Быстрые действия',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.m),
             SizedBox(
               height: 110,
               child: ListView(
@@ -362,7 +281,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               'Твоя успеваемость',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.m),
             if (_isDashboardLoading)
               const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
             else if (_dashboardError != null)
@@ -377,7 +296,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     iconColor: colors.primary,
                     bgColor: colors.primaryContainer,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.m),
                   StatCard(
                     icon: Icons.check_circle,
                     title: 'Выполнено',
@@ -385,7 +304,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     iconColor: Colors.green,
                     bgColor: Colors.green.withValues(alpha: 0.2),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.m),
                   StatCard(
                     icon: Icons.pending_actions,
                     title: 'Осталось',
@@ -414,14 +333,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: colors.errorContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.card,
         border: Border.all(color: colors.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer, size: 26),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.m),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,13 +387,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Skeleton(height: 160, width: double.infinity, borderRadius: 24),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.l),
           const Skeleton(height: 22, width: 160),
           const SizedBox(height: 8),
           const Skeleton(height: 86, width: double.infinity, borderRadius: 16),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.l),
           const Skeleton(height: 24, width: 180),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.m),
           SizedBox(
             height: 110,
             child: ListView.builder(
@@ -489,11 +408,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ),
           const SizedBox(height: 24),
           const Skeleton(height: 24, width: 200),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.m),
           const Skeleton(height: 90, width: double.infinity, borderRadius: 16),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.m),
           const Skeleton(height: 90, width: double.infinity, borderRadius: 16),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.m),
           const Skeleton(height: 90, width: double.infinity, borderRadius: 16),
         ],
       ),

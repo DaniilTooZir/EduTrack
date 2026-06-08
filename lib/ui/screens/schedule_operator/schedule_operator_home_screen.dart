@@ -1,13 +1,13 @@
-﻿import 'package:edu_track/data/repositories/schedule_repository.dart';
+import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
-import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
-import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/ui/widgets/app_drawer.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/ui/widgets/welcome_card.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/data_loading_mixin.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
@@ -85,55 +85,14 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [colors.secondary, colors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  'Меню оператора расписания',
-                  style: TextStyle(color: colors.onPrimary, fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            DrawerNavItem(
-              icon: Icons.dashboard,
-              title: 'Главная',
-              selected: _selectedIndex == 0,
-              onTap: () {
-                _navigateToTab(0);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.edit_calendar,
-              title: 'Редактор расписания',
-              selected: _selectedIndex == 1,
-              onTap: () {
-                _navigateToTab(1);
-                Navigator.of(context).pop();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
-              title: Text('Настройки', style: TextStyle(color: colors.onSurface)),
-              onTap: () {
-                Navigator.pop(context);
-                showSettingsSheet(context);
-              },
-            ),
-          ],
-        ),
+      drawer: AppDrawer(
+        title: 'Меню оператора расписания',
+        selectedIndex: _selectedIndex,
+        onNavigate: _navigateToTab,
+        items: const [
+          AppDrawerItem(icon: Icons.dashboard, title: 'Главная', tabIndex: 0),
+          AppDrawerItem(icon: Icons.edit_calendar, title: 'Редактор расписания', tabIndex: 1),
+        ],
       ),
       body: Container(
         width: double.infinity,
@@ -188,7 +147,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             ),
             const SizedBox(height: 24),
             Text('Действия', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary)),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.m),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -211,7 +170,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             ),
             const SizedBox(height: 4),
             Text('Группировка по дням и датам.', style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.m),
             if (isLoading)
               _buildScheduleSkeleton(colors)
             else if (_schedules.isEmpty)
@@ -233,7 +192,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       color: colors.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -249,7 +208,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                     decoration: BoxDecoration(color: colors.primaryContainer, borderRadius: BorderRadius.circular(8)),
                     child: Icon(Icons.calendar_today, color: colors.onPrimaryContainer, size: 20),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.m),
                   Text(headerTitle, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary)),
                 ],
               ),
@@ -320,7 +279,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: colors.surface, borderRadius: AppRadius.card),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -329,7 +288,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                   child: Row(
                     children: [
                       Skeleton(height: 36, width: 36, borderRadius: 8),
-                      SizedBox(width: 12),
+                      SizedBox(width: AppSpacing.m),
                       Skeleton(height: 18, width: 160),
                     ],
                   ),

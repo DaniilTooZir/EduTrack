@@ -1,10 +1,11 @@
-import 'package:edu_track/data/services/group_service.dart';
+﻿import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -145,7 +146,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       DropdownButtonFormField<String>(
                         initialValue: editCuratorId,
                         decoration: const InputDecoration(labelText: 'Куратор', border: OutlineInputBorder()),
@@ -229,15 +230,15 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.l),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                   elevation: 6,
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.l),
                     child: Form(
                       key: _formKey,
                       autovalidateMode: _autovalidateMode,
@@ -266,7 +267,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: AppSpacing.l),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: colors.primary,
@@ -287,7 +288,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.m),
                           DropdownButtonFormField<String>(
                             initialValue: _selectedCuratorId,
                             decoration: const InputDecoration(
@@ -316,7 +317,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                   'Список групп',
                   style: TextStyle(fontWeight: FontWeight.bold, color: colors.primary, fontSize: 20),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.m),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadData,
@@ -416,7 +417,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
               child: Row(
                 children: [
                   const Skeleton(height: 40, width: 40, borderRadius: 20),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.l),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

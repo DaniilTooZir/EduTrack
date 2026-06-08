@@ -7,6 +7,7 @@ import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -140,7 +141,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.bar_chart_rounded, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.l),
             Text('Оценок пока нет', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 18)),
           ],
         ),
@@ -243,7 +244,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.menu_book_rounded, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.l),
                   Text('Нет оценок для отображения', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16)),
                 ],
               ),
@@ -349,7 +350,7 @@ class _SubjectAnalyticsCard extends StatelessWidget {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -421,7 +422,7 @@ class _JournalSubjectTile extends StatelessWidget {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -517,7 +518,7 @@ class _FinalGradeRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.m),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -705,7 +706,7 @@ class _JournalGradeRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.m),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

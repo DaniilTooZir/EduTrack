@@ -6,6 +6,7 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:file_picker/file_picker.dart';
@@ -270,7 +271,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                         onChanged: (val) => setStateDialog(() => editSelectedGroupId = val),
                         validator: (val) => val == null ? 'Выберите группу' : null,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       TextFormField(
                         controller: editTitleController,
                         maxLength: 100,
@@ -280,7 +281,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                 Validators.requiredField(val, fieldName: 'Заголовок') ??
                                 Validators.validateLength(val, max: 100),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       TextFormField(
                         controller: editDescriptionController,
                         maxLines: 3,
@@ -288,7 +289,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                         decoration: const InputDecoration(labelText: 'Описание', border: OutlineInputBorder()),
                         validator: (val) => Validators.validateLength(val, max: 500),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -340,7 +341,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       Row(
                         children: [
                           Expanded(
@@ -449,7 +450,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.l),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -472,7 +473,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       // Поиск
                       TextField(
                         controller: _searchController,
@@ -524,7 +525,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       if (_homeworks.isEmpty)
                         Center(
                           child: Padding(
@@ -600,13 +601,13 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                         'Создать новое задание',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.l),
                       Card(
                         elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                         color: colors.surface,
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.l),
                           child: Form(
                             key: _formKey,
                             autovalidateMode: _autovalidateMode,
@@ -620,7 +621,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                   onChanged: (val) => setState(() => _selectedSubjectId = val),
                                   validator: (val) => val == null ? 'Выберите предмет' : null,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.m),
                                 DropdownButtonFormField<String>(
                                   initialValue: _selectedGroupId,
                                   decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
@@ -629,7 +630,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                   onChanged: (val) => setState(() => _selectedGroupId = val),
                                   validator: (val) => val == null ? 'Выберите группу' : null,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.m),
                                 TextFormField(
                                   controller: _titleController,
                                   maxLength: 100,
@@ -642,7 +643,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                           Validators.requiredField(val, fieldName: 'Заголовок') ??
                                           Validators.validateLength(val, max: 100),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.m),
                                 TextFormField(
                                   controller: _descriptionController,
                                   maxLines: 3,
@@ -653,7 +654,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                   ),
                                   validator: (val) => Validators.validateLength(val, max: 500),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.m),
                                 Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -692,7 +693,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.m),
                                 Row(
                                   children: [
                                     Expanded(
@@ -712,7 +713,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.m),
                                     IconButton.filled(
                                       onPressed: _selectDueDate,
                                       icon: const Icon(Icons.calendar_today),

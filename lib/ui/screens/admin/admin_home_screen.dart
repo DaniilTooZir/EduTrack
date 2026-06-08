@@ -1,4 +1,4 @@
-import 'package:edu_track/data/services/dashboard_service.dart';
+﻿import 'package:edu_track/data/services/dashboard_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/admin/academic_periods_screen.dart';
@@ -8,11 +8,11 @@ import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/subject_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
-import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
-import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/ui/widgets/app_drawer.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/ui/widgets/stat_card.dart';
 import 'package:edu_track/ui/widgets/welcome_card.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -151,100 +151,19 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [colors.secondary, colors.primary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  'Меню администратора',
-                  style: TextStyle(color: colors.onPrimary, fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            DrawerNavItem(
-              icon: Icons.dashboard_rounded,
-              title: 'Главная',
-              selected: _selectedIndex == 0,
-              onTap: () {
-                _navigateToTab(0);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.people_alt_rounded,
-              title: 'Пользователи',
-              selected: _selectedIndex == 1,
-              onTap: () {
-                _navigateToTab(1);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.person_add_alt_1_rounded,
-              title: 'Добавить пользователя',
-              selected: _selectedIndex == 2,
-              onTap: () {
-                _navigateToTab(2);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.menu_book_rounded,
-              title: 'Предметы',
-              selected: _selectedIndex == 3,
-              onTap: () {
-                _navigateToTab(3);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.groups_rounded,
-              title: 'Группы',
-              selected: _selectedIndex == 4,
-              onTap: () {
-                _navigateToTab(4);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.calendar_month_rounded,
-              title: 'Учебные периоды',
-              selected: _selectedIndex == 5,
-              onTap: () {
-                _navigateToTab(5);
-                Navigator.of(context).pop();
-              },
-            ),
-            DrawerNavItem(
-              icon: Icons.person_rounded,
-              title: 'Профиль',
-              selected: _selectedIndex == 6,
-              onTap: () {
-                _navigateToTab(6);
-                Navigator.of(context).pop();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.settings, color: colors.onSurfaceVariant),
-              title: Text('Настройки', style: TextStyle(color: colors.onSurface)),
-              onTap: () {
-                Navigator.pop(context);
-                showSettingsSheet(context);
-              },
-            ),
-          ],
-        ),
+      drawer: AppDrawer(
+        title: 'Меню администратора',
+        selectedIndex: _selectedIndex,
+        onNavigate: _navigateToTab,
+        items: const [
+          AppDrawerItem(icon: Icons.dashboard_rounded, title: 'Главная', tabIndex: 0),
+          AppDrawerItem(icon: Icons.people_alt_rounded, title: 'Пользователи', tabIndex: 1),
+          AppDrawerItem(icon: Icons.person_add_alt_1_rounded, title: 'Добавить пользователя', tabIndex: 2),
+          AppDrawerItem(icon: Icons.menu_book_rounded, title: 'Предметы', tabIndex: 3),
+          AppDrawerItem(icon: Icons.groups_rounded, title: 'Группы', tabIndex: 4),
+          AppDrawerItem(icon: Icons.calendar_month_rounded, title: 'Учебные периоды', tabIndex: 5),
+          AppDrawerItem(icon: Icons.person_rounded, title: 'Профиль', tabIndex: 6),
+        ],
       ),
       body: Container(
         width: double.infinity,
@@ -280,7 +199,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   'Статистика учреждения',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.m),
                 if (_isLoading)
                   _buildStatsSkeleton()
                 else
@@ -323,7 +242,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   'Быстрые действия',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.l),
                 if (_isLoading)
                   _buildQuickActionsSkeleton()
                 else
@@ -379,10 +298,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       child: Material(
         color: colors.surface,
         elevation: 2,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.card,
         child: InkWell(
           onTap: () => _navigateToTab(pageIndex),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.card,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
             child: Column(

@@ -1,4 +1,4 @@
-﻿import 'package:edu_track/data/repositories/homework_repository.dart';
+import 'package:edu_track/data/repositories/homework_repository.dart';
 import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/homework.dart';
@@ -7,6 +7,7 @@ import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_bottom_sheet.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -175,7 +176,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                       size: 64,
                       color: colors.onSurfaceVariant.withValues(alpha: 0.3),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.l),
                     Text('В этой категории пусто', style: TextStyle(color: colors.onSurfaceVariant)),
                   ],
                 ),
@@ -210,13 +211,13 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                 color: colors.surface,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppRadius.card,
                   onTap: () => _openHomeworkSheet(hw),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.l),
                     child: Row(
                       children: [
                         Container(
@@ -224,7 +225,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                           decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), shape: BoxShape.circle),
                           child: Icon(statusIcon, color: statusColor, size: 24),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: AppSpacing.l),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,21 +269,21 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
 
   Widget _buildHomeworkSkeleton() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.l),
       itemCount: 6,
       itemBuilder:
           (context, index) => Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.l),
               decoration: BoxDecoration(
                 border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: AppRadius.card,
               ),
               child: const Row(
                 children: [
                   Skeleton(height: 44, width: 44, borderRadius: 22),
-                  SizedBox(width: 16),
+                  SizedBox(width: AppSpacing.l),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,7 +476,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                         hw.description!,
                         style: TextStyle(color: colors.onSurface.withValues(alpha: 0.8), fontSize: 16),
                       ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.l),
                     if (hw.fileUrl != null)
                       InkWell(
                         onTap: () => _openFile(hw.fileUrl!),
@@ -596,13 +597,13 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                         fontSize: 18,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.l),
                     // ── Завершено / На проверке / На доработку ──────────────
                     if (_isDone || hasContent) ...[
                       if (status?.teacherComment != null && status!.teacherComment!.isNotEmpty) ...[
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.l),
                           margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             color: Colors.orange.withValues(alpha: 0.1),
@@ -643,7 +644,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                       if (status?.studentComment != null && status!.studentComment!.isNotEmpty)
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.l),
                           decoration: BoxDecoration(
                             color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(12),
@@ -651,7 +652,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           ),
                           child: Text(status.studentComment!),
                         ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       if (status?.fileUrl != null)
                         InkWell(
                           onTap: () => _openFile(status.fileUrl!),
@@ -683,7 +684,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           'Новый ответ:',
                           style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold, fontSize: 15),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.m),
                         TextField(
                           controller: _commentController,
                           maxLines: 4,
@@ -694,7 +695,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.m),
                         InkWell(
                           onTap: _pickFile,
                           borderRadius: BorderRadius.circular(12),
@@ -707,7 +708,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             child: Row(
                               children: [
                                 Icon(Icons.upload_file, color: colors.primary),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: AppSpacing.m),
                                 Text(
                                   'Прикрепить файл (необязательно)',
                                   style: TextStyle(color: colors.onSurfaceVariant),
@@ -717,7 +718,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           ),
                         ),
                         if (_selectedFiles.isNotEmpty) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.m),
                           ..._selectedFiles.map(
                             (file) => Container(
                               margin: const EdgeInsets.only(bottom: 8),
@@ -730,7 +731,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                               child: Row(
                                 children: [
                                   Icon(Icons.insert_drive_file_outlined, size: 20, color: colors.primary),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.m),
                                   Expanded(
                                     child: Text(
                                       file.name,
@@ -747,7 +748,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.l),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -799,7 +800,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.3),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       InkWell(
                         onTap: _pickFile,
                         borderRadius: BorderRadius.circular(12),
@@ -812,7 +813,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           child: Row(
                             children: [
                               Icon(Icons.upload_file, color: colors.primary),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppSpacing.m),
                               Text(
                                 'Прикрепить файлы (необязательно)',
                                 style: TextStyle(color: colors.onSurfaceVariant),
@@ -822,7 +823,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                         ),
                       ),
                       if (_selectedFiles.isNotEmpty) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.m),
                         ..._selectedFiles.map(
                           (file) => Container(
                             margin: const EdgeInsets.only(bottom: 8),
@@ -835,7 +836,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             child: Row(
                               children: [
                                 Icon(Icons.insert_drive_file_outlined, size: 20, color: colors.primary),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: AppSpacing.m),
                                 Expanded(
                                   child: Text(
                                     file.name,

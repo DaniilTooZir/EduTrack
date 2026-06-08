@@ -1,5 +1,6 @@
 import 'package:edu_track/data/services/institution_request_service.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/phone_mask_formatter.dart';
 import 'package:edu_track/utils/validators.dart';
@@ -83,7 +84,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                   elevation: 6,
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -145,7 +146,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             validator: Validators.validateEmail,
                             colors: colors,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.m),
                           _buildTextField(
                             controller: _phoneController,
                             label: 'Телефон',

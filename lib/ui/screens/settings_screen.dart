@@ -1,7 +1,8 @@
-import 'package:edu_track/data/services/notification_service.dart';
+﻿import 'package:edu_track/data/services/notification_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -98,7 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: Colors.orange,
                   onTap: () => themeProvider.setTheme(AppThemeMode.light),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.m),
                 _ThemeCard(
                   label: 'Темная',
                   icon: Icons.nightlight_round,
@@ -106,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: Colors.blueGrey,
                   onTap: () => themeProvider.setTheme(AppThemeMode.dark),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.m),
                 _ThemeCard(
                   label: 'Фиолетовая',
                   icon: Icons.palette_rounded,

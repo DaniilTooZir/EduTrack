@@ -4,6 +4,7 @@ import 'package:edu_track/models/message.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -142,7 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   }
                   return ListView.builder(
                     reverse: true,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.l),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
@@ -430,7 +431,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return ListView.builder(
       reverse: true,
       itemCount: 8,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.l),
       itemBuilder: (context, index) {
         final isMe = index % 2 == 0;
         return Align(

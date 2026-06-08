@@ -9,6 +9,7 @@ import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/utils/app_bottom_sheet.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -118,7 +119,7 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
                       : _filteredHomeworks.isEmpty
                       ? Center(child: Text('Задания не найдены', style: TextStyle(color: colors.onSurfaceVariant)))
                       : ListView.separated(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.l),
                         itemCount: _filteredHomeworks.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
@@ -151,10 +152,10 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
 
   Widget _buildFilters(ColorScheme colors) {
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(AppSpacing.l),
       elevation: 4,
       color: colors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -171,7 +172,7 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
               ),
               onChanged: (val) => setState(() => _searchQuery = val),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.m),
             Row(
               children: [
                 Expanded(
@@ -191,7 +192,7 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
                     onChanged: (val) => setState(() => _selectedSubjectId = val),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.m),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedGroupId,
@@ -322,7 +323,7 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                     Row(
                       children: [
                         Text('Всего студентов: ${_students.length}', style: TextStyle(color: colors.onSurfaceVariant)),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: AppSpacing.l),
                         Text(
                           'Сдано: $submittedCount',
                           style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold),
@@ -472,7 +473,7 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
                   ),
                   child: Text(widget.status!.studentComment!),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.l),
               ],
               if (widget.status?.fileUrl != null)
                 OutlinedButton.icon(

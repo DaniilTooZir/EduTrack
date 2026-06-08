@@ -1,4 +1,4 @@
-import 'package:edu_track/data/database/connection_to_database.dart';
+﻿import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/data/repositories/group_repository.dart';
@@ -18,6 +18,7 @@ import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -174,18 +175,18 @@ class _ErrorApp extends StatelessWidget {
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.m),
                 Text(error, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 30),
                 ElevatedButton(onPressed: onRetry, child: const Text('Попробовать снова')),
                 if (onOffline != null) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.m),
                   OutlinedButton.icon(
                     onPressed: onOffline,
                     icon: const Icon(Icons.offline_bolt_outlined),
                     label: const Text('Войти офлайн'),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.m),
                   const Text(
                     'Доступны только ранее загруженные данные',
                     textAlign: TextAlign.center,

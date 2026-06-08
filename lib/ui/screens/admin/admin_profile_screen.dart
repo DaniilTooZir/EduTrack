@@ -4,6 +4,7 @@ import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/phone_mask_formatter.dart';
 import 'package:edu_track/utils/validators.dart';
@@ -194,7 +195,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.l),
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 600),
@@ -207,7 +208,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   _buildAvatar(colors),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: AppSpacing.l),
                                   Center(
                                     child: Text(
                                       '${_admin!.name} ${_admin!.surname}',
@@ -414,7 +415,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   onPressed: _isSaving ? null : _saveChanges,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.l),
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.cancel),

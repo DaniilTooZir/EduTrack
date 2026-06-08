@@ -13,6 +13,7 @@ import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_bottom_sheet.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/journal_pdf_exporter.dart';
@@ -345,14 +346,14 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
               color: Colors.black26,
               child: Center(
                 child: Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CircularProgressIndicator(color: colors.primary),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.l),
                         Text('Создание PDF...', style: TextStyle(color: colors.onSurface, fontSize: 14)),
                       ],
                     ),
@@ -627,7 +628,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.table_chart_outlined, size: 64, color: colors.outlineVariant),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.l),
           Text(
             'Данных пока нет',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: colors.onSurfaceVariant),
@@ -752,7 +753,7 @@ class _CellEditSheetState extends State<_CellEditSheet> {
               textInputAction: TextInputAction.done,
             ),
             if (hasData) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.m),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -807,7 +808,7 @@ class _FinalGradeSheet extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text('Итоговая оценка за период', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.l),
             if (computedAvg > 0)
               Container(
                 width: double.infinity,
@@ -855,7 +856,7 @@ class _FinalGradeSheet extends StatelessWidget {
               ],
             ),
             if (currentFinalGrade != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.l),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -906,7 +907,7 @@ class _OptionButton extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               color: isSelected ? color : color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: AppRadius.card,
               border: Border.all(color: color, width: isSelected ? 0 : 1.5),
             ),
             alignment: Alignment.center,

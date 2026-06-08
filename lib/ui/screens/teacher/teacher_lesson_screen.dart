@@ -10,6 +10,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
@@ -220,7 +221,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                         },
                         validator: (val) => val == null ? 'Выберите предмет' : null,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       DropdownButtonFormField<Group>(
                         decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
                         initialValue: selectedGroup,
@@ -235,7 +236,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                         validator: (val) => val == null ? 'Выберите группу' : null,
                         hint: selectedSubject == null ? const Text('Сначала выберите предмет') : null,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       if (isDialogLoading)
                         const Center(child: CircularProgressIndicator())
                       else if (availableSchedules.isNotEmpty)
@@ -258,7 +259,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                         )
                       else if (selectedGroup != null && selectedSubject != null)
                         const Text('В расписании нет занятий.', style: TextStyle(color: Colors.redAccent)),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.m),
                       TextFormField(
                         controller: topicController,
                         decoration: const InputDecoration(labelText: 'Тема занятия', border: OutlineInputBorder()),
@@ -456,7 +457,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
           (context, index) => Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.l),
               decoration: BoxDecoration(
                 border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                 borderRadius: BorderRadius.circular(12),
@@ -466,7 +467,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                   Row(
                     children: [
                       Skeleton(height: 48, width: 48, borderRadius: 24),
-                      SizedBox(width: 12),
+                      SizedBox(width: AppSpacing.m),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,7 +480,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.l),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [

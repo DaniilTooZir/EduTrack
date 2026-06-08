@@ -1,7 +1,8 @@
-import 'package:edu_track/data/services/debt_service.dart';
+﻿import 'package:edu_track/data/services/debt_service.dart';
 import 'package:edu_track/models/student_debt_info.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -116,7 +117,7 @@ class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.groups_rounded, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.l),
             Text('Нет доступных групп', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16)),
           ],
         ),
@@ -131,7 +132,7 @@ class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Column(
-                children: [_buildGroupSelector(colors), const SizedBox(height: 12), _buildFilterRow(colors)],
+                children: [_buildGroupSelector(colors), const SizedBox(height: AppSpacing.m), _buildFilterRow(colors)],
               ),
             ),
           ),
@@ -199,7 +200,7 @@ class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.check_circle_outline, size: 64, color: Colors.green.withValues(alpha: 0.7)),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.l),
                 Text(
                   _showOnlyDebtors ? 'Задолжников нет!' : 'Студентов нет',
                   style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16),

@@ -4,6 +4,7 @@ import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/utils/app_bottom_sheet.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -91,7 +92,7 @@ class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.people_outline, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.l),
                           Text(
                             'Студентов в группе нет',
                             style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16),
@@ -142,7 +143,7 @@ class _StudentCard extends StatelessWidget {
                   color: student.isHeadman ? Colors.white : colors.onPrimaryContainer,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.m),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +234,7 @@ class _StudentGradesSheetState extends State<_StudentGradesSheet> {
       height: maxHeight,
       child: Column(
         children: [
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.m),
           Center(
             child: Container(
               width: 40,
@@ -241,7 +242,7 @@ class _StudentGradesSheetState extends State<_StudentGradesSheet> {
               decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.l),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -251,7 +252,7 @@ class _StudentGradesSheetState extends State<_StudentGradesSheet> {
                   backgroundColor: colors.primaryContainer,
                   child: Icon(Icons.person, color: colors.onPrimaryContainer),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,7 +273,7 @@ class _StudentGradesSheetState extends State<_StudentGradesSheet> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.m),
           Divider(height: 1, color: colors.outlineVariant),
           Expanded(child: _buildBody(colors)),
         ],
@@ -289,7 +290,7 @@ class _StudentGradesSheetState extends State<_StudentGradesSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.menu_book_rounded, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.l),
             Text('Оценок пока нет', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16)),
           ],
         ),
@@ -405,7 +406,7 @@ class _GradeEntryRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.m),
           Expanded(child: Text(dateStr, style: TextStyle(fontSize: 14, color: colors.onSurface))),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

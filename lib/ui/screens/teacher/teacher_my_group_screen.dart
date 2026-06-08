@@ -1,4 +1,4 @@
-import 'package:edu_track/data/repositories/group_repository.dart';
+﻿import 'package:edu_track/data/repositories/group_repository.dart';
 import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/student.dart';
@@ -7,6 +7,7 @@ import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/screens/teacher/curator_group_journal_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -118,7 +119,7 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                                   size: 64,
                                   color: colors.onSurfaceVariant.withValues(alpha: 0.5),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: AppSpacing.l),
                                 Text(
                                   'Вы не являетесь куратором группы.',
                                   style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
@@ -134,7 +135,7 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                     children: [
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.all(AppSpacing.l),
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -183,7 +184,7 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.l),
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(
@@ -314,7 +315,7 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
     return Column(
       children: [
         const Padding(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppSpacing.l),
           child: Skeleton(height: 120, width: double.infinity, borderRadius: 16),
         ),
         const SizedBox(height: 24),

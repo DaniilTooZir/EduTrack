@@ -2,6 +2,7 @@
 
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -76,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.m),
                             Text(
                               'Загрузка данных...',
                               style: TextStyle(

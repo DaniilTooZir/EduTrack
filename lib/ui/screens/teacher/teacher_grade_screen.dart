@@ -1,10 +1,11 @@
-import 'package:edu_track/data/repositories/grade_repository.dart';
+﻿import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -204,7 +205,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                                     ],
                                   )
                                   : ListView.separated(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: const EdgeInsets.all(AppSpacing.l),
                                     itemCount: _filteredStudents.length,
                                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                                     itemBuilder: (context, index) {
@@ -273,7 +274,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.l),
                         decoration: BoxDecoration(
                           color: colors.surface,
                           boxShadow: [
@@ -305,7 +306,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
 
   Widget _buildGradesSkeleton() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.l),
       itemCount: 10,
       itemBuilder:
           (context, index) => Padding(
@@ -313,7 +314,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
             child: Row(
               children: [
                 const Skeleton(height: 40, width: 40, borderRadius: 20),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.m),
                 const Skeleton(height: 16, width: 150),
                 const Spacer(),
                 const Skeleton(height: 40, width: 60, borderRadius: 8),

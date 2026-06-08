@@ -1,3 +1,4 @@
+﻿import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 
 class QuickActionCard extends StatelessWidget {
@@ -16,10 +17,10 @@ class QuickActionCard extends StatelessWidget {
       child: Material(
         color: colors.surface,
         elevation: 2,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.card,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.card,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
             child: Column(

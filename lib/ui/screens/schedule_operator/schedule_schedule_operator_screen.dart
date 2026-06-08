@@ -12,6 +12,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/data_loading_mixin.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
@@ -549,14 +550,14 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.l),
             child: Column(
               children: [
                 Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.l),
                     child: Form(
                       key: _formKey,
                       autovalidateMode: _autovalidateMode,
@@ -567,9 +568,9 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                             'Добавление урока',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: colors.primary),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.l),
                           _buildDatePicker(colors),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.m),
                           Row(
                             children: [
                               Expanded(
@@ -580,13 +581,13 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                   colors,
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppSpacing.m),
                               Expanded(
                                 child: _buildTimePicker('Конец', _endTime, (t) => setState(() => _endTime = t), colors),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.m),
                           Row(
                             children: [
                               Expanded(
@@ -611,7 +612,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                   validator: (val) => val == null ? 'Предмет?' : null,
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppSpacing.m),
                               Expanded(
                                 child: DropdownButtonFormField<String>(
                                   decoration: const InputDecoration(
@@ -639,7 +640,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.m),
                           DropdownButtonFormField<String>(
                             decoration: const InputDecoration(
                               labelText: 'Преподаватель',
@@ -686,7 +687,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                           child: CircularProgressIndicator(strokeWidth: 2),
                                         )
                                         : Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.m),
                                     Expanded(
                                       child: Text(
                                         _isCheckingConflict ? 'Проверка наложений...' : _currentConflictError!,
@@ -702,7 +703,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                 ),
                               ),
                             ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.l),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
@@ -729,7 +730,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.l),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -782,7 +783,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                               onChanged: (val) => setState(() => _filterGroupId = val),
                             ),
                           ),
-                        if (_groups.isNotEmpty && _teachers.isNotEmpty) const SizedBox(width: 12),
+                        if (_groups.isNotEmpty && _teachers.isNotEmpty) const SizedBox(width: AppSpacing.m),
                         if (_teachers.isNotEmpty)
                           Expanded(
                             child: DropdownButtonFormField<String?>(
@@ -1100,15 +1101,15 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                   child: Text(formatDate(_date)),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.m),
               Row(
                 children: [
                   Expanded(child: _buildTimePicker('Начало', _startTime, (t) => setState(() => _startTime = t))),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.m),
                   Expanded(child: _buildTimePicker('Конец', _endTime, (t) => setState(() => _endTime = t))),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.m),
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Предмет', border: OutlineInputBorder(), isDense: true),
                 initialValue: _subjectId,
@@ -1121,7 +1122,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                   if (val != null) setState(() => _subjectId = val);
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.m),
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder(), isDense: true),
                 initialValue: _groupId,
@@ -1137,7 +1138,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                   }
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.m),
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: 'Преподаватель',
@@ -1181,7 +1182,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                         _isCheckingConflict
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                             : Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.m),
                         Expanded(
                           child: Text(
                             _isCheckingConflict ? 'Проверка наложений...' : _conflictError!,

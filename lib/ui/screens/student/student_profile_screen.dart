@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/avatar_service.dart';
@@ -10,6 +10,7 @@ import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -230,7 +231,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.l),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 600),
@@ -243,7 +244,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildAvatar(colors),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: AppSpacing.l),
                                 Center(
                                   child: Text(
                                     '${_student!.name} ${_student!.surname}',
@@ -278,7 +279,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                                           backgroundColor: colors.primary,
                                           child: Icon(Icons.school, color: colors.onPrimary),
                                         ),
-                                        const SizedBox(width: 12),
+                                        const SizedBox(width: AppSpacing.m),
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,7 +507,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   onPressed: _isSaving ? null : _saveChanges,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.l),
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.cancel),

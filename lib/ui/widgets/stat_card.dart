@@ -1,3 +1,4 @@
+﻿import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 
 class StatCard extends StatelessWidget {
@@ -25,10 +26,10 @@ class StatCard extends StatelessWidget {
     if (compact) {
       return Container(
         width: 160,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.l),
         decoration: BoxDecoration(
           color: colors.surface.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.card,
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))],
         ),
         child: Column(
@@ -45,7 +46,7 @@ class StatCard extends StatelessWidget {
                 Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: iconColor)),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.m),
             Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: colors.onSurface)),
           ],
         ),
@@ -53,13 +54,10 @@ class StatCard extends StatelessWidget {
     }
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colors.surface.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(16),
-        ),
+        padding: const EdgeInsets.all(AppSpacing.l),
+        decoration: BoxDecoration(color: colors.surface.withValues(alpha: 0.9), borderRadius: AppRadius.card),
         child: Row(
           children: [
             Container(
@@ -67,7 +65,7 @@ class StatCard extends StatelessWidget {
               decoration: BoxDecoration(color: effectiveBg, borderRadius: BorderRadius.circular(12)),
               child: Icon(icon, size: 32, color: iconColor),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.l),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

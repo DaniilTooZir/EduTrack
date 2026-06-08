@@ -1,6 +1,7 @@
 ﻿import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -53,7 +54,7 @@ class WelcomeScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 24),
                               Text('EduTrack', textAlign: TextAlign.center, style: titleStyle),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppSpacing.m),
                               Text(
                                 'Цифровая платформа для образовательных учреждений.\nУчёт, контроль, обучение — в одном месте.',
                                 textAlign: TextAlign.center,

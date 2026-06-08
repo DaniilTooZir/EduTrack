@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/academic_period_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
@@ -95,7 +96,7 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.l),
                       _DatePickerTile(
                         label: 'Дата начала',
                         date: startDate,
@@ -227,7 +228,7 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.calendar_month_outlined, size: 64, color: colors.outlineVariant),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.l),
               Text(
                 'Периодов пока нет',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: colors.onSurfaceVariant),
@@ -318,7 +319,7 @@ class _PeriodCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
         child: Row(

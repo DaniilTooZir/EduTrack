@@ -7,6 +7,7 @@ import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -215,7 +216,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.l),
                       child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 600),
@@ -229,7 +230,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   _buildAvatar(colors),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: AppSpacing.l),
                                   Center(
                                     child: Text(
                                       '${_teacher!.name} ${_teacher!.surname}',
@@ -433,7 +434,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   style: ElevatedButton.styleFrom(backgroundColor: colors.primary, foregroundColor: colors.onPrimary),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSpacing.l),
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.cancel),

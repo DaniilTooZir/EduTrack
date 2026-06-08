@@ -1,8 +1,9 @@
-import 'package:edu_track/data/repositories/schedule_repository.dart';
+﻿import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -109,7 +110,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
           child: RefreshIndicator(
             onRefresh: _loadSchedule,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.l),
               children:
                   _groupedSchedule.entries.map((entry) {
                     return Column(
@@ -183,20 +184,20 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
   Widget _buildLoadingSkeleton() {
     return ListView.builder(
       itemCount: 5,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.l),
       itemBuilder:
           (context, index) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.l),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: AppRadius.card,
               ),
               child: const Row(
                 children: [
                   Skeleton(height: 50, width: 50),
-                  SizedBox(width: 16),
+                  SizedBox(width: AppSpacing.l),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

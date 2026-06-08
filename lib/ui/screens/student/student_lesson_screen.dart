@@ -1,4 +1,4 @@
-import 'package:edu_track/data/repositories/lesson_repository.dart';
+﻿import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
@@ -6,6 +6,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -106,16 +107,16 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
         color: colors.surface.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.card,
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.card,
           onTap: () => context.push(AppRoutes.studentLessonComments, extra: lesson.id),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.l),
             child: Row(
               children: [
                 Container(
@@ -135,7 +136,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.l),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,7 +256,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                                                 size: 64,
                                                 color: colors.onSurfaceVariant.withValues(alpha: 0.5),
                                               ),
-                                              const SizedBox(height: 16),
+                                              const SizedBox(height: AppSpacing.l),
                                               Text(
                                                 'Пока нет проведенных уроков',
                                                 style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
@@ -288,7 +289,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
 
   Widget _buildLessonsSkeleton() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.l),
       itemCount: 5,
       itemBuilder:
           (context, index) => Padding(
@@ -296,7 +297,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
             child: Row(
               children: [
                 const Skeleton(height: 60, width: 60),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.l),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

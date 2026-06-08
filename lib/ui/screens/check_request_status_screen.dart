@@ -1,6 +1,7 @@
-﻿import 'package:edu_track/data/services/institution_request_status_service.dart';
+import 'package:edu_track/data/services/institution_request_status_service.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -101,7 +102,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Card(
                   elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Form(
