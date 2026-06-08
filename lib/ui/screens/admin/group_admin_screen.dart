@@ -1,4 +1,5 @@
-﻿import 'package:edu_track/data/services/group_service.dart';
+﻿import 'package:edu_track/data/services/chat_service.dart';
+import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/teacher.dart';
@@ -23,6 +24,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
   final _nameController = TextEditingController();
   final _service = GroupService();
   final _teacherService = TeacherService();
+  final _chatService = ChatService();
   List<Group> _groups = [];
   List<Teacher> _teachers = [];
   bool _isLoading = true;
@@ -101,6 +103,8 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
       if (mounted) setState(() => _isAdding = false);
       return;
     }
+
+    await _chatService.getOrCreateGroupChat(result.data, newGroup.name);
 
     MessengerHelper.showSuccess('Группа добавлена');
     _nameController.clear();

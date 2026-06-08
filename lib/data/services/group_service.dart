@@ -21,10 +21,10 @@ class GroupService {
     }
   }
 
-  Future<AppResult<void>> addGroup(Group group) async {
+  Future<AppResult<String>> addGroup(Group group) async {
     try {
-      await _client.from('groups').insert(group.toMap());
-      return AppResult.success(null);
+      final response = await _client.from('groups').insert(group.toMap()).select('id').single();
+      return AppResult.success(response['id'] as String);
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
         return AppResult.failure('Группа с таким названием уже существует.');
