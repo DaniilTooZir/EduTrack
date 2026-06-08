@@ -4,6 +4,7 @@ import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/utils/app_bottom_sheet.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -43,10 +44,7 @@ class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
   }
 
   void _openStudentGrades(Student student) {
-    showAppBottomSheet(
-      context,
-      builder: (_) => _StudentGradesSheet(student: student),
-    );
+    showAppBottomSheet(context, builder: (_) => _StudentGradesSheet(student: student));
   }
 
   @override
@@ -390,7 +388,7 @@ class _GradeEntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final gradeColor = _gradeColor(entry.value.toDouble());
     final d = entry.date;
-    final dateStr = '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+    final dateStr = formatDate(d);
     const labels = {5: 'Отлично', 4: 'Хорошо', 3: 'Удовл.', 2: 'Неудовл.'};
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

@@ -8,7 +8,8 @@ import 'package:edu_track/ui/widgets/drawer_nav_item.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/ui/widgets/welcome_card.dart';
-import 'package:edu_track/utils/messenger_helper.dart';
+import 'package:edu_track/utils/data_loading_mixin.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -20,11 +21,10 @@ class ScheduleOperatorHomeScreen extends StatefulWidget {
   State<ScheduleOperatorHomeScreen> createState() => _ScheduleOperatorHomeScreenState();
 }
 
-class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen> {
+class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen> with DataLoadingMixin {
   int _selectedIndex = 0;
   final List<String> _titles = ['Главная', 'Расписание'];
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
-  bool _isLoading = true;
   List<Schedule> _schedules = [];
 
   @override
@@ -36,19 +36,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   Future<void> _loadData() async {
     final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
     if (institutionId == null) return;
-    setState(() => _isLoading = true);
-    final result = await _scheduleService.getScheduleForInstitution(institutionId);
-    if (result.isFailure) {
-      MessengerHelper.showError(result.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-    if (mounted) {
-      setState(() {
-        _schedules = result.data;
-        _isLoading = false;
-      });
-    }
+    await loadAsync(_scheduleService.getScheduleForInstitution(institutionId), onSuccess: (data) => _schedules = data);
   }
 
   void _refreshDashboard() {
@@ -156,8 +144,6 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     );
   }
 
-  String _formatDate(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   String _getWeekdayName(int weekday) {
     const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
     if (weekday >= 1 && weekday <= 7) return days[weekday - 1];
@@ -179,7 +165,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     final grouped = <String, List<Schedule>>{};
     for (final s in sorted) {
       final header =
-          s.date != null ? '${_getWeekdayName(s.weekday)}, ${_formatDate(s.date!)}' : _getWeekdayName(s.weekday);
+          s.date != null ? '${_getWeekdayName(s.weekday)}, ${formatDate(s.date!)}' : _getWeekdayName(s.weekday);
       grouped.putIfAbsent(header, () => []).add(s);
     }
     return RefreshIndicator(
@@ -226,7 +212,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
             const SizedBox(height: 4),
             Text('Группировка по дням и датам.', style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
             const SizedBox(height: 12),
-            if (_isLoading)
+            if (isLoading)
               _buildScheduleSkeleton(colors)
             else if (_schedules.isEmpty)
               Center(

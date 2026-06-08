@@ -3,6 +3,8 @@ import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/data_loading_mixin.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,9 +15,8 @@ class TeacherScheduleScreen extends StatefulWidget {
   State<TeacherScheduleScreen> createState() => _TeacherScheduleScreenState();
 }
 
-class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
+class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with DataLoadingMixin {
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
-  bool _isLoading = true;
   List<Schedule> _scheduleList = [];
   Map<String, List<Schedule>> _groupedSchedule = {};
 
@@ -28,44 +29,33 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
   }
 
   Future<void> _loadSchedule() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final teacherId = userProvider.userId;
+    final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
-    setState(() => _isLoading = true);
-    final result = await _scheduleService.getScheduleForTeacher(teacherId);
-    if (result.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-    final list = result.data;
-    list.sort((a, b) {
-      if (a.date == null && b.date != null) return -1;
-      if (a.date != null && b.date == null) return 1;
-      if (a.date != null && b.date != null) {
-        final d = a.date!.compareTo(b.date!);
-        if (d != 0) return d;
-      }
-      final w = a.weekday.compareTo(b.weekday);
-      if (w != 0) return w;
-      return a.startTime.compareTo(b.startTime);
-    });
-    final Map<String, List<Schedule>> grouped = {};
-    for (final s in list) {
-      String header = _getWeekdayName(s.weekday);
-      if (s.date != null) header += ', ${_formatDate(s.date!)}';
-      grouped.putIfAbsent(header, () => []).add(s);
-    }
-    if (mounted) {
-      setState(() {
+    await loadAsync(
+      _scheduleService.getScheduleForTeacher(teacherId),
+      showError: false,
+      onSuccess: (list) {
+        list.sort((a, b) {
+          if (a.date == null && b.date != null) return -1;
+          if (a.date != null && b.date == null) return 1;
+          if (a.date != null && b.date != null) {
+            final d = a.date!.compareTo(b.date!);
+            if (d != 0) return d;
+          }
+          final w = a.weekday.compareTo(b.weekday);
+          if (w != 0) return w;
+          return a.startTime.compareTo(b.startTime);
+        });
+        final Map<String, List<Schedule>> grouped = {};
+        for (final s in list) {
+          String header = _getWeekdayName(s.weekday);
+          if (s.date != null) header += ', ${formatDate(s.date!)}';
+          grouped.putIfAbsent(header, () => []).add(s);
+        }
         _scheduleList = list;
         _groupedSchedule = grouped;
-        _isLoading = false;
-      });
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+      },
+    );
   }
 
   String _getWeekdayName(int weekday) {
@@ -78,7 +68,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
-    if (_isLoading) return _buildLoadingSkeleton();
+    if (isLoading) return _buildLoadingSkeleton();
     return Container(
       decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
       child: Center(

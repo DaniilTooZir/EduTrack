@@ -5,6 +5,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -108,11 +109,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final yesterday = today.subtract(const Duration(days: 1));
     final msgDay = DateTime(time.year, time.month, time.day);
     if (msgDay == today) {
-      return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+      return formatTime(time);
     } else if (msgDay == yesterday) {
       return 'Вчера';
     } else if (time.year == now.year) {
-      return '${time.day.toString().padLeft(2, '0')}.${time.month.toString().padLeft(2, '0')}';
+      return formatShortDate(time);
     } else {
       return '${time.day.toString().padLeft(2, '0')}.${time.month.toString().padLeft(2, '0')}.${(time.year % 100).toString().padLeft(2, '0')}';
     }

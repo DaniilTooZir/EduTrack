@@ -14,6 +14,7 @@ import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_bottom_sheet.dart';
 import 'package:edu_track/utils/app_result.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/journal_pdf_exporter.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
@@ -319,7 +320,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
 
   String _fmtDate(DateTime? d) {
     if (d == null) return '?';
-    return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}';
+    return formatShortDate(d);
   }
 
   @override

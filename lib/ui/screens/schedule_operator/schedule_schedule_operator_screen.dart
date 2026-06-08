@@ -12,6 +12,8 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/data_loading_mixin.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -23,13 +25,12 @@ class ScheduleScheduleOperatorScreen extends StatefulWidget {
   State<ScheduleScheduleOperatorScreen> createState() => _ScheduleScheduleOperatorScreen();
 }
 
-class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScreen> {
+class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScreen> with DataLoadingMixin {
   late final ScheduleRepository _scheduleService;
   late final SubjectService _subjectService;
   late final GroupService _groupService;
   late final TeacherService _teacherService;
 
-  bool _isLoading = true;
   List<Schedule> _schedules = [];
 
   String? _institutionId;
@@ -124,26 +125,11 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
 
   Future<void> _loadSchedule() async {
     if (_institutionId == null) return;
-    setState(() => _isLoading = true);
-    final result = await _scheduleService.getScheduleForInstitution(_institutionId!);
-    if (result.isFailure) {
-      MessengerHelper.showError(result.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-    if (mounted) {
-      setState(() {
-        _schedules = result.data;
-        _isLoading = false;
-      });
-    }
+    await loadAsync(
+      _scheduleService.getScheduleForInstitution(_institutionId!),
+      onSuccess: (data) => _schedules = data,
+    );
   }
-
-  String _formatTimeOfDay(TimeOfDay time) =>
-      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00';
-
-  String _formatDate(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
 
   String _getWeekdayName(int weekday) {
     if (weekday >= 1 && weekday <= 7) return _weekdays[weekday - 1];
@@ -182,8 +168,8 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     }
     setState(() => _isAdding = true);
 
-    final sTime = _formatTimeOfDay(_startTime!);
-    final eTime = _formatTimeOfDay(_endTime!);
+    final sTime = formatTimeOfDaySec(_startTime!);
+    final eTime = formatTimeOfDaySec(_endTime!);
 
     if (!_conflictChecked) {
       final conflictResult = await _scheduleService.checkConflict(
@@ -367,8 +353,8 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     final result = await _scheduleService.checkConflict(
       institutionId: _institutionId!,
       date: _selectedDate!,
-      startTime: _formatTimeOfDay(_startTime!),
-      endTime: _formatTimeOfDay(_endTime!),
+      startTime: formatTimeOfDaySec(_startTime!),
+      endTime: formatTimeOfDaySec(_endTime!),
       teacherId: _selectedTeacherId!,
       groupId: _selectedGroupId!,
     );
@@ -402,7 +388,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       ),
       child: Text(
         _selectedDate != null
-            ? '${_formatDate(_selectedDate!)} (${_getWeekdayName(_selectedDate!.weekday)})'
+            ? '${formatDate(_selectedDate!)} (${_getWeekdayName(_selectedDate!.weekday)})'
             : 'Выберите дату',
         style: TextStyle(color: _selectedDate == null ? colors.onSurfaceVariant : colors.onSurface, fontSize: 16),
       ),
@@ -448,7 +434,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     final grouped = <String, List<Schedule>>{};
     for (final s in schedules) {
       final header =
-          s.date != null ? '${_getWeekdayName(s.weekday)}, ${_formatDate(s.date!)}' : _getWeekdayName(s.weekday);
+          s.date != null ? '${_getWeekdayName(s.weekday)}, ${formatDate(s.date!)}' : _getWeekdayName(s.weekday);
       grouped.putIfAbsent(header, () => []).add(s);
     }
     return ListView.builder(
@@ -827,7 +813,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                   child: RefreshIndicator(
                     onRefresh: _loadSchedule,
                     child:
-                        _isLoading
+                        isLoading
                             ? _buildScheduleListSkeleton()
                             : displayedSchedules.isEmpty
                             ? ListView(
@@ -965,9 +951,6 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
     return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
 
-  String _formatTimeOfDay(TimeOfDay t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00';
-
   int _timeToMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
 
   void _scheduleConflictValidation() {
@@ -990,8 +973,8 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
     final result = await widget.scheduleService.checkConflict(
       institutionId: widget.institutionId,
       date: _date,
-      startTime: _formatTimeOfDay(_startTime),
-      endTime: _formatTimeOfDay(_endTime),
+      startTime: formatTimeOfDaySec(_startTime),
+      endTime: formatTimeOfDaySec(_endTime),
       teacherId: _teacherId,
       groupId: _groupId,
       excludeId: widget.lesson.id,
@@ -1012,8 +995,8 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
     }
     setState(() => _isSaving = true);
 
-    final startTime = _formatTimeOfDay(_startTime);
-    final endTime = _formatTimeOfDay(_endTime);
+    final startTime = formatTimeOfDaySec(_startTime);
+    final endTime = formatTimeOfDaySec(_endTime);
 
     if (!_conflictChecked) {
       final conflictResult = await widget.scheduleService.checkConflict(
@@ -1114,9 +1097,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                     border: const OutlineInputBorder(),
                     suffixIcon: Icon(Icons.calendar_month, color: colors.primary),
                   ),
-                  child: Text(
-                    '${_date.day.toString().padLeft(2, '0')}.${_date.month.toString().padLeft(2, '0')}.${_date.year}',
-                  ),
+                  child: Text(formatDate(_date)),
                 ),
               ),
               const SizedBox(height: 12),

@@ -3,6 +3,7 @@ import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -192,11 +193,7 @@ class _StudentLessonCommentsScreenState extends State<StudentLessonCommentsScree
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    final localTime = timestamp.toLocal();
-    final time = TimeOfDay.fromDateTime(localTime);
-    return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
-  }
+  String _formatTimestamp(DateTime timestamp) => formatTimeOfDay(TimeOfDay.fromDateTime(timestamp.toLocal()));
 
   @override
   Widget build(BuildContext context) {

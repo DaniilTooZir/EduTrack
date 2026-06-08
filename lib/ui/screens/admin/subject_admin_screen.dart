@@ -3,6 +3,7 @@ import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/data_loading_mixin.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -16,10 +17,9 @@ class SubjectAdminScreen extends StatefulWidget {
   State<SubjectAdminScreen> createState() => _SubjectAdminScreenState();
 }
 
-class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
+class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadingMixin {
   late final SubjectService _subjectService;
   List<Subject> _subjects = [];
-  bool _isLoading = true;
   bool _isAdding = false;
   String? _institutionId;
   final _formKey = GlobalKey<FormState>();
@@ -37,19 +37,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
 
   Future<void> _loadData() async {
     if (_institutionId == null) return;
-    setState(() => _isLoading = true);
-    final result = await _subjectService.getSubjectsForInstitution(_institutionId!);
-    if (result.isFailure) {
-      MessengerHelper.showError(result.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-    if (mounted) {
-      setState(() {
-        _subjects = result.data;
-        _isLoading = false;
-      });
-    }
+    await loadAsync(_subjectService.getSubjectsForInstitution(_institutionId!), onSuccess: (data) => _subjects = data);
   }
 
   @override
@@ -106,14 +94,14 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                     onPressed: () async {
                       if (!editFormKey.currentState!.validate()) return;
                       Navigator.pop(ctx);
-                      setState(() => _isLoading = true);
+                      setState(() => isLoading = true);
                       final result = await _subjectService.updateSubject(
                         id: subject.id,
                         name: editNameController.text.trim(),
                       );
                       if (result.isFailure) {
                         MessengerHelper.showError(result.errorMessage);
-                        if (mounted) setState(() => _isLoading = false);
+                        if (mounted) setState(() => isLoading = false);
                         return;
                       }
                       MessengerHelper.showSuccess('Предмет обновлён');
@@ -150,11 +138,11 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
     );
 
     if (confirmed == true) {
-      setState(() => _isLoading = true);
+      setState(() => isLoading = true);
       final result = await _subjectService.deleteSubject(subject.id);
       if (result.isFailure) {
         MessengerHelper.showError(result.errorMessage);
-        if (mounted) setState(() => _isLoading = false);
+        if (mounted) setState(() => isLoading = false);
         return;
       }
       MessengerHelper.showSuccess('Предмет удалён');
@@ -232,7 +220,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> {
                   child: RefreshIndicator(
                     onRefresh: _loadData,
                     child:
-                        _isLoading
+                        isLoading
                             ? _buildListSkeleton()
                             : _subjects.isEmpty
                             ? ListView(

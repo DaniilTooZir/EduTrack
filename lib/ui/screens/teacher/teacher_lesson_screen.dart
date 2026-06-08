@@ -10,6 +10,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
@@ -121,10 +122,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
         schedule.subject?.name ?? _subjects.where((s) => s.id == schedule.subjectId).firstOrNull?.name ?? 'Предмет';
     final groupName =
         schedule.group?.name ?? _groups.where((g) => g.id == schedule.groupId).firstOrNull?.name ?? 'Группа';
-    final dateStr =
-        schedule.date != null
-            ? '${schedule.date!.day.toString().padLeft(2, '0')}.${schedule.date!.month.toString().padLeft(2, '0')}'
-            : 'Без даты';
+    final dateStr = schedule.date != null ? formatShortDate(schedule.date!) : 'Без даты';
     return Card(
       elevation: 3,
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
@@ -246,10 +244,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                           decoration: const InputDecoration(labelText: 'Время урока', border: OutlineInputBorder()),
                           items:
                               availableSchedules.map((s) {
-                                final dateStr =
-                                    s.date != null
-                                        ? '${s.date!.day.toString().padLeft(2, '0')}.${s.date!.month.toString().padLeft(2, '0')}'
-                                        : 'Еженедельно';
+                                final dateStr = s.date != null ? formatShortDate(s.date!) : 'Еженедельно';
                                 return DropdownMenuItem(
                                   value: s,
                                   child: Text(

@@ -6,6 +6,7 @@ import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/lesson_attendance.dart';
 import 'package:edu_track/models/student.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
@@ -43,10 +44,7 @@ class JournalPdfExporter {
     final font = await PdfGoogleFonts.notoSansRegular();
     final fontBold = await PdfGoogleFonts.notoSansBold();
 
-    String fmtDate(DateTime? d) {
-      if (d == null) return '?';
-      return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}';
-    }
+    String fmtDate(DateTime? d) => d != null ? formatShortDate(d) : '?';
 
     double computeAvg(Student s) {
       final grades = lessons.map((l) => gradeMap['${s.id}|${l.id!}']).whereType<Grade>().toList();

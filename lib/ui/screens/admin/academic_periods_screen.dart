@@ -3,6 +3,7 @@ import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/utils/app_result.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -366,7 +367,7 @@ class _PeriodCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_fmt(period.startDate)} — ${_fmt(period.endDate)}',
+                    '${formatDate(period.startDate)} — ${formatDate(period.endDate)}',
                     style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
                   ),
                 ],
@@ -387,8 +388,6 @@ class _PeriodCard extends StatelessWidget {
       ),
     );
   }
-
-  String _fmt(DateTime d) => '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
 }
 
 class _DatePickerTile extends StatelessWidget {
@@ -401,10 +400,7 @@ class _DatePickerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final text =
-        date != null
-            ? '${date!.day.toString().padLeft(2, '0')}.${date!.month.toString().padLeft(2, '0')}.${date!.year}'
-            : 'Не выбрана';
+    final text = date != null ? formatDate(date!) : 'Не выбрана';
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),

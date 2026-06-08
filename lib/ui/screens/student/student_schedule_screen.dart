@@ -3,6 +3,7 @@ import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -60,7 +61,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     for (final s in list) {
       String header = _getWeekdayName(s.weekday);
       if (s.date != null) {
-        header += ', ${_formatDate(s.date!)}';
+        header += ', ${formatDate(s.date!)}';
       }
       grouped.putIfAbsent(header, () => []).add(s);
     }
@@ -71,10 +72,6 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
         _isLoading = false;
       });
     }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 
   String _getWeekdayName(int weekday) {
