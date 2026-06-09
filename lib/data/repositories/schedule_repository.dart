@@ -51,8 +51,11 @@ class ScheduleRepository {
     return result;
   }
 
-  Future<AppResult<List<Schedule>>> getScheduleForInstitution(String institutionId) =>
-      _remote.getScheduleForInstitution(institutionId);
+  Future<AppResult<List<Schedule>>> getScheduleForInstitution(
+    String institutionId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) => _remote.getScheduleForInstitution(institutionId, startDate: startDate, endDate: endDate);
 
   Future<AppResult<Schedule?>> getScheduleById(String id) => _remote.getScheduleById(id);
 

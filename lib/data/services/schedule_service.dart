@@ -7,15 +7,19 @@ class ScheduleService {
   final SupabaseClient _client;
   ScheduleService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
-  Future<AppResult<List<Schedule>>> getScheduleForInstitution(String institutionId) async {
+  Future<AppResult<List<Schedule>>> getScheduleForInstitution(
+    String institutionId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
-      final response = await _client
+      var query = _client
           .from('schedule')
           .select('*, subject:subjects(*), group:groups(*), teacher:teachers(*)')
-          .eq('institution_id', institutionId)
-          .order('weekday', ascending: true)
-          .order('start_time', ascending: true);
-      final List<dynamic> data = response as List<dynamic>;
+          .eq('institution_id', institutionId);
+      if (startDate != null) query = query.gte('date', startDate.toIso8601String());
+      if (endDate != null) query = query.lte('date', endDate.toIso8601String());
+      final List<dynamic> data = await query as List<dynamic>;
       return AppResult.success(data.map((e) => Schedule.fromMap(e as Map<String, dynamic>)).toList());
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при загрузке расписания учреждения: ${e.message}');

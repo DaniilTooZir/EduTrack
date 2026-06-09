@@ -104,18 +104,12 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
     if (period != _lastPeriod) {
       _lastPeriod = period;
-      _rebuildGrouped();
+      _loadSchedule();
     }
   }
 
   void _rebuildGrouped() {
-    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
-    var filtered =
-        period == null
-            ? _schedules
-            : _schedules
-                .where((s) => s.date != null && !s.date!.isBefore(period.startDate) && !s.date!.isAfter(period.endDate))
-                .toList();
+    var filtered = _schedules;
     if (_filterGroupId != null) {
       filtered = filtered.where((s) => s.groupId == _filterGroupId).toList();
     }
@@ -163,8 +157,13 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
 
   Future<void> _loadSchedule() async {
     if (_institutionId == null) return;
+    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
     await loadAsync(
-      _scheduleService.getScheduleForInstitution(_institutionId!),
+      _scheduleService.getScheduleForInstitution(
+        _institutionId!,
+        startDate: period?.startDate,
+        endDate: period?.endDate,
+      ),
       onSuccess: (data) {
         data.sort((a, b) {
           if (a.date != null && b.date != null) {
@@ -881,7 +880,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                       height: 300,
                       child: Center(
                         child: Text(
-                          _schedules.isEmpty
+                          _schedules.isEmpty && _lastPeriod == null
                               ? 'Расписание пустое'
                               : (_filterGroupId != null || _filterTeacherId != null)
                               ? 'Нет занятий по выбранным фильтрам'
