@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+const String kAppVersion = '0.0.5-alpha';
+
 abstract final class AppSpacing {
   static const double xs = 4;
   static const double s = 8;

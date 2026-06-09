@@ -63,7 +63,13 @@ class AppNavigation {
       routes: [
         GoRoute(path: AppRoutes.splash, builder: (context, state) => const SplashScreen()),
         GoRoute(path: AppRoutes.welcome, builder: (context, state) => const WelcomeScreen()),
-        GoRoute(path: AppRoutes.login, builder: (context, state) => const LoginScreen()),
+        GoRoute(
+          path: AppRoutes.login,
+          builder: (context, state) {
+            final extra = state.extra as Map<String, String?>?;
+            return LoginScreen(initialLogin: extra?['login'], initialPassword: extra?['password']);
+          },
+        ),
         GoRoute(path: AppRoutes.institutionRequest, builder: (context, state) => const InstitutionRequestScreen()),
         GoRoute(path: AppRoutes.checkStatus, builder: (context, state) => const CheckRequestStatusScreen()),
         GoRoute(path: AppRoutes.adminHome, builder: (context, state) => const AdminHomeScreen()),

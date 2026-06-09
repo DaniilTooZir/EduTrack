@@ -1,6 +1,4 @@
-﻿import 'dart:async';
-
-import 'package:edu_track/routes/app_routes.dart';
+﻿import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +15,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  final bool _isSkipping = false;
 
   @override
   void initState() {
@@ -25,8 +22,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this);
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     _controller.forward();
-    Timer(const Duration(seconds: 4), () {
-      if (!_isSkipping && mounted) {
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
         context.go(AppRoutes.welcome);
       }
     });
@@ -46,7 +43,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        decoration: BoxDecoration(
+          gradient: AppTheme.getBackgroundGradient(themeProvider.effectiveMode(Theme.of(context).brightness)),
+        ),
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -62,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Image.asset(
-                              AppTheme.getLogoPath(themeProvider.mode),
+                              AppTheme.getLogoPath(themeProvider.effectiveMode(Theme.of(context).brightness)),
                               width: logoSize.clamp(80, 160),
                               height: logoSize.clamp(80, 160),
                             ),
@@ -79,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             ),
                             const SizedBox(height: AppSpacing.m),
                             Text(
-                              'Загрузка данных...',
+                              'Инициализация...',
                               style: TextStyle(
                                 color: colors.onSurface.withValues(alpha: 0.7),
                                 fontSize: 16,

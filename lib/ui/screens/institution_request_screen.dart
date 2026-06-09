@@ -50,7 +50,19 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
       return;
     }
 
-    MessengerHelper.showSuccess('Заявка успешно отправлена!');
+    await showDialog<void>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Заявка отправлена'),
+            content: const Text(
+              'Ваша заявка принята на рассмотрение.\n\n'
+              'Когда она будет обработана, проверить статус можно на экране '
+              '«Проверить статус заявки» по указанному email.',
+            ),
+            actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Понятно'))],
+          ),
+    );
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -76,7 +88,9 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
       appBar: AppBar(title: const Text('Регистрация организации'), elevation: 4),
       body: Container(
         height: double.infinity,
-        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        decoration: BoxDecoration(
+          gradient: AppTheme.getBackgroundGradient(themeProvider.effectiveMode(Theme.of(context).brightness)),
+        ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -99,6 +113,8 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 20),
+
+                          _SectionLabel(label: 'Об организации', colors: colors),
                           _buildTextField(
                             controller: _nameController,
                             label: 'Название организации',
@@ -108,6 +124,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s"\-.,№\(\)«»]')),
                             ],
+                            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                             colors: colors,
                           ),
                           _buildTextField(
@@ -120,14 +137,18 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s,\-\.\/\(\)]')),
                             ],
+                            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                             colors: colors,
                           ),
+
+                          _SectionLabel(label: 'Контактные данные', colors: colors),
                           _buildTextField(
                             controller: _headNameController,
                             label: 'Имя руководителя',
                             icon: Icons.person,
                             validator: (val) => Validators.validateName(val, 'Имя'),
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
+                            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                             colors: colors,
                           ),
                           _buildTextField(
@@ -136,6 +157,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             icon: Icons.person_outline,
                             validator: (val) => Validators.validateName(val, 'Фамилия'),
                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Zа-яА-ЯёЁ\s-]'))],
+                            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                             colors: colors,
                           ),
                           _buildTextField(
@@ -144,6 +166,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             icon: Icons.email,
                             inputType: TextInputType.emailAddress,
                             validator: Validators.validateEmail,
+                            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                             colors: colors,
                           ),
                           const SizedBox(height: AppSpacing.m),
@@ -155,6 +178,7 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             validator: Validators.validatePhone,
                             inputFormatters: [PhoneMaskFormatter()],
                             hintText: '+7 (___) ___-__-__',
+                            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                             colors: colors,
                           ),
                           _buildTextField(
@@ -164,6 +188,8 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
                             maxLines: 3,
                             maxLength: 300,
                             validator: (val) => Validators.validateLength(val, max: 300),
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _submitRequest(),
                             colors: colors,
                           ),
                           const SizedBox(height: 24),
@@ -213,6 +239,8 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
     String? hintText,
+    TextInputAction textInputAction = TextInputAction.next,
+    void Function(String)? onFieldSubmitted,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -224,6 +252,8 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
         validator: validator,
         inputFormatters: inputFormatters,
         autovalidateMode: AutovalidateMode.onUserInteraction,
+        textInputAction: textInputAction,
+        onFieldSubmitted: onFieldSubmitted,
         decoration: InputDecoration(
           labelText: label,
           hintText: hintText,
@@ -233,6 +263,24 @@ class _InstitutionRequestScreenState extends State<InstitutionRequestScreen> {
           fillColor: colors.surfaceContainerHighest.withValues(alpha: 0.3),
           counterText: '',
         ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final ColorScheme colors;
+
+  const _SectionLabel({required this.label, required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: colors.primary, letterSpacing: 0.5),
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum AppThemeMode { light, dark, purple }
+enum AppThemeMode { light, dark, purple, system }
 
 class AppTheme {
   static final ThemeData lightTheme = ThemeData(
@@ -70,6 +70,7 @@ class AppTheme {
   static LinearGradient getBackgroundGradient(AppThemeMode mode) {
     switch (mode) {
       case AppThemeMode.light:
+      case AppThemeMode.system:
         return const LinearGradient(
           colors: [Color(0xFFFFFFFF), Color(0xFFE3F2FD)],
           begin: Alignment.topLeft,
@@ -93,6 +94,7 @@ class AppTheme {
   static String getLogoPath(AppThemeMode mode) {
     switch (mode) {
       case AppThemeMode.light:
+      case AppThemeMode.system:
         return 'assets/images/logo_light.png';
       case AppThemeMode.dark:
         return 'assets/images/logo_dark.png';
@@ -115,7 +117,14 @@ class ThemeProvider with ChangeNotifier {
         return AppTheme.darkTheme;
       case AppThemeMode.purple:
         return AppTheme.purpleTheme;
+      case AppThemeMode.system:
+        return AppTheme.lightTheme;
     }
+  }
+
+  AppThemeMode effectiveMode(Brightness brightness) {
+    if (_mode != AppThemeMode.system) return _mode;
+    return brightness == Brightness.dark ? AppThemeMode.dark : AppThemeMode.light;
   }
 
   Future<void> loadTheme() async {

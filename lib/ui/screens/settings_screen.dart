@@ -64,11 +64,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAboutDialog(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     showAboutDialog(
       context: context,
       applicationName: 'EduTrack',
-      applicationVersion: '0.0.5-alpha',
-      applicationIcon: const FlutterLogo(size: 48),
+      applicationVersion: kAppVersion,
+      applicationIcon: Image.asset(
+        AppTheme.getLogoPath(themeProvider.effectiveMode(Theme.of(context).brightness)),
+        width: 48,
+        height: 48,
+      ),
       children: [
         const SizedBox(height: 8),
         const Text('Система управления учебным процессом для преподавателей, студентов и администраторов.'),
@@ -90,30 +95,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _SectionHeader(label: 'Тема оформления'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
+            child: Column(
               children: [
-                _ThemeCard(
-                  label: 'Светлая',
-                  icon: Icons.wb_sunny_rounded,
-                  selected: themeProvider.mode == AppThemeMode.light,
-                  color: Colors.orange,
-                  onTap: () => themeProvider.setTheme(AppThemeMode.light),
+                Row(
+                  children: [
+                    _ThemeCard(
+                      label: 'Светлая',
+                      icon: Icons.wb_sunny_rounded,
+                      selected: themeProvider.mode == AppThemeMode.light,
+                      color: Colors.orange,
+                      onTap: () => themeProvider.setTheme(AppThemeMode.light),
+                    ),
+                    const SizedBox(width: AppSpacing.m),
+                    _ThemeCard(
+                      label: 'Темная',
+                      icon: Icons.nightlight_round,
+                      selected: themeProvider.mode == AppThemeMode.dark,
+                      color: Colors.blueGrey,
+                      onTap: () => themeProvider.setTheme(AppThemeMode.dark),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppSpacing.m),
-                _ThemeCard(
-                  label: 'Темная',
-                  icon: Icons.nightlight_round,
-                  selected: themeProvider.mode == AppThemeMode.dark,
-                  color: Colors.blueGrey,
-                  onTap: () => themeProvider.setTheme(AppThemeMode.dark),
-                ),
-                const SizedBox(width: AppSpacing.m),
-                _ThemeCard(
-                  label: 'Фиолетовая',
-                  icon: Icons.palette_rounded,
-                  selected: themeProvider.mode == AppThemeMode.purple,
-                  color: const Color(0xFF5E35B1),
-                  onTap: () => themeProvider.setTheme(AppThemeMode.purple),
+                const SizedBox(height: AppSpacing.m),
+                Row(
+                  children: [
+                    _ThemeCard(
+                      label: 'Фиолетовая',
+                      icon: Icons.palette_rounded,
+                      selected: themeProvider.mode == AppThemeMode.purple,
+                      color: const Color(0xFF5E35B1),
+                      onTap: () => themeProvider.setTheme(AppThemeMode.purple),
+                    ),
+                    const SizedBox(width: AppSpacing.m),
+                    _ThemeCard(
+                      label: 'Системная',
+                      icon: Icons.brightness_auto_rounded,
+                      selected: themeProvider.mode == AppThemeMode.system,
+                      color: Colors.teal,
+                      onTap: () => themeProvider.setTheme(AppThemeMode.system),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -135,7 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: Icon(Icons.info_outline, color: colors.outline),
             title: const Text('EduTrack'),
-            subtitle: const Text('Версия 0.0.5-alpha'),
+            subtitle: const Text('Версия $kAppVersion'),
             onTap: () => _showAboutDialog(context),
             trailing: Icon(Icons.chevron_right, color: colors.outline),
           ),

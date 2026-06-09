@@ -1,17 +1,19 @@
-﻿import 'package:edu_track/data/services/auth_service.dart';
+import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/settings_sheet.dart';
 import 'package:edu_track/utils/app_constants.dart';
-import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final String? initialLogin;
+  final String? initialPassword;
+
+  const LoginScreen({super.key, this.initialLogin, this.initialPassword});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -26,12 +28,17 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialLogin != null) _loginController.text = widget.initialLogin!;
+    if (widget.initialPassword != null) _passwordController.text = widget.initialPassword!;
+  }
+
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
     setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -40,8 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
     final result = await AuthService.login(login, password);
     if (result.isFailure) {
-      MessengerHelper.showError(result.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _errorMessage = result.errorMessage;
+          _isLoading = false;
+        });
+      }
       return;
     }
     final authResult = result.data;
@@ -50,7 +61,9 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _errorMessage = 'Неверный логин или пароль.';
         _isLoading = false;
+        _isPasswordVisible = false;
       });
+      _passwordController.clear();
       return;
     }
     final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -92,7 +105,9 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        decoration: BoxDecoration(
+          gradient: AppTheme.getBackgroundGradient(themeProvider.effectiveMode(Theme.of(context).brightness)),
+        ),
         child: SafeArea(
           child: Stack(
             children: [

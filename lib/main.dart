@@ -209,10 +209,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final isSystem = themeProvider.mode == AppThemeMode.system;
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'EduTrack',
-      theme: themeProvider.currentThemeData,
+      theme: isSystem ? AppTheme.lightTheme : themeProvider.currentThemeData,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: isSystem ? ThemeMode.system : ThemeMode.light,
       routerConfig: router,
       scaffoldMessengerKey: MessengerHelper.scaffoldMessengerKey,
     );

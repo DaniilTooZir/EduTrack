@@ -20,9 +20,11 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
   final TextEditingController _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String? _statusMessage;
+  String? _currentStatus;
   String? _login;
   String? _password;
   bool _isLoading = false;
+  bool _isPasswordObscured = true;
 
   Future<void> _checkStatus() async {
     FocusScope.of(context).unfocus();
@@ -30,6 +32,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
     setState(() {
       _isLoading = true;
       _statusMessage = null;
+      _currentStatus = null;
       _login = null;
       _password = null;
     });
@@ -47,9 +50,11 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
     setState(() {
       _isLoading = false;
       if (data == null) {
+        _currentStatus = null;
         _statusMessage = 'Заявка с таким email не найдена.';
       } else {
         final status = data['status'] as String;
+        _currentStatus = status;
         switch (status) {
           case 'pending':
             _statusMessage = 'Заявка находится на рассмотрении.';
@@ -93,7 +98,9 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
       appBar: AppBar(title: const Text('Проверка статуса заявки'), elevation: 4),
       body: Container(
         height: double.infinity,
-        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        decoration: BoxDecoration(
+          gradient: AppTheme.getBackgroundGradient(themeProvider.effectiveMode(Theme.of(context).brightness)),
+        ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -119,6 +126,8 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _checkStatus(),
                             inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
                             decoration: InputDecoration(
                               labelText: 'Email руководителя',
@@ -168,6 +177,7 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
   }
 
   Widget _buildStatusResult(ColorScheme colors) {
+    final style = _resolveStatusStyle(_currentStatus, colors);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       key: ValueKey(_statusMessage),
@@ -175,18 +185,18 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colors.primaryContainer,
+            color: style.bgColor,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
+            border: Border.all(color: style.iconColor.withValues(alpha: 0.4)),
           ),
           child: Row(
             children: [
-              Icon(Icons.info_outline, color: colors.onPrimaryContainer),
+              Icon(style.icon, color: style.iconColor),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   _statusMessage!,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.onPrimaryContainer),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: style.textColor),
                 ),
               ),
             ],
@@ -196,14 +206,12 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
           const SizedBox(height: 20),
           _buildCopyRow('Логин', _login!, Icons.person, colors),
           const SizedBox(height: 8),
-          _buildCopyRow('Пароль', _password!, Icons.lock, colors),
+          _buildPasswordRow(colors),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                context.push(AppRoutes.login);
-              },
+              onPressed: () => context.push(AppRoutes.login, extra: {'login': _login, 'password': _password}),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.secondary,
                 foregroundColor: colors.onSecondary,
@@ -241,5 +249,78 @@ class _CheckRequestStatusScreenState extends State<CheckRequestStatusScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildPasswordRow(ColorScheme colors) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextFormField(
+            initialValue: _password,
+            readOnly: true,
+            obscureText: _isPasswordObscured,
+            decoration: InputDecoration(
+              labelText: 'Пароль',
+              prefixIcon: Icon(Icons.lock_outline, color: colors.primary),
+              border: const OutlineInputBorder(),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              suffixIcon: IconButton(
+                icon: Icon(_isPasswordObscured ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+                onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          icon: Icon(Icons.copy, color: colors.primary),
+          tooltip: 'Копировать Пароль',
+          onPressed: () => _copyToClipboard(_password!, 'Пароль'),
+        ),
+      ],
+    );
+  }
+
+  ({Color bgColor, Color iconColor, Color textColor, IconData icon}) _resolveStatusStyle(
+    String? status,
+    ColorScheme colors,
+  ) {
+    switch (status) {
+      case 'approved':
+        return (
+          bgColor: Colors.green.withValues(alpha: 0.1),
+          iconColor: Colors.green,
+          textColor: Colors.green.shade800,
+          icon: Icons.check_circle_outline,
+        );
+      case 'rejected':
+        return (
+          bgColor: colors.errorContainer,
+          iconColor: colors.error,
+          textColor: colors.onErrorContainer,
+          icon: Icons.cancel_outlined,
+        );
+      case 'failed':
+        return (
+          bgColor: colors.errorContainer,
+          iconColor: colors.error,
+          textColor: colors.onErrorContainer,
+          icon: Icons.error_outline,
+        );
+      case 'pending':
+        return (
+          bgColor: Colors.orange.withValues(alpha: 0.1),
+          iconColor: Colors.orange,
+          textColor: Colors.orange.shade900,
+          icon: Icons.hourglass_top_rounded,
+        );
+      default:
+        return (
+          bgColor: colors.primaryContainer,
+          iconColor: colors.primary,
+          textColor: colors.onPrimaryContainer,
+          icon: Icons.info_outline,
+        );
+    }
   }
 }

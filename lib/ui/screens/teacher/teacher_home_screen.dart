@@ -174,9 +174,30 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     });
   }
 
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Выход из аккаунта'),
+            content: const Text('Вы уверены, что хотите выйти?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Отмена')),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Theme.of(ctx).colorScheme.error),
+                child: const Text('Выйти'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await Provider.of<UserProvider>(context, listen: false).clearUser();
+    if (context.mounted) context.go(AppRoutes.welcome);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
 
@@ -280,14 +301,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _refreshDashboard),
           if (_selectedIndex == 8 && _journalRefreshCallback != null)
             IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _journalRefreshCallback),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Выйти',
-            onPressed: () async {
-              await userProvider.clearUser();
-              if (context.mounted) context.go(AppRoutes.welcome);
-            },
-          ),
+          IconButton(icon: const Icon(Icons.logout), tooltip: 'Выйти', onPressed: () => _confirmLogout(context)),
         ],
       ),
       drawer: AppDrawer(

@@ -30,7 +30,9 @@ class WelcomeScreen extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+        decoration: BoxDecoration(
+          gradient: AppTheme.getBackgroundGradient(themeProvider.effectiveMode(Theme.of(context).brightness)),
+        ),
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -47,7 +49,7 @@ class WelcomeScreen extends StatelessWidget {
                             children: [
                               const Spacer(flex: 2),
                               Image.asset(
-                                AppTheme.getLogoPath(themeProvider.mode),
+                                AppTheme.getLogoPath(themeProvider.effectiveMode(Theme.of(context).brightness)),
                                 width: size.width * 0.5,
                                 height: size.height * 0.22,
                                 fit: BoxFit.contain,
@@ -63,8 +65,10 @@ class WelcomeScreen extends StatelessWidget {
                               const SizedBox(height: 48),
                               SizedBox(
                                 width: buttonWidth,
-                                child: ElevatedButton(
+                                child: ElevatedButton.icon(
                                   onPressed: () => context.push(AppRoutes.login),
+                                  icon: const Icon(Icons.login),
+                                  label: const Text('Войти'),
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: colors.onPrimary,
                                     backgroundColor: colors.primary,
@@ -72,34 +76,24 @@ class WelcomeScreen extends StatelessWidget {
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                     elevation: 3,
                                   ),
-                                  child: const Text('Войти'),
                                 ),
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 16),
                               SizedBox(
                                 width: buttonWidth,
-                                child: Divider(thickness: 1, color: colors.outline.withValues(alpha: 0.5)),
-                              ),
-                              const SizedBox(height: 20),
-                              SizedBox(
-                                width: buttonWidth,
-                                child: OutlinedButton(
+                                child: OutlinedButton.icon(
                                   onPressed: () => context.push(AppRoutes.institutionRequest),
+                                  icon: const Icon(Icons.add_business_outlined),
+                                  label: const Text('Зарегистрировать ОО'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: colors.primary,
                                     padding: const EdgeInsets.symmetric(vertical: 14),
                                     side: BorderSide(color: colors.primary, width: 1.5),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
-                                  child: const Text('Зарегистрировать ОО'),
                                 ),
                               ),
-                              const SizedBox(height: 20),
-                              SizedBox(
-                                width: buttonWidth,
-                                child: Divider(thickness: 1, color: colors.outline.withValues(alpha: 0.5)),
-                              ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 16),
                               SizedBox(
                                 width: buttonWidth,
                                 child: TextButton(

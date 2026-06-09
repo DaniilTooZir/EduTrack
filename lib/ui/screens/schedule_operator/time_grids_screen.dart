@@ -114,12 +114,62 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
   }
 
   Future<void> _deleteSlot(TimeGrid grid, TimeSlot slot) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Удалить слот?'),
+            content: Text('Удалить слот ${slot.timeRange}${slot.label != null ? ' (${slot.label})' : ''}?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text('Удалить', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted) return;
     final result = await _service.deleteSlot(slot.id);
     if (!mounted) return;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
     } else {
       _updateGridSlots(grid.id, grid.slots.where((s) => s.id != slot.id).toList());
+    }
+  }
+
+  Future<void> _reorderSlots(TimeGrid grid, int oldIndex, int newIndex) async {
+    if (newIndex > oldIndex) newIndex--;
+    final slots = List<TimeSlot>.from(grid.slots)..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final moved = slots.removeAt(oldIndex);
+    slots.insert(newIndex, moved);
+    final reordered = [
+      for (int i = 0; i < slots.length; i++)
+        TimeSlot(
+          id: slots[i].id,
+          gridId: slots[i].gridId,
+          label: slots[i].label,
+          startTime: slots[i].startTime,
+          endTime: slots[i].endTime,
+          sortOrder: i,
+        ),
+    ];
+    _updateGridSlots(grid.id, reordered);
+    for (final slot in reordered) {
+      final result = await _service.updateSlot(
+        slot.id,
+        label: slot.label,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        sortOrder: slot.sortOrder,
+      );
+      if (!mounted) return;
+      if (result.isFailure) {
+        MessengerHelper.showError(result.errorMessage);
+        await _load();
+        return;
+      }
     }
   }
 
@@ -173,6 +223,20 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
     );
   }
 
+  String _slotLabel(int n) {
+    if (n % 100 >= 11 && n % 100 <= 19) return '$n слотов';
+    switch (n % 10) {
+      case 1:
+        return '$n слот';
+      case 2:
+      case 3:
+      case 4:
+        return '$n слота';
+      default:
+        return '$n слотов';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -182,7 +246,9 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
         Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+          decoration: BoxDecoration(
+            gradient: AppTheme.getBackgroundGradient(themeProvider.effectiveMode(Theme.of(context).brightness)),
+          ),
           child:
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -238,6 +304,7 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
 
   Widget _buildGridCard(TimeGrid grid, ColorScheme colors) {
     final isExpanded = _expanded.contains(grid.id);
+    final sortedSlots = List<TimeSlot>.from(grid.slots)..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
@@ -263,7 +330,7 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.primary),
                     ),
                   ),
-                  Text('${grid.slots.length} сл.', style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant)),
+                  Text(_slotLabel(grid.slots.length), style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant)),
                   IconButton(
                     icon: Icon(Icons.edit_outlined, size: 20, color: colors.primary),
                     onPressed: () => _renameGrid(grid),
@@ -293,7 +360,7 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
                     ? Column(
                       children: [
                         const Divider(height: 1),
-                        if (grid.slots.isEmpty)
+                        if (sortedSlots.isEmpty)
                           Padding(
                             padding: const EdgeInsets.all(AppSpacing.l),
                             child: Text(
@@ -302,7 +369,13 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
                             ),
                           )
                         else
-                          ...grid.slots.map((s) => _buildSlotRow(grid, s, colors)),
+                          ReorderableListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: sortedSlots.length,
+                            itemBuilder: (ctx, i) => _buildSlotRow(grid, sortedSlots[i], i, colors),
+                            onReorder: (old, nw) => _reorderSlots(grid, old, nw),
+                          ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l, vertical: AppSpacing.m),
                           child: SizedBox(
@@ -323,8 +396,9 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
     );
   }
 
-  Widget _buildSlotRow(TimeGrid grid, TimeSlot slot, ColorScheme colors) {
+  Widget _buildSlotRow(TimeGrid grid, TimeSlot slot, int index, ColorScheme colors) {
     return Container(
+      key: ValueKey(slot.id),
       decoration: BoxDecoration(border: Border(bottom: BorderSide(color: colors.outlineVariant, width: 0.5))),
       child: ListTile(
         dense: true,
@@ -340,6 +414,10 @@ class _TimeGridsScreenState extends State<TimeGridsScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ReorderableDragStartListener(
+              index: index,
+              child: Icon(Icons.drag_handle, color: colors.onSurfaceVariant, size: 20),
+            ),
             IconButton(
               icon: Icon(Icons.edit_outlined, size: 18, color: colors.primary),
               onPressed: () => _editSlot(grid, slot),
@@ -401,6 +479,12 @@ class _SlotDialogState extends State<_SlotDialog> {
   Future<void> _save() async {
     if (_start == null || _end == null) {
       MessengerHelper.showError('Укажите время начала и окончания');
+      return;
+    }
+    final startMinutes = _start!.hour * 60 + _start!.minute;
+    final endMinutes = _end!.hour * 60 + _end!.minute;
+    if (endMinutes <= startMinutes) {
+      MessengerHelper.showError('Время окончания должно быть позже начала');
       return;
     }
     final startStr = formatTimeOfDaySec(_start!);
