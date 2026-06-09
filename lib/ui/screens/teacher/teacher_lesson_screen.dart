@@ -246,7 +246,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 FilledButton.tonalIcon(
-                  onPressed: () => context.push(AppRoutes.teacherLessonComments, extra: lesson.id),
+                  onPressed: () => context.push(AppRoutes.teacherLessonCommentsPath(lesson.id!)),
                   icon: const Icon(Icons.chat_bubble_outline, size: 18),
                   label: const Text('Чат'),
                 ),

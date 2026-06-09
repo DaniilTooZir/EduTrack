@@ -114,7 +114,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: AppRadius.card,
-          onTap: () => context.push(AppRoutes.studentLessonComments, extra: lesson.id),
+          onTap: () => context.push(AppRoutes.studentLessonCommentsPath(lesson.id!)),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.l),
             child: Row(
@@ -170,7 +170,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                     icon: const Icon(Icons.chat_bubble_outline, size: 20),
                     color: colors.onSecondaryContainer,
                     tooltip: 'Открыть чат',
-                    onPressed: () => context.push(AppRoutes.studentLessonComments, extra: lesson.id),
+                    onPressed: () => context.push(AppRoutes.studentLessonCommentsPath(lesson.id!)),
                   ),
                 ),
               ],

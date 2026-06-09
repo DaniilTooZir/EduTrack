@@ -46,7 +46,15 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
-    final list = result.data;
+    final now = DateTime.now();
+    final mondayThisWeek = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+    final endDate = DateTime(mondayThisWeek.year, mondayThisWeek.month, mondayThisWeek.day + 13, 23, 59, 59);
+
+    final list =
+        result.data.where((s) {
+          if (s.date == null) return true;
+          return !s.date!.isBefore(mondayThisWeek) && !s.date!.isAfter(endDate);
+        }).toList();
     list.sort((a, b) {
       if (a.date == null && b.date != null) return -1;
       if (a.date != null && b.date == null) return 1;

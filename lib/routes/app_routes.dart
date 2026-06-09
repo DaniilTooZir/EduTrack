@@ -9,10 +9,13 @@ abstract class AppRoutes {
   static const String studentHome = '/student-home';
   static const String scheduleOperatorHome = '/schedule-operator-home';
   static const String adminAddUser = '/admin-add-user';
-  static const String teacherLessonComments = '/teacher/lesson_comments';
+  static const String teacherLessonComments = '/teacher/lesson-comments';
   static const String teacherGrades = '/teacher/grades';
   static const String teacherHomeworkStatus = '/teacher/homework-status';
-  static const String studentLessonComments = '/student/lesson_comments';
+  static const String studentLessonComments = '/student/lesson-comments';
+
+  static String teacherLessonCommentsPath(String lessonId) => '$teacherLessonComments/$lessonId';
+  static String studentLessonCommentsPath(String lessonId) => '$studentLessonComments/$lessonId';
   static const String teacherJournal = '/teacher/journal';
   static const String adminPeriods = '/admin/periods';
   static const String settings = '/settings';

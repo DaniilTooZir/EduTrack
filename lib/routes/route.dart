@@ -73,15 +73,18 @@ class AppNavigation {
         GoRoute(path: AppRoutes.studentHome, builder: (context, state) => const StudentHomeScreen()),
         GoRoute(path: AppRoutes.scheduleOperatorHome, builder: (context, state) => const ScheduleOperatorHomeScreen()),
         GoRoute(path: AppRoutes.adminAddUser, builder: (context, state) => const AddUserScreen()),
-        GoRoute(path: AppRoutes.teacherLessonComments, builder: (context, state) => const LessonCommentsScreen()),
+        GoRoute(
+          path: '${AppRoutes.teacherLessonComments}/:lessonId',
+          builder: (context, state) => LessonCommentsScreen(lessonId: state.pathParameters['lessonId']!),
+        ),
         GoRoute(path: AppRoutes.teacherGrades, builder: (context, state) => const TeacherGradeScreen()),
         GoRoute(
           path: AppRoutes.teacherHomeworkStatus,
           builder: (context, state) => const TeacherHomeworkStatusScreen(),
         ),
         GoRoute(
-          path: AppRoutes.studentLessonComments,
-          builder: (context, state) => const StudentLessonCommentsScreen(),
+          path: '${AppRoutes.studentLessonComments}/:lessonId',
+          builder: (context, state) => StudentLessonCommentsScreen(lessonId: state.pathParameters['lessonId']!),
         ),
         GoRoute(
           path: AppRoutes.teacherJournal,

@@ -7,12 +7,12 @@ import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LessonCommentsScreen extends StatefulWidget {
-  const LessonCommentsScreen({super.key});
+  final String lessonId;
+  const LessonCommentsScreen({super.key, required this.lessonId});
 
   @override
   State<LessonCommentsScreen> createState() => _LessonCommentsScreenState();
@@ -28,25 +28,17 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
   bool _isSending = false;
   PlatformFile? _selectedFile;
 
-  late final String lessonId;
+  String get lessonId => widget.lessonId;
   String? userId;
   String? userRole;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = GoRouterState.of(context);
-      if (state.extra == null) {
-        context.pop();
-        return;
-      }
-      lessonId = state.extra as String;
-      final provider = Provider.of<UserProvider>(context, listen: false);
-      userId = provider.userId;
-      userRole = provider.role;
-      _loadComments();
-    });
+    final provider = Provider.of<UserProvider>(context, listen: false);
+    userId = provider.userId;
+    userRole = provider.role;
+    _loadComments();
   }
 
   @override
