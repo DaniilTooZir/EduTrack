@@ -56,6 +56,9 @@ class GradeService {
     }
   }
 
+  String _toDateString(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
   Future<AppResult<Map<String, dynamic>>> getJournalData({
     required String groupId,
     required String subjectId,
@@ -68,8 +71,8 @@ class GradeService {
           .select('id, date, weekday, start_time')
           .eq('group_id', groupId)
           .eq('subject_id', subjectId);
-      if (startDate != null) scheduleQuery = scheduleQuery.gte('date', startDate.toIso8601String());
-      if (endDate != null) scheduleQuery = scheduleQuery.lte('date', endDate.toIso8601String());
+      if (startDate != null) scheduleQuery = scheduleQuery.gte('date', _toDateString(startDate));
+      if (endDate != null) scheduleQuery = scheduleQuery.lte('date', _toDateString(endDate));
       final step1 = await Future.wait([
         scheduleQuery,
         _supabase.from('students').select().eq('group_id', groupId).order('surname', ascending: true),

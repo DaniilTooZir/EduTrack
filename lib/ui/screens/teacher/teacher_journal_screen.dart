@@ -2,6 +2,7 @@ import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/data/services/final_grade_service.dart';
 import 'package:edu_track/data/services/grade_comment_service.dart';
 import 'package:edu_track/data/services/lesson_attendance_service.dart';
+import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/final_grade.dart';
 import 'package:edu_track/models/grade.dart';
@@ -27,6 +28,22 @@ const double _cellHeight = 48.0;
 const double _headerHeight = 48.0;
 const double _avgColWidth = 64.0;
 const double _finalColWidth = 64.0;
+const double _paginationBarHeight = 44.0;
+
+const _monthNames = [
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь',
+];
 
 Color _gradeColor(int value, ColorScheme colors) => switch (value) {
   5 => const Color(0xFF2E7D32),
@@ -70,6 +87,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   final _attendanceService = AttendanceService();
   final _commentService = GradeCommentService();
   final _finalGradeService = FinalGradeService();
+  final _lessonService = LessonService();
 
   bool _isLoading = true;
   bool _isExporting = false;
@@ -81,7 +99,41 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   Map<String, LessonAttendance> _attendanceMap = {};
   Map<String, DateTime?> _lessonDateMap = {};
   Map<String, FinalGrade> _finalGradeMap = {};
+  Map<String, String> _commentMap = {};
   AcademicPeriod? _loadedPeriod;
+
+  final _leftScrollCtrl = ScrollController();
+  final _rightScrollCtrl = ScrollController();
+  bool _scrollSyncing = false;
+  int _pageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _leftScrollCtrl.addListener(_syncLeftToRight);
+    _rightScrollCtrl.addListener(_syncRightToLeft);
+  }
+
+  void _syncLeftToRight() {
+    if (_scrollSyncing || !_rightScrollCtrl.hasClients) return;
+    _scrollSyncing = true;
+    _rightScrollCtrl.jumpTo(_leftScrollCtrl.offset);
+    _scrollSyncing = false;
+  }
+
+  void _syncRightToLeft() {
+    if (_scrollSyncing || !_leftScrollCtrl.hasClients) return;
+    _scrollSyncing = true;
+    _leftScrollCtrl.jumpTo(_rightScrollCtrl.offset);
+    _scrollSyncing = false;
+  }
+
+  @override
+  void dispose() {
+    _leftScrollCtrl.dispose();
+    _rightScrollCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -107,14 +159,22 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   Future<void> _doExport() async {
     setState(() => _isExporting = true);
     try {
+      final exportLessons = _visibleLessons.where((l) => l.id != null).toList();
+      final pages = _pages;
+      String? pageLabel;
+      if (pages.length > 1 && _pageIndex < pages.length) {
+        final start = pages[_pageIndex].$1;
+        pageLabel = '${_monthNames[start.month - 1]} ${start.year}';
+      }
       await JournalPdfExporter.share(
         students: _students,
-        lessons: _lessons,
+        lessons: exportLessons,
         gradeMap: _gradeMap,
         attendanceMap: _attendanceMap,
         lessonDateMap: _lessonDateMap,
         finalGradeMap: _finalGradeMap,
         period: _loadedPeriod,
+        pageLabel: pageLabel,
         subjectName: widget.subjectName ?? widget.subjectId,
         groupName: widget.groupName ?? widget.groupId,
       );
@@ -171,9 +231,24 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       final rawDate = sched?['date'];
       lessonDateMap[lesson.id!] = rawDate != null ? DateTime.tryParse(rawDate.toString()) : null;
     }
-    lessons.sort((a, b) {
-      final da = lessonDateMap[a.id];
-      final db = lessonDateMap[b.id];
+
+    final existingScheduleIds = lessons.map((l) => l.scheduleId).toSet();
+    final pendingLessons = <Lesson>[];
+    for (final sched in schedules) {
+      final schedId = sched['id'].toString();
+      if (existingScheduleIds.contains(schedId)) continue;
+      final rawDate = sched['date'];
+      if (rawDate == null) continue;
+      final date = DateTime.tryParse(rawDate.toString());
+      if (date == null) continue;
+      pendingLessons.add(Lesson(scheduleId: schedId, attendanceStatus: 'pending'));
+      lessonDateMap[schedId] = date;
+    }
+
+    final allLessons = [...lessons, ...pendingLessons];
+    allLessons.sort((a, b) {
+      final da = lessonDateMap[a.id ?? a.scheduleId];
+      final db = lessonDateMap[b.id ?? b.scheduleId];
       if (da == null && db == null) return 0;
       if (da == null) return 1;
       if (db == null) return -1;
@@ -187,35 +262,87 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       }
     }
 
+    final gradeIds = grades.where((g) => g.id != null).map((g) => g.id!).toList();
+    final commentResult = await _commentService.getCommentsByGradeIds(gradeIds);
+    final commentMap = commentResult.isSuccess ? commentResult.data : <String, String>{};
+    if (!mounted) return;
+
     setState(() {
-      _lessons = lessons;
+      _lessons = allLessons;
       _students = students;
       _gradeMap = {for (final g in grades) '${g.studentId}|${g.lessonId}': g};
       _attendanceMap = {for (final a in attendances) '${a.studentId}|${a.lessonId}': a};
       _lessonDateMap = lessonDateMap;
       _finalGradeMap = finalGradeMap;
+      _commentMap = commentMap;
       _isLoading = false;
+
+      final pageCount = _pages.length;
+      _pageIndex = pageCount > 0 ? pageCount - 1 : 0;
     });
   }
 
+  Future<Lesson?> _ensureLessonCreated(Lesson lesson) async {
+    if (lesson.id != null) return lesson;
+    final result = await _lessonService.addLesson(lesson);
+    if (!mounted) return null;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      return null;
+    }
+    final realLesson = lesson.copyWith(id: result.data);
+    setState(() {
+      final idx = _lessons.indexWhere((l) => l.scheduleId == lesson.scheduleId && l.id == null);
+      if (idx >= 0) _lessons[idx] = realLesson;
+      final date = _lessonDateMap[lesson.scheduleId];
+      if (date != null) _lessonDateMap[realLesson.id!] = date;
+    });
+    return realLesson;
+  }
+
+  Future<void> _onHeaderTap(Lesson lesson) async {
+    if (!mounted) return;
+    final result = await showAppBottomSheet<String?>(
+      context,
+      builder: (_) => _LessonTopicSheet(dateLabel: _fmtDate(_lessonDateMap[lesson.id]), currentTopic: lesson.topic),
+    );
+    if (result == null || !mounted) return;
+    final newTopic = result.trim().isEmpty ? null : result.trim();
+    final res = await _lessonService.updateLessonTopic(lesson.id!, newTopic);
+    if (!mounted) return;
+    if (res.isFailure) {
+      MessengerHelper.showError(res.errorMessage);
+      return;
+    }
+    setState(() {
+      final idx = _lessons.indexWhere((l) => l.id == lesson.id);
+      if (idx >= 0) _lessons[idx] = _lessons[idx].copyWith(topic: newTopic);
+    });
+    MessengerHelper.showSuccess(newTopic == null ? 'Тема удалена' : 'Тема урока сохранена');
+  }
+
   Future<void> _onCellTap(Student student, Lesson lesson) async {
-    final key = '${student.id}|${lesson.id!}';
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId ?? '';
+    final resolvedLesson = await _ensureLessonCreated(lesson);
+    if (resolvedLesson == null || !mounted) return;
+
+    final key = '${student.id}|${resolvedLesson.id!}';
     final result = await showAppBottomSheet<Object?>(
       context,
       builder:
           (_) => _CellEditSheet(
             studentName: '${student.surname} ${student.name}',
-            dateLabel: _fmtDate(_lessonDateMap[lesson.id]),
+            dateLabel: _fmtDate(_lessonDateMap[resolvedLesson.id]),
             currentGrade: _gradeMap[key],
             currentAttendance: _attendanceMap[key],
+            currentComment: _commentMap[_gradeMap[key]?.id ?? ''],
           ),
     );
     if (result == null || !mounted) return;
     if (result is Map<String, dynamic>) {
       final gradeValue = result['value'] as int;
       final comment = (result['comment'] as String? ?? '').trim();
-      final grade = Grade(lessonId: lesson.id!, studentId: student.id, value: gradeValue);
+      final grade = Grade(lessonId: resolvedLesson.id!, studentId: student.id, value: gradeValue);
       final res = await _gradeService.addOrUpdateGrade(grade);
       if (!mounted) return;
       if (res.isFailure) {
@@ -232,10 +359,15 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       setState(() {
         _gradeMap[key] = grade.copyWith(id: gradeId);
         _attendanceMap.remove(key);
+        if (comment.isNotEmpty) {
+          _commentMap[gradeId] = comment;
+        } else {
+          _commentMap.remove(gradeId);
+        }
       });
       MessengerHelper.showSuccess('Оценка $gradeValue сохранена');
     } else if (result == 'н') {
-      final attendance = LessonAttendance(lessonId: lesson.id!, studentId: student.id, status: 'absent');
+      final attendance = LessonAttendance(lessonId: resolvedLesson.id!, studentId: student.id, status: 'absent');
       final res = await _attendanceService.addOrUpdateAttendance(attendance);
       if (!mounted) return;
       if (res.isFailure) {
@@ -249,7 +381,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       MessengerHelper.showSuccess('Отметка «Н» сохранена');
     } else if (result == 'clear') {
       final existingGradeId = _gradeMap[key]?.id;
-      final res = await _gradeService.clearJournalCell(studentId: student.id, lessonId: lesson.id!);
+      final res = await _gradeService.clearJournalCell(studentId: student.id, lessonId: resolvedLesson.id!);
       if (!mounted) return;
       if (res.isFailure) {
         MessengerHelper.showError(res.errorMessage);
@@ -262,6 +394,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       setState(() {
         _gradeMap.remove(key);
         _attendanceMap.remove(key);
+        if (existingGradeId != null) _commentMap.remove(existingGradeId);
       });
       MessengerHelper.showSuccess('Ячейка очищена');
     }
@@ -367,40 +500,181 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   }
 
   double _computeAvg(Student student) {
-    final grades = _lessons.map((l) => _gradeMap['${student.id}|${l.id!}']).whereType<Grade>().toList();
+    final grades =
+        _lessons.where((l) => l.id != null).map((l) => _gradeMap['${student.id}|${l.id!}']).whereType<Grade>().toList();
     if (grades.isEmpty) return 0;
     return grades.map((g) => g.value).reduce((a, b) => a + b) / grades.length;
   }
 
   bool get _showFinalColumn => _loadedPeriod != null;
 
-  Widget _buildJournal(ColorScheme colors) {
-    return SingleChildScrollView(
-      child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: _buildGrid(colors)),
+  List<(DateTime, DateTime)> get _pages {
+    final months = <DateTime>{};
+    for (final lesson in _lessons) {
+      final date = _lessonDateMap[lesson.id ?? lesson.scheduleId];
+      if (date != null) months.add(DateTime(date.year, date.month));
+    }
+    if (months.isEmpty) return [];
+    final sorted = months.toList()..sort();
+    return sorted.map((m) => (m, DateTime(m.year, m.month + 1, 0))).toList();
+  }
+
+  List<Lesson> get _visibleLessons {
+    final pages = _pages;
+    if (pages.length <= 1) return _lessons;
+    if (_pageIndex >= pages.length) return _lessons;
+    final (start, _) = pages[_pageIndex];
+    return _lessons.where((l) {
+      final date = _lessonDateMap[l.id ?? l.scheduleId];
+      return date != null && date.year == start.year && date.month == start.month;
+    }).toList();
+  }
+
+  Widget _buildPaginationBar(ColorScheme colors) {
+    final pages = _pages;
+    if (pages.length <= 1) return const SizedBox.shrink();
+    final (start, _) = pages[_pageIndex];
+    final label = '${_monthNames[start.month - 1]} ${start.year}';
+    return Container(
+      height: _paginationBarHeight,
+      color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            iconSize: 20,
+            onPressed: _pageIndex > 0 ? () => setState(() => _pageIndex--) : null,
+          ),
+          Expanded(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: colors.onSurface),
+            ),
+          ),
+          Text('${_pageIndex + 1} / ${pages.length}', style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            iconSize: 20,
+            onPressed: _pageIndex < pages.length - 1 ? () => setState(() => _pageIndex++) : null,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildGrid(ColorScheme colors) {
+  Widget _buildJournal(ColorScheme colors) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeaderRow(colors),
-        const Divider(height: 1, thickness: 1),
-        for (var i = 0; i < _students.length; i++) _buildStudentRow(_students[i], i.isEven, colors),
+        _buildPaginationBar(colors),
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: _nameColWidth,
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(color: colors.shadow.withValues(alpha: 0.1), blurRadius: 6, offset: const Offset(3, 0)),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _headerNameCell(colors),
+                    Divider(height: 1, thickness: 1, color: colors.outline.withValues(alpha: 0.5)),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: _leftScrollCtrl,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (var i = 0; i < _students.length; i++) _buildNameCell(_students[i], i.isEven, colors),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Scrollable data area
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bodyHeight = constraints.maxHeight - _headerHeight - 1;
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDataHeaderRow(colors),
+                          Divider(height: 1, thickness: 1, color: colors.outline.withValues(alpha: 0.5)),
+                          SizedBox(
+                            height: bodyHeight,
+                            child: SingleChildScrollView(
+                              controller: _rightScrollCtrl,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  for (var i = 0; i < _students.length; i++)
+                                    _buildDataRowWithoutName(_students[i], i.isEven, colors),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildHeaderRow(ColorScheme colors) {
+  Widget _buildNameCell(Student student, bool isEven, ColorScheme colors) {
+    return Container(
+      width: _nameColWidth,
+      height: _cellHeight,
+      color: isEven ? colors.surface : colors.surfaceContainerHighest.withValues(alpha: 0.35),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        '${student.surname} ${student.name}',
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.onSurface),
+      ),
+    );
+  }
+
+  Widget _buildDataHeaderRow(ColorScheme colors) {
     return Container(
       height: _headerHeight,
       color: colors.primaryContainer,
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _headerNameCell(colors),
-          for (final lesson in _lessons) _headerDateCell(lesson, colors),
+          for (final lesson in _visibleLessons) _headerDateCell(lesson, colors),
           _headerAvgCell(colors),
           if (_showFinalColumn) _headerFinalCell(colors),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataRowWithoutName(Student student, bool isEven, ColorScheme colors) {
+    return Container(
+      height: _cellHeight,
+      color: isEven ? colors.surface : colors.surfaceContainerHighest.withValues(alpha: 0.35),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final lesson in _visibleLessons) _buildDataCell(student, lesson, colors),
+          _buildAvgCell(student, colors),
+          if (_showFinalColumn) _buildFinalGradeCell(student, colors),
         ],
       ),
     );
@@ -443,48 +717,50 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   }
 
   Widget _headerDateCell(Lesson lesson, ColorScheme colors) {
-    return Container(
+    final isPending = lesson.id == null;
+    final dateKey = lesson.id ?? lesson.scheduleId;
+    final hasTopic = !isPending && (lesson.topic?.isNotEmpty ?? false);
+    final cell = Container(
       width: _cellWidth,
       height: _headerHeight,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         border: Border(left: BorderSide(color: colors.outline.withValues(alpha: 0.3), width: 0.5)),
       ),
-      child: Text(
-        _fmtDate(_lessonDateMap[lesson.id]),
-        textAlign: TextAlign.center,
-        style: TextStyle(fontWeight: FontWeight.bold, color: colors.onPrimaryContainer, fontSize: 12),
-      ),
-    );
-  }
-
-  Widget _buildStudentRow(Student student, bool isEven, ColorScheme colors) {
-    return Container(
-      height: _cellHeight,
-      color: isEven ? colors.surface : colors.surfaceContainerHighest.withValues(alpha: 0.35),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: _nameColWidth,
-            height: _cellHeight,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '${student.surname} ${student.name}',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.onSurface),
-                ),
-              ),
+          Text(
+            _fmtDate(_lessonDateMap[dateKey]),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isPending ? colors.onPrimaryContainer.withValues(alpha: 0.4) : colors.onPrimaryContainer,
+              fontSize: 12,
             ),
           ),
-          for (final lesson in _lessons) _buildDataCell(student, lesson, colors),
-          _buildAvgCell(student, colors),
-          if (_showFinalColumn) _buildFinalGradeCell(student, colors),
+          if (hasTopic)
+            Text(
+              lesson.topic!,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 9, color: colors.onPrimaryContainer.withValues(alpha: 0.6)),
+            ),
         ],
       ),
     );
+    if (isPending) return cell;
+    Widget result = GestureDetector(onTap: () => _onHeaderTap(lesson), child: cell);
+    if (hasTopic) {
+      result = Tooltip(
+        message: lesson.topic!,
+        preferBelow: true,
+        triggerMode: TooltipTriggerMode.longPress,
+        child: result,
+      );
+    }
+    return result;
   }
 
   Widget _buildAvgCell(Student student, ColorScheme colors) {
@@ -542,9 +818,6 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   }
 
   Widget _buildDataCell(Student student, Lesson lesson, ColorScheme colors) {
-    final key = '${student.id}|${lesson.id!}';
-    final grade = _gradeMap[key];
-    final attendance = _attendanceMap[key];
     return GestureDetector(
       onTap: () => _onCellTap(student, lesson),
       child: Container(
@@ -554,7 +827,14 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
         decoration: BoxDecoration(
           border: Border(left: BorderSide(color: colors.outline.withValues(alpha: 0.2), width: 0.5)),
         ),
-        child: _cellContent(grade, attendance, colors),
+        child:
+            lesson.id == null
+                ? Icon(Icons.add, size: 16, color: colors.outline.withValues(alpha: 0.25))
+                : _cellContent(
+                  _gradeMap['${student.id}|${lesson.id!}'],
+                  _attendanceMap['${student.id}|${lesson.id!}'],
+                  colors,
+                ),
       ),
     );
   }
@@ -649,31 +929,27 @@ class _CellEditSheet extends StatefulWidget {
   final String dateLabel;
   final Grade? currentGrade;
   final LessonAttendance? currentAttendance;
+  final String? currentComment;
 
-  const _CellEditSheet({required this.studentName, required this.dateLabel, this.currentGrade, this.currentAttendance});
+  const _CellEditSheet({
+    required this.studentName,
+    required this.dateLabel,
+    this.currentGrade,
+    this.currentAttendance,
+    this.currentComment,
+  });
 
   @override
   State<_CellEditSheet> createState() => _CellEditSheetState();
 }
 
 class _CellEditSheetState extends State<_CellEditSheet> {
-  final _commentController = TextEditingController();
-  final _commentService = GradeCommentService();
-  bool _loadingComment = false;
+  late final TextEditingController _commentController;
 
   @override
   void initState() {
     super.initState();
-    if (widget.currentGrade?.id != null) _loadComment();
-  }
-
-  Future<void> _loadComment() async {
-    setState(() => _loadingComment = true);
-    final result = await _commentService.getComment(widget.currentGrade!.id!);
-    if (mounted && result.isSuccess && result.data != null) {
-      _commentController.text = result.data!;
-    }
-    if (mounted) setState(() => _loadingComment = false);
+    _commentController = TextEditingController(text: widget.currentComment ?? '');
   }
 
   @override
@@ -731,13 +1007,7 @@ class _CellEditSheetState extends State<_CellEditSheet> {
               controller: _commentController,
               decoration: InputDecoration(
                 hintText: 'Комментарий к оценке (необязательно)',
-                prefixIcon:
-                    _loadingComment
-                        ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                        )
-                        : const Icon(Icons.comment_outlined, size: 20),
+                prefixIcon: const Icon(Icons.comment_outlined, size: 20),
                 suffixIcon: ListenableBuilder(
                   listenable: _commentController,
                   builder:
@@ -872,6 +1142,91 @@ class _FinalGradeSheet extends StatelessWidget {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LessonTopicSheet extends StatefulWidget {
+  final String dateLabel;
+  final String? currentTopic;
+
+  const _LessonTopicSheet({required this.dateLabel, this.currentTopic});
+
+  @override
+  State<_LessonTopicSheet> createState() => _LessonTopicSheetState();
+}
+
+class _LessonTopicSheetState extends State<_LessonTopicSheet> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.currentTopic ?? '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text('Тема урока', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: colors.onSurface)),
+            const SizedBox(height: 4),
+            Text(widget.dateLabel, style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              maxLines: 3,
+              minLines: 1,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                hintText: 'Введите тему урока',
+                suffixIcon: ListenableBuilder(
+                  listenable: _controller,
+                  builder:
+                      (_, __) =>
+                          _controller.text.isNotEmpty
+                              ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: _controller.clear)
+                              : const SizedBox.shrink(),
+                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.m),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).pop(_controller.text),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  minimumSize: const Size.fromHeight(44),
+                ),
+                child: const Text('Сохранить'),
+              ),
+            ),
           ],
         ),
       ),

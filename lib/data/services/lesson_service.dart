@@ -7,10 +7,21 @@ class LessonService {
   final SupabaseClient _client;
   LessonService({SupabaseClient? client}) : _client = client ?? SupabaseConnection.client;
 
-  Future<AppResult<void>> addLesson(Lesson lesson) async {
+  Future<AppResult<void>> updateLessonTopic(String lessonId, String? topic) async {
     try {
-      await _client.from('lessons').insert(lesson.toMap());
+      await _client.from('lessons').update({'topic': topic}).eq('id', lessonId);
       return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при обновлении темы: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось обновить тему урока.');
+    }
+  }
+
+  Future<AppResult<String>> addLesson(Lesson lesson) async {
+    try {
+      final response = await _client.from('lessons').insert(lesson.toMap()).select('id').single();
+      return AppResult.success(response['id'] as String);
     } on PostgrestException catch (e) {
       return AppResult.failure('Ошибка при добавлении урока: ${e.message}');
     } catch (e) {

@@ -42,5 +42,9 @@ class SessionService {
     await prefs.remove('role');
     await prefs.remove('institutionId');
     await prefs.remove('groupId');
+    await prefs.remove('journal_group_id');
+    await prefs.remove('journal_subject_id');
+    await prefs.remove('journal_group_name');
+    await prefs.remove('journal_subject_name');
   }
 }

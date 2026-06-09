@@ -1,6 +1,7 @@
 import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/group_service.dart';
+import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/lesson.dart';
@@ -32,6 +33,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   final SubjectService _subjectService = SubjectService();
   final GroupService _groupService = GroupService();
+  final LessonService _lessonService = LessonService();
 
   List<Lesson> _lessons = [];
   List<Subject> _subjects = [];
@@ -118,6 +120,91 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     }
   }
 
+  Future<void> _editTopic(Lesson lesson) async {
+    if (lesson.id == null) return;
+    final controller = TextEditingController(text: lesson.topic ?? '');
+    final result = await showModalBottomSheet<String?>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder:
+          (ctx) => Padding(
+            padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(ctx).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Тема урока',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(ctx).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLines: 3,
+                  minLines: 1,
+                  textInputAction: TextInputAction.done,
+                  decoration: InputDecoration(
+                    hintText: 'Введите тему урока',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    suffixIcon: ListenableBuilder(
+                      listenable: controller,
+                      builder:
+                          (_, __) =>
+                              controller.text.isNotEmpty
+                                  ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: controller.clear)
+                                  : const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.m),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(ctx).pop(controller.text),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      minimumSize: const Size.fromHeight(44),
+                    ),
+                    child: const Text('Сохранить'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+    controller.dispose();
+    if (result == null || !mounted) return;
+    final newTopic = result.trim().isEmpty ? null : result.trim();
+    final res = await _lessonService.updateLessonTopic(lesson.id!, newTopic);
+    if (!mounted) return;
+    if (res.isFailure) {
+      MessengerHelper.showError(res.errorMessage);
+      return;
+    }
+    setState(() {
+      final idx = _lessons.indexWhere((l) => l.id == lesson.id);
+      if (idx >= 0) _lessons[idx] = _lessons[idx].copyWith(topic: newTopic);
+    });
+    MessengerHelper.showSuccess(newTopic == null ? 'Тема удалена' : 'Тема сохранена');
+  }
+
   Widget _buildLessonTile(Lesson lesson, Schedule schedule, ColorScheme colors) {
     final subjectName =
         schedule.subject?.name ?? _subjects.where((s) => s.id == schedule.subjectId).firstOrNull?.name ?? 'Предмет';
@@ -146,6 +233,11 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
             subtitle: Text(
               '$dateStr • $groupName • ${schedule.startTime}',
               style: TextStyle(color: colors.onSurfaceVariant),
+            ),
+            trailing: IconButton(
+              icon: Icon(Icons.edit_outlined, size: 20, color: colors.onSurfaceVariant),
+              tooltip: 'Изменить тему',
+              onPressed: () => _editTopic(lesson),
             ),
           ),
           Padding(

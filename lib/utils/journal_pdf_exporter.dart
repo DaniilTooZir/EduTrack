@@ -40,6 +40,7 @@ class JournalPdfExporter {
     required AcademicPeriod? period,
     required String subjectName,
     required String groupName,
+    String? pageLabel,
   }) async {
     final font = await PdfGoogleFonts.notoSansRegular();
     final fontBold = await PdfGoogleFonts.notoSansBold();
@@ -101,7 +102,9 @@ class JournalPdfExporter {
                 pw.Text('Предмет: $subjectName  ·  Группа: $groupName', style: pw.TextStyle(font: font, fontSize: 9.5)),
                 if (period != null)
                   pw.Text(
-                    'Период: ${period.name}  (${fmtDate(period.startDate)} — ${fmtDate(period.endDate)})',
+                    pageLabel != null
+                        ? 'Период: ${period.name}  ·  Месяц: $pageLabel'
+                        : 'Период: ${period.name}  (${fmtDate(period.startDate)} — ${fmtDate(period.endDate)})',
                     style: pw.TextStyle(font: font, fontSize: 9),
                   ),
                 pw.SizedBox(height: 6),

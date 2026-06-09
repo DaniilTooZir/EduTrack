@@ -27,7 +27,7 @@ class LessonRepository {
     return result;
   }
 
-  Future<AppResult<void>> addLesson(Lesson lesson) async {
+  Future<AppResult<String>> addLesson(Lesson lesson) async {
     final result = await _remote.addLesson(lesson);
     if (result.isSuccess) {
       await _local.deleteLessonsForSchedules([lesson.scheduleId]);
