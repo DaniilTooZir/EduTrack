@@ -47,7 +47,6 @@ class ScheduleService {
     required String groupId,
     required String teacherId,
     required DateTime date,
-    required int weekday,
     required String startTime,
     required String endTime,
   }) async {
@@ -58,7 +57,7 @@ class ScheduleService {
         'group_id': groupId,
         'teacher_id': teacherId,
         'date': date.toIso8601String(),
-        'weekday': weekday,
+        'weekday': date.weekday,
         'start_time': startTime,
         'end_time': endTime,
       });
@@ -178,38 +177,39 @@ class ScheduleService {
     }
   }
 
-  Future<AppResult<({int copied, int skipped})>> copyScheduleToNextWeek(
+  Future<AppResult<({int copied, int skipped})>> copyScheduleToWeek(
     String institutionId,
-    DateTime startOfCurrentWeek,
+    DateTime sourceWeekStart,
+    DateTime targetWeekStart,
   ) async {
     try {
-      final endOfCurrentWeek = startOfCurrentWeek.add(const Duration(days: 6));
-      final startOfNextWeek = startOfCurrentWeek.add(const Duration(days: 7));
-      final endOfNextWeek = startOfCurrentWeek.add(const Duration(days: 13));
+      final sourceWeekEnd = sourceWeekStart.add(const Duration(days: 6));
+      final targetWeekEnd = targetWeekStart.add(const Duration(days: 6));
 
       final currentData = await _client
           .from('schedule')
           .select()
           .eq('institution_id', institutionId)
-          .gte('date', startOfCurrentWeek.toIso8601String())
-          .lte('date', endOfCurrentWeek.toIso8601String());
+          .gte('date', sourceWeekStart.toIso8601String())
+          .lte('date', sourceWeekEnd.toIso8601String());
       final List<Map<String, dynamic>> source = (currentData as List).cast<Map<String, dynamic>>();
       if (source.isEmpty) {
-        return AppResult.failure('На этой неделе нет занятий для копирования.');
+        return AppResult.failure('На выбранной неделе нет занятий для копирования.');
       }
 
       final nextWeekData = await _client
           .from('schedule')
           .select('group_id, teacher_id, date, start_time, end_time')
           .eq('institution_id', institutionId)
-          .gte('date', startOfNextWeek.toIso8601String())
-          .lte('date', endOfNextWeek.toIso8601String());
+          .gte('date', targetWeekStart.toIso8601String())
+          .lte('date', targetWeekEnd.toIso8601String());
       final List<Map<String, dynamic>> existing = (nextWeekData as List).cast<Map<String, dynamic>>();
+      final offset = targetWeekStart.difference(sourceWeekStart);
       final toInsert = <Map<String, dynamic>>[];
       int skipped = 0;
       for (final item in source) {
         final oldDate = DateTime.parse(item['date'] as String);
-        final newDate = oldDate.add(const Duration(days: 7));
+        final newDate = oldDate.add(offset);
         final startTime = item['start_time'] as String;
         final endTime = item['end_time'] as String;
         final teacherId = item['teacher_id'] as String;
@@ -251,7 +251,6 @@ class ScheduleService {
     required String groupId,
     required String teacherId,
     required DateTime date,
-    required int weekday,
     required String startTime,
     required String endTime,
   }) async {
@@ -263,7 +262,7 @@ class ScheduleService {
             'group_id': groupId,
             'teacher_id': teacherId,
             'date': date.toIso8601String(),
-            'weekday': weekday,
+            'weekday': date.weekday,
             'start_time': startTime,
             'end_time': endTime,
           })

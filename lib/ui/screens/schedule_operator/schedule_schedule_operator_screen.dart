@@ -4,11 +4,13 @@ import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/data/services/teacher_service.dart';
+import 'package:edu_track/data/services/time_grid_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
+import 'package:edu_track/models/time_grid.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/period_dropdown.dart';
@@ -32,6 +34,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   late final SubjectService _subjectService;
   late final GroupService _groupService;
   late final TeacherService _teacherService;
+  late final TimeGridService _timeGridService;
 
   List<Schedule> _schedules = [];
 
@@ -53,9 +56,12 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   TimeOfDay? _endTime;
 
   bool _isAdding = false;
+  bool _isFormExpanded = false;
   List<Subject> _subjects = [];
   List<Group> _groups = [];
   List<Teacher> _teachers = [];
+  List<TimeGrid> _timeGrids = [];
+  String? _selectedGridId;
 
   String? _filterGroupId;
   String? _filterTeacherId;
@@ -80,6 +86,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     _subjectService = SubjectService();
     _groupService = GroupService();
     _teacherService = TeacherService();
+    _timeGridService = TimeGridService();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _institutionId = userProvider.institutionId;
     _selectedDate = DateTime.now();
@@ -89,6 +96,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       _loadGroups();
       _loadTeachers();
       _loadSchedule();
+      _loadTimeGrids();
     }
   }
 
@@ -153,6 +161,61 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       return;
     }
     setState(() => _teachers = result.data);
+  }
+
+  void _loadTimeGrids() async {
+    final result = await _timeGridService.getGridsForInstitution(_institutionId!);
+    if (!mounted) return;
+    if (result.isSuccess) setState(() => _timeGrids = result.data);
+  }
+
+  TimeOfDay _parseTimeOfDay(String time) {
+    final parts = time.split(':');
+    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+  }
+
+  Widget _buildSlotChips(ColorScheme colors) {
+    if (_timeGrids.isEmpty) return const SizedBox.shrink();
+    final activeGrid = _timeGrids.firstWhere(
+      (g) => g.id == (_selectedGridId ?? _timeGrids.first.id),
+      orElse: () => _timeGrids.first,
+    );
+    if (activeGrid.slots.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_timeGrids.length > 1) ...[
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(labelText: 'Сетка времени', border: OutlineInputBorder(), isDense: true),
+            initialValue: _selectedGridId ?? _timeGrids.first.id,
+            items: _timeGrids.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
+            onChanged: (val) => setState(() => _selectedGridId = val),
+          ),
+          const SizedBox(height: AppSpacing.m),
+        ],
+        Text('Быстрый выбор:', style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children:
+              activeGrid.slots.map((slot) {
+                final chipLabel = slot.label != null ? '${slot.label}\n${slot.timeRange}' : slot.timeRange;
+                return ActionChip(
+                  label: Text(chipLabel, style: const TextStyle(fontSize: 12), textAlign: TextAlign.center),
+                  onPressed: () {
+                    setState(() {
+                      _startTime = _parseTimeOfDay(slot.startTime);
+                      _endTime = _parseTimeOfDay(slot.endTime);
+                    });
+                    _scheduleConflictValidation();
+                  },
+                );
+              }).toList(),
+        ),
+        const SizedBox(height: AppSpacing.m),
+      ],
+    );
   }
 
   Future<void> _loadSchedule() async {
@@ -252,7 +315,6 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       subjectId: _selectedSubjectId!,
       groupId: _selectedGroupId!,
       teacherId: _selectedTeacherId!,
-      weekday: _selectedDate!.weekday,
       date: _selectedDate!,
       startTime: sTime,
       endTime: eTime,
@@ -279,21 +341,36 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   }
 
   Future<void> _duplicateSchedule() async {
-    final picked = await showDatePicker(
+    final pickedSource = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      helpText: 'Выберите любой день недели-источника',
+      helpText: 'Выберите любой день НЕДЕЛИ-ИСТОЧНИКА',
     );
-    if (picked == null || !mounted) return;
+    if (pickedSource == null || !mounted) return;
 
-    final startOfSource = picked.subtract(Duration(days: picked.weekday - 1));
-    final endOfSource = startOfSource.add(const Duration(days: 6));
-    final startOfTarget = startOfSource.add(const Duration(days: 7));
-    final endOfTarget = startOfSource.add(const Duration(days: 13));
+    final startOfSource = pickedSource.subtract(Duration(days: pickedSource.weekday - 1));
+
+    final pickedTarget = await showDatePicker(
+      context: context,
+      initialDate: startOfSource.add(const Duration(days: 7)),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Выберите любой день НЕДЕЛИ-НАЗНАЧЕНИЯ',
+    );
+    if (pickedTarget == null || !mounted) return;
+
+    final startOfTarget = pickedTarget.subtract(Duration(days: pickedTarget.weekday - 1));
+
+    if (startOfTarget == startOfSource) {
+      MessengerHelper.showError('Нельзя скопировать неделю саму на себя');
+      return;
+    }
 
     String fmt(DateTime d) => '${d.day}.${d.month}';
+    final endOfSource = startOfSource.add(const Duration(days: 6));
+    final endOfTarget = startOfTarget.add(const Duration(days: 6));
     final sourceRange = '${fmt(startOfSource)}–${fmt(endOfSource)}';
     final targetRange = '${fmt(startOfTarget)}–${fmt(endOfTarget)}';
 
@@ -312,7 +389,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     if (confirmed != true) return;
 
     setState(() => _isCloning = true);
-    final result = await _scheduleService.copyScheduleToNextWeek(_institutionId!, startOfSource);
+    final result = await _scheduleService.copyScheduleToWeek(_institutionId!, startOfSource, startOfTarget);
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
     } else {
@@ -586,184 +663,235 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                     child: Card(
                       elevation: 6,
                       shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.l),
-                        child: Form(
-                          key: _formKey,
-                          autovalidateMode: _autovalidateMode,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Добавление урока',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: colors.primary),
-                              ),
-                              const SizedBox(height: AppSpacing.l),
-                              _buildDatePicker(colors),
-                              const SizedBox(height: AppSpacing.m),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildTimePicker(
-                                      'Начало',
-                                      _startTime,
-                                      (t) => setState(() => _startTime = t),
-                                      colors,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.m),
-                                  Expanded(
-                                    child: _buildTimePicker(
-                                      'Конец',
-                                      _endTime,
-                                      (t) => setState(() => _endTime = t),
-                                      colors,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.m),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: const InputDecoration(
-                                        labelText: 'Предмет',
-                                        border: OutlineInputBorder(),
-                                        isDense: true,
+                      clipBehavior: Clip.antiAlias,
+                      child: Form(
+                        key: _formKey,
+                        autovalidateMode: _autovalidateMode,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              onTap: () => setState(() => _isFormExpanded = !_isFormExpanded),
+                              child: Padding(
+                                padding: const EdgeInsets.all(AppSpacing.l),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'Добавить урок',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: colors.primary,
                                       ),
-                                      initialValue: _selectedSubjectId,
-                                      isExpanded: true,
-                                      items:
-                                          _subjects
-                                              .map(
-                                                (s) => DropdownMenuItem(
-                                                  value: s.id,
-                                                  child: Text(s.name, overflow: TextOverflow.ellipsis),
-                                                ),
-                                              )
-                                              .toList(),
-                                      onChanged: (val) => setState(() => _selectedSubjectId = val),
-                                      validator: (val) => val == null ? 'Предмет?' : null,
                                     ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.m),
-                                  Expanded(
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: const InputDecoration(
-                                        labelText: 'Группа',
-                                        border: OutlineInputBorder(),
-                                        isDense: true,
-                                      ),
-                                      initialValue: _selectedGroupId,
-                                      isExpanded: true,
-                                      items:
-                                          _groups
-                                              .map(
-                                                (g) => DropdownMenuItem(
-                                                  value: g.id,
-                                                  child: Text(g.name, overflow: TextOverflow.ellipsis),
-                                                ),
-                                              )
-                                              .toList(),
-                                      onChanged: (val) {
-                                        setState(() => _selectedGroupId = val);
-                                        _scheduleConflictValidation();
-                                      },
-                                      validator: (val) => val == null ? 'Группа?' : null,
+                                    const Spacer(),
+                                    AnimatedRotation(
+                                      turns: _isFormExpanded ? 0.5 : 0.0,
+                                      duration: const Duration(milliseconds: 200),
+                                      child: Icon(Icons.expand_more, color: colors.primary),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.m),
-                              DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(
-                                  labelText: 'Преподаватель',
-                                  border: OutlineInputBorder(),
-                                  isDense: true,
+                                  ],
                                 ),
-                                initialValue: _selectedTeacherId,
-                                isExpanded: true,
-                                items:
-                                    _teachers
-                                        .map(
-                                          (t) => DropdownMenuItem(
-                                            value: t.id,
-                                            child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged: (val) {
-                                  setState(() => _selectedTeacherId = val);
-                                  _scheduleConflictValidation();
-                                },
-                                validator: (val) => val == null ? 'Преподаватель?' : null,
                               ),
-                              if (_isCheckingConflict || _currentConflictError != null)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 300),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          _isCheckingConflict
-                                              ? colors.surfaceContainerHighest.withValues(alpha: 0.5)
-                                              : colors.errorContainer.withValues(alpha: 0.8),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: _isCheckingConflict ? colors.outline : colors.error),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        _isCheckingConflict
-                                            ? const SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(strokeWidth: 2),
-                                            )
-                                            : Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
-                                        const SizedBox(width: AppSpacing.m),
-                                        Expanded(
-                                          child: Text(
-                                            _isCheckingConflict ? 'Проверка наложений...' : _currentConflictError!,
-                                            style: TextStyle(
-                                              color:
-                                                  _isCheckingConflict
-                                                      ? colors.onSurfaceVariant
-                                                      : colors.onErrorContainer,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w500,
+                            ),
+                            AnimatedSize(
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeInOut,
+                              child:
+                                  _isFormExpanded
+                                      ? Padding(
+                                        padding: const EdgeInsets.fromLTRB(AppSpacing.l, 0, AppSpacing.l, AppSpacing.l),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _buildDatePicker(colors),
+                                            const SizedBox(height: AppSpacing.m),
+                                            _buildSlotChips(colors),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: _buildTimePicker(
+                                                    'Начало',
+                                                    _startTime,
+                                                    (t) => setState(() => _startTime = t),
+                                                    colors,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: AppSpacing.m),
+                                                Expanded(
+                                                  child: _buildTimePicker(
+                                                    'Конец',
+                                                    _endTime,
+                                                    (t) => setState(() => _endTime = t),
+                                                    colors,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
+                                            const SizedBox(height: AppSpacing.m),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: DropdownButtonFormField<String>(
+                                                    decoration: const InputDecoration(
+                                                      labelText: 'Предмет',
+                                                      border: OutlineInputBorder(),
+                                                      isDense: true,
+                                                    ),
+                                                    initialValue: _selectedSubjectId,
+                                                    isExpanded: true,
+                                                    items:
+                                                        _subjects
+                                                            .map(
+                                                              (s) => DropdownMenuItem(
+                                                                value: s.id,
+                                                                child: Text(s.name, overflow: TextOverflow.ellipsis),
+                                                              ),
+                                                            )
+                                                            .toList(),
+                                                    onChanged: (val) => setState(() => _selectedSubjectId = val),
+                                                    validator: (val) => val == null ? 'Выберите предмет' : null,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: AppSpacing.m),
+                                                Expanded(
+                                                  child: DropdownButtonFormField<String>(
+                                                    decoration: const InputDecoration(
+                                                      labelText: 'Группа',
+                                                      border: OutlineInputBorder(),
+                                                      isDense: true,
+                                                    ),
+                                                    initialValue: _selectedGroupId,
+                                                    isExpanded: true,
+                                                    items:
+                                                        _groups
+                                                            .map(
+                                                              (g) => DropdownMenuItem(
+                                                                value: g.id,
+                                                                child: Text(g.name, overflow: TextOverflow.ellipsis),
+                                                              ),
+                                                            )
+                                                            .toList(),
+                                                    onChanged: (val) {
+                                                      setState(() => _selectedGroupId = val);
+                                                      _scheduleConflictValidation();
+                                                    },
+                                                    validator: (val) => val == null ? 'Выберите группу' : null,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: AppSpacing.m),
+                                            DropdownButtonFormField<String>(
+                                              decoration: const InputDecoration(
+                                                labelText: 'Преподаватель',
+                                                border: OutlineInputBorder(),
+                                                isDense: true,
+                                              ),
+                                              initialValue: _selectedTeacherId,
+                                              isExpanded: true,
+                                              items:
+                                                  _teachers
+                                                      .map(
+                                                        (t) => DropdownMenuItem(
+                                                          value: t.id,
+                                                          child: Text(
+                                                            '${t.surname} ${t.name}',
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                        ),
+                                                      )
+                                                      .toList(),
+                                              onChanged: (val) {
+                                                setState(() => _selectedTeacherId = val);
+                                                _scheduleConflictValidation();
+                                              },
+                                              validator: (val) => val == null ? 'Выберите преподавателя' : null,
+                                            ),
+                                            if (_isCheckingConflict || _currentConflictError != null)
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                                child: AnimatedContainer(
+                                                  duration: const Duration(milliseconds: 300),
+                                                  padding: const EdgeInsets.all(12),
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        _isCheckingConflict
+                                                            ? colors.surfaceContainerHighest.withValues(alpha: 0.5)
+                                                            : colors.errorContainer.withValues(alpha: 0.8),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    border: Border.all(
+                                                      color: _isCheckingConflict ? colors.outline : colors.error,
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      _isCheckingConflict
+                                                          ? const SizedBox(
+                                                            width: 20,
+                                                            height: 20,
+                                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                                          )
+                                                          : Icon(
+                                                            Icons.warning_amber_rounded,
+                                                            color: colors.onErrorContainer,
+                                                          ),
+                                                      const SizedBox(width: AppSpacing.m),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _isCheckingConflict
+                                                              ? 'Проверка наложений...'
+                                                              : _currentConflictError!,
+                                                          style: TextStyle(
+                                                            color:
+                                                                _isCheckingConflict
+                                                                    ? colors.onSurfaceVariant
+                                                                    : colors.onErrorContainer,
+                                                            fontSize: 13,
+                                                            fontWeight: FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            const SizedBox(height: AppSpacing.l),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(
+                                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  backgroundColor: colors.primary,
+                                                  foregroundColor: colors.onPrimary,
+                                                ),
+                                                onPressed:
+                                                    (_isAdding || _currentConflictError != null)
+                                                        ? null
+                                                        : _addScheduleEntry,
+                                                icon:
+                                                    _isAdding
+                                                        ? SizedBox(
+                                                          width: 20,
+                                                          height: 20,
+                                                          child: CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                            color: colors.onPrimary,
+                                                          ),
+                                                        )
+                                                        : const Icon(Icons.add),
+                                                label: const Text('Добавить в расписание'),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              const SizedBox(height: AppSpacing.l),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    backgroundColor: colors.primary,
-                                    foregroundColor: colors.onPrimary,
-                                  ),
-                                  onPressed: (_isAdding || _currentConflictError != null) ? null : _addScheduleEntry,
-                                  icon:
-                                      _isAdding
-                                          ? SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
-                                          )
-                                          : const Icon(Icons.add),
-                                  label: const Text('Добавить в расписание'),
-                                ),
-                              ),
-                            ],
-                          ),
+                                      )
+                                      : const SizedBox.shrink(),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -787,10 +915,10 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                               children: [
                                 const PeriodDropdown(),
                                 if (!_isCloning)
-                                  IconButton.filledTonal(
+                                  TextButton.icon(
                                     onPressed: _duplicateSchedule,
-                                    icon: const Icon(Icons.copy_all, size: 20),
-                                    tooltip: 'Копировать неделю',
+                                    icon: const Icon(Icons.copy_all, size: 18),
+                                    label: const Text('Копировать'),
                                   )
                                 else
                                   const SizedBox(
@@ -863,6 +991,20 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                     ),
                                   ),
                               ],
+                            ),
+                          ),
+                        if (_filterGroupId != null || _filterTeacherId != null)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed:
+                                  () => setState(() {
+                                    _filterGroupId = null;
+                                    _filterTeacherId = null;
+                                    _rebuildGrouped();
+                                  }),
+                              icon: const Icon(Icons.filter_alt_off, size: 16),
+                              label: const Text('Сбросить фильтры'),
                             ),
                           ),
                       ],
@@ -1086,7 +1228,6 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
       groupId: _groupId,
       teacherId: _teacherId,
       date: _date,
-      weekday: _date.weekday,
       startTime: startTime,
       endTime: endTime,
     );

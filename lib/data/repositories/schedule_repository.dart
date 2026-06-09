@@ -65,7 +65,6 @@ class ScheduleRepository {
     required String groupId,
     required String teacherId,
     required DateTime date,
-    required int weekday,
     required String startTime,
     required String endTime,
   }) => _remote.addScheduleEntry(
@@ -74,7 +73,6 @@ class ScheduleRepository {
     groupId: groupId,
     teacherId: teacherId,
     date: date,
-    weekday: weekday,
     startTime: startTime,
     endTime: endTime,
   );
@@ -99,10 +97,11 @@ class ScheduleRepository {
     excludeId: excludeId,
   );
 
-  Future<AppResult<({int copied, int skipped})>> copyScheduleToNextWeek(
+  Future<AppResult<({int copied, int skipped})>> copyScheduleToWeek(
     String institutionId,
-    DateTime startOfCurrentWeek,
-  ) => _remote.copyScheduleToNextWeek(institutionId, startOfCurrentWeek);
+    DateTime sourceWeekStart,
+    DateTime targetWeekStart,
+  ) => _remote.copyScheduleToWeek(institutionId, sourceWeekStart, targetWeekStart);
 
   Future<AppResult<void>> updateScheduleEntry({
     required String id,
@@ -110,7 +109,6 @@ class ScheduleRepository {
     required String groupId,
     required String teacherId,
     required DateTime date,
-    required int weekday,
     required String startTime,
     required String endTime,
   }) => _remote.updateScheduleEntry(
@@ -119,7 +117,6 @@ class ScheduleRepository {
     groupId: groupId,
     teacherId: teacherId,
     date: date,
-    weekday: weekday,
     startTime: startTime,
     endTime: endTime,
   );

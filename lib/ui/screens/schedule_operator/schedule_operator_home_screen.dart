@@ -1,8 +1,10 @@
 import 'package:edu_track/data/repositories/schedule_repository.dart';
+import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/screens/schedule_operator/schedule_schedule_operator_screen.dart';
+import 'package:edu_track/ui/screens/schedule_operator/time_grids_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/app_drawer.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
@@ -23,9 +25,11 @@ class ScheduleOperatorHomeScreen extends StatefulWidget {
 
 class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen> with DataLoadingMixin {
   int _selectedIndex = 0;
-  final List<String> _titles = ['Главная', 'Расписание'];
+  final List<String> _titles = ['Главная', 'Расписание', 'Сетки времени'];
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   List<Schedule> _schedules = [];
+  Map<String, List<Schedule>> _groupedSchedule = {};
+  AcademicPeriod? _lastPeriod;
 
   @override
   void initState() {
@@ -33,10 +37,49 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
     _loadData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
+    if (period != _lastPeriod) {
+      _lastPeriod = period;
+      _loadData();
+    }
+  }
+
   Future<void> _loadData() async {
-    final institutionId = Provider.of<UserProvider>(context, listen: false).institutionId;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final institutionId = userProvider.institutionId;
     if (institutionId == null) return;
-    await loadAsync(_scheduleService.getScheduleForInstitution(institutionId), onSuccess: (data) => _schedules = data);
+    final period = userProvider.selectedPeriod;
+    await loadAsync(
+      _scheduleService.getScheduleForInstitution(institutionId, startDate: period?.startDate, endDate: period?.endDate),
+      onSuccess: (data) {
+        _schedules = data;
+        _rebuildGrouped();
+      },
+    );
+  }
+
+  void _rebuildGrouped() {
+    final sorted = List<Schedule>.from(_schedules)..sort((a, b) {
+      if (a.date == null && b.date != null) return -1;
+      if (a.date != null && b.date == null) return 1;
+      if (a.date != null && b.date != null) {
+        final d = a.date!.compareTo(b.date!);
+        if (d != 0) return d;
+      }
+      final w = a.weekday.compareTo(b.weekday);
+      if (w != 0) return w;
+      return a.startTime.compareTo(b.startTime);
+    });
+    final grouped = <String, List<Schedule>>{};
+    for (final s in sorted) {
+      final header =
+          s.date != null ? '${_getWeekdayName(s.weekday)}, ${formatDate(s.date!)}' : _getWeekdayName(s.weekday);
+      grouped.putIfAbsent(header, () => []).add(s);
+    }
+    _groupedSchedule = grouped;
   }
 
   void _refreshDashboard() {
@@ -61,6 +104,9 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
         break;
       case 1:
         bodyContent = const ScheduleScheduleOperatorScreen();
+        break;
+      case 2:
+        bodyContent = const TimeGridsScreen();
         break;
       default:
         bodyContent = _buildPlaceholder(_titles[_selectedIndex], colors);
@@ -92,6 +138,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
         items: const [
           AppDrawerItem(icon: Icons.dashboard, title: 'Главная', tabIndex: 0),
           AppDrawerItem(icon: Icons.edit_calendar, title: 'Редактор расписания', tabIndex: 1),
+          AppDrawerItem(icon: Icons.schedule, title: 'Сетки времени', tabIndex: 2),
         ],
       ),
       body: Container(
@@ -110,23 +157,6 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   }
 
   Widget _buildDashboard(ColorScheme colors) {
-    final sorted = List<Schedule>.from(_schedules)..sort((a, b) {
-      if (a.date == null && b.date != null) return -1;
-      if (a.date != null && b.date == null) return 1;
-      if (a.date != null && b.date != null) {
-        final d = a.date!.compareTo(b.date!);
-        if (d != 0) return d;
-      }
-      final w = a.weekday.compareTo(b.weekday);
-      if (w != 0) return w;
-      return a.startTime.compareTo(b.startTime);
-    });
-    final grouped = <String, List<Schedule>>{};
-    for (final s in sorted) {
-      final header =
-          s.date != null ? '${_getWeekdayName(s.weekday)}, ${formatDate(s.date!)}' : _getWeekdayName(s.weekday);
-      grouped.putIfAbsent(header, () => []).add(s);
-    }
     return RefreshIndicator(
       onRefresh: () async {
         _refreshDashboard();
@@ -181,7 +211,9 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
                 ),
               )
             else
-              Column(children: grouped.entries.map((e) => _buildDayScheduleCard(e.key, e.value, colors)).toList()),
+              Column(
+                children: _groupedSchedule.entries.map((e) => _buildDayScheduleCard(e.key, e.value, colors)).toList(),
+              ),
           ],
         ),
       ),
