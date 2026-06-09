@@ -4,6 +4,7 @@ import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/data/services/teacher_service.dart';
+import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
@@ -59,6 +60,9 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   String? _filterGroupId;
   String? _filterTeacherId;
 
+  Map<String, List<Schedule>> _groupedSchedule = {};
+  AcademicPeriod? _lastPeriod;
+
   static const List<String> _weekdays = [
     'Понедельник',
     'Вторник',
@@ -92,6 +96,39 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   void dispose() {
     _conflictDebounceTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
+    if (period != _lastPeriod) {
+      _lastPeriod = period;
+      _rebuildGrouped();
+    }
+  }
+
+  void _rebuildGrouped() {
+    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
+    var filtered =
+        period == null
+            ? _schedules
+            : _schedules
+                .where((s) => s.date != null && !s.date!.isBefore(period.startDate) && !s.date!.isAfter(period.endDate))
+                .toList();
+    if (_filterGroupId != null) {
+      filtered = filtered.where((s) => s.groupId == _filterGroupId).toList();
+    }
+    if (_filterTeacherId != null) {
+      filtered = filtered.where((s) => s.teacherId == _filterTeacherId).toList();
+    }
+    final grouped = <String, List<Schedule>>{};
+    for (final s in filtered) {
+      final header =
+          s.date != null ? '${_getWeekdayName(s.weekday)}, ${formatDate(s.date!)}' : _getWeekdayName(s.weekday);
+      grouped.putIfAbsent(header, () => []).add(s);
+    }
+    _groupedSchedule = grouped;
   }
 
   void _loadSubjects() async {
@@ -128,7 +165,19 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     if (_institutionId == null) return;
     await loadAsync(
       _scheduleService.getScheduleForInstitution(_institutionId!),
-      onSuccess: (data) => _schedules = data,
+      onSuccess: (data) {
+        data.sort((a, b) {
+          if (a.date != null && b.date != null) {
+            final d = a.date!.compareTo(b.date!);
+            if (d != 0) return d;
+          }
+          if (a.date == null) return 1;
+          if (b.date == null) return -1;
+          return a.startTime.compareTo(b.startTime);
+        });
+        _schedules = data;
+        _rebuildGrouped();
+      },
     );
   }
 
@@ -422,422 +471,429 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         ),
       );
 
-  Widget _buildScheduleList(List<Schedule> source, ColorScheme colors, ThemeData theme) {
-    final schedules = List<Schedule>.from(source)..sort((a, b) {
-      if (a.date != null && b.date != null) {
-        final d = a.date!.compareTo(b.date!);
-        if (d != 0) return d;
-      }
-      if (a.date == null) return 1;
-      if (b.date == null) return -1;
-      return a.startTime.compareTo(b.startTime);
-    });
-    final grouped = <String, List<Schedule>>{};
-    for (final s in schedules) {
-      final header =
-          s.date != null ? '${_getWeekdayName(s.weekday)}, ${formatDate(s.date!)}' : _getWeekdayName(s.weekday);
-      grouped.putIfAbsent(header, () => []).add(s);
-    }
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: grouped.length,
-      itemBuilder: (context, index) {
-        final header = grouped.keys.elementAt(index);
-        final items = grouped[header]!;
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          color: colors.surface,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+  SliverPadding _buildScheduleSliver(ColorScheme colors, ThemeData theme) {
+    final entries = _groupedSchedule.entries.toList();
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
+      sliver: SliverList.builder(
+        itemCount: entries.length,
+        itemBuilder: (context, index) {
+          final header = entries[index].key;
+          final items = entries[index].value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Card(
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              color: colors.surface,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.calendar_today, size: 18, color: colors.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      header,
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: colors.primary),
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today, size: 18, color: colors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          header,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columnSpacing: 15,
+                        horizontalMargin: 5,
+                        headingRowHeight: 30,
+                        dataRowMinHeight: 40,
+                        columns: const [
+                          DataColumn(label: Text('Время')),
+                          DataColumn(label: Text('Группа')),
+                          DataColumn(label: Text('Предмет')),
+                          DataColumn(label: Text('Препод.')),
+                          DataColumn(label: Text('')),
+                        ],
+                        rows:
+                            items.map((s) {
+                              final subjectName = s.subject?.name ?? '—';
+                              final groupName = s.group?.name ?? '—';
+                              final teacherName = s.teacherName;
+                              final timeRange = '${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)}';
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(timeRange, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  ),
+                                  DataCell(Text(groupName)),
+                                  DataCell(Text(subjectName)),
+                                  DataCell(
+                                    SizedBox(width: 100, child: Text(teacherName, overflow: TextOverflow.ellipsis)),
+                                  ),
+                                  DataCell(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(Icons.edit_outlined, color: colors.primary, size: 20),
+                                          onPressed: () => _showEditDialog(s),
+                                          tooltip: 'Редактировать',
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.delete, color: colors.error, size: 20),
+                                          onPressed: () => _deleteScheduleEntry(s.id),
+                                          tooltip: 'Удалить',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                      ),
                     ),
                   ],
                 ),
-                const Divider(),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columnSpacing: 15,
-                    horizontalMargin: 5,
-                    headingRowHeight: 30,
-                    dataRowMinHeight: 40,
-                    columns: const [
-                      DataColumn(label: Text('Время')),
-                      DataColumn(label: Text('Группа')),
-                      DataColumn(label: Text('Предмет')),
-                      DataColumn(label: Text('Препод.')),
-                      DataColumn(label: Text('')),
-                    ],
-                    rows:
-                        items.map((s) {
-                          final subjectName = s.subject?.name ?? '—';
-                          final groupName = s.group?.name ?? '—';
-                          final teacherName = s.teacherName;
-                          final timeRange = '${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)}';
-                          return DataRow(
-                            cells: [
-                              DataCell(
-                                Text(timeRange, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              ),
-                              DataCell(Text(groupName)),
-                              DataCell(Text(subjectName)),
-                              DataCell(SizedBox(width: 100, child: Text(teacherName, overflow: TextOverflow.ellipsis))),
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.edit_outlined, color: colors.primary, size: 20),
-                                      onPressed: () => _showEditDialog(s),
-                                      tooltip: 'Редактировать',
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.delete, color: colors.error, size: 20),
-                                      onPressed: () => _deleteScheduleEntry(s.id),
-                                      tooltip: 'Удалить',
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    Provider.of<UserProvider>(context);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final selectedPeriod = Provider.of<UserProvider>(context).selectedPeriod;
-    var displayedSchedules =
-        selectedPeriod == null
-            ? _schedules
-            : _schedules
-                .where(
-                  (s) =>
-                      s.date != null &&
-                      !s.date!.isBefore(selectedPeriod.startDate) &&
-                      !s.date!.isAfter(selectedPeriod.endDate),
-                )
-                .toList();
-    if (_filterGroupId != null) {
-      displayedSchedules = displayedSchedules.where((s) => s.groupId == _filterGroupId).toList();
-    }
-    if (_filterTeacherId != null) {
-      displayedSchedules = displayedSchedules.where((s) => s.teacherId == _filterTeacherId).toList();
-    }
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.l),
-            child: Column(
-              children: [
-                Card(
-                  elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.l),
-                    child: Form(
-                      key: _formKey,
-                      autovalidateMode: _autovalidateMode,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Добавление урока',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: colors.primary),
-                          ),
-                          const SizedBox(height: AppSpacing.l),
-                          _buildDatePicker(colors),
-                          const SizedBox(height: AppSpacing.m),
-                          Row(
+          child: RefreshIndicator(
+            onRefresh: _loadSchedule,
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.l, AppSpacing.l, AppSpacing.l, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: Card(
+                      elevation: 6,
+                      shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.l),
+                        child: Form(
+                          key: _formKey,
+                          autovalidateMode: _autovalidateMode,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: _buildTimePicker(
-                                  'Начало',
-                                  _startTime,
-                                  (t) => setState(() => _startTime = t),
-                                  colors,
-                                ),
+                              Text(
+                                'Добавление урока',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: colors.primary),
                               ),
-                              const SizedBox(width: AppSpacing.m),
-                              Expanded(
-                                child: _buildTimePicker('Конец', _endTime, (t) => setState(() => _endTime = t), colors),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.m),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Предмет',
-                                    border: OutlineInputBorder(),
-                                    isDense: true,
-                                  ),
-                                  initialValue: _selectedSubjectId,
-                                  isExpanded: true,
-                                  items:
-                                      _subjects
-                                          .map(
-                                            (s) => DropdownMenuItem(
-                                              value: s.id,
-                                              child: Text(s.name, overflow: TextOverflow.ellipsis),
-                                            ),
-                                          )
-                                          .toList(),
-                                  onChanged: (val) => setState(() => _selectedSubjectId = val),
-                                  validator: (val) => val == null ? 'Предмет?' : null,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.m),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  decoration: const InputDecoration(
-                                    labelText: 'Группа',
-                                    border: OutlineInputBorder(),
-                                    isDense: true,
-                                  ),
-                                  initialValue: _selectedGroupId,
-                                  isExpanded: true,
-                                  items:
-                                      _groups
-                                          .map(
-                                            (g) => DropdownMenuItem(
-                                              value: g.id,
-                                              child: Text(g.name, overflow: TextOverflow.ellipsis),
-                                            ),
-                                          )
-                                          .toList(),
-                                  onChanged: (val) {
-                                    setState(() => _selectedGroupId = val);
-                                    _scheduleConflictValidation();
-                                  },
-                                  validator: (val) => val == null ? 'Группа?' : null,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.m),
-                          DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Преподаватель',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            initialValue: _selectedTeacherId,
-                            isExpanded: true,
-                            items:
-                                _teachers
-                                    .map(
-                                      (t) => DropdownMenuItem(
-                                        value: t.id,
-                                        child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
-                                      ),
-                                    )
-                                    .toList(),
-                            onChanged: (val) {
-                              setState(() => _selectedTeacherId = val);
-                              _scheduleConflictValidation();
-                            },
-                            validator: (val) => val == null ? 'Преподаватель?' : null,
-                          ),
-                          if (_isCheckingConflict || _currentConflictError != null)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color:
-                                      _isCheckingConflict
-                                          ? colors.surfaceContainerHighest.withValues(alpha: 0.5)
-                                          : colors.errorContainer.withValues(alpha: 0.8),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: _isCheckingConflict ? colors.outline : colors.error),
-                                ),
-                                child: Row(
-                                  children: [
-                                    _isCheckingConflict
-                                        ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                        : Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
-                                    const SizedBox(width: AppSpacing.m),
-                                    Expanded(
-                                      child: Text(
-                                        _isCheckingConflict ? 'Проверка наложений...' : _currentConflictError!,
-                                        style: TextStyle(
-                                          color:
-                                              _isCheckingConflict ? colors.onSurfaceVariant : colors.onErrorContainer,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
+                              const SizedBox(height: AppSpacing.l),
+                              _buildDatePicker(colors),
+                              const SizedBox(height: AppSpacing.m),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildTimePicker(
+                                      'Начало',
+                                      _startTime,
+                                      (t) => setState(() => _startTime = t),
+                                      colors,
                                     ),
-                                  ],
+                                  ),
+                                  const SizedBox(width: AppSpacing.m),
+                                  Expanded(
+                                    child: _buildTimePicker(
+                                      'Конец',
+                                      _endTime,
+                                      (t) => setState(() => _endTime = t),
+                                      colors,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.m),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DropdownButtonFormField<String>(
+                                      decoration: const InputDecoration(
+                                        labelText: 'Предмет',
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                      ),
+                                      initialValue: _selectedSubjectId,
+                                      isExpanded: true,
+                                      items:
+                                          _subjects
+                                              .map(
+                                                (s) => DropdownMenuItem(
+                                                  value: s.id,
+                                                  child: Text(s.name, overflow: TextOverflow.ellipsis),
+                                                ),
+                                              )
+                                              .toList(),
+                                      onChanged: (val) => setState(() => _selectedSubjectId = val),
+                                      validator: (val) => val == null ? 'Предмет?' : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.m),
+                                  Expanded(
+                                    child: DropdownButtonFormField<String>(
+                                      decoration: const InputDecoration(
+                                        labelText: 'Группа',
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                      ),
+                                      initialValue: _selectedGroupId,
+                                      isExpanded: true,
+                                      items:
+                                          _groups
+                                              .map(
+                                                (g) => DropdownMenuItem(
+                                                  value: g.id,
+                                                  child: Text(g.name, overflow: TextOverflow.ellipsis),
+                                                ),
+                                              )
+                                              .toList(),
+                                      onChanged: (val) {
+                                        setState(() => _selectedGroupId = val);
+                                        _scheduleConflictValidation();
+                                      },
+                                      validator: (val) => val == null ? 'Группа?' : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.m),
+                              DropdownButtonFormField<String>(
+                                decoration: const InputDecoration(
+                                  labelText: 'Преподаватель',
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                initialValue: _selectedTeacherId,
+                                isExpanded: true,
+                                items:
+                                    _teachers
+                                        .map(
+                                          (t) => DropdownMenuItem(
+                                            value: t.id,
+                                            child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
+                                          ),
+                                        )
+                                        .toList(),
+                                onChanged: (val) {
+                                  setState(() => _selectedTeacherId = val);
+                                  _scheduleConflictValidation();
+                                },
+                                validator: (val) => val == null ? 'Преподаватель?' : null,
+                              ),
+                              if (_isCheckingConflict || _currentConflictError != null)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          _isCheckingConflict
+                                              ? colors.surfaceContainerHighest.withValues(alpha: 0.5)
+                                              : colors.errorContainer.withValues(alpha: 0.8),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: _isCheckingConflict ? colors.outline : colors.error),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        _isCheckingConflict
+                                            ? const SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                            )
+                                            : Icon(Icons.warning_amber_rounded, color: colors.onErrorContainer),
+                                        const SizedBox(width: AppSpacing.m),
+                                        Expanded(
+                                          child: Text(
+                                            _isCheckingConflict ? 'Проверка наложений...' : _currentConflictError!,
+                                            style: TextStyle(
+                                              color:
+                                                  _isCheckingConflict
+                                                      ? colors.onSurfaceVariant
+                                                      : colors.onErrorContainer,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              const SizedBox(height: AppSpacing.l),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    backgroundColor: colors.primary,
+                                    foregroundColor: colors.onPrimary,
+                                  ),
+                                  onPressed: (_isAdding || _currentConflictError != null) ? null : _addScheduleEntry,
+                                  icon:
+                                      _isAdding
+                                          ? SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
+                                          )
+                                          : const Icon(Icons.add),
+                                  label: const Text('Добавить в расписание'),
                                 ),
                               ),
-                            ),
-                          const SizedBox(height: AppSpacing.l),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                backgroundColor: colors.primary,
-                                foregroundColor: colors.onPrimary,
-                              ),
-                              onPressed: (_isAdding || _currentConflictError != null) ? null : _addScheduleEntry,
-                              icon:
-                                  _isAdding
-                                      ? SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
-                                      )
-                                      : const Icon(Icons.add),
-                              label: const Text('Добавить в расписание'),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.l),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Расписание занятий',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.l, AppSpacing.l, AppSpacing.l, 8),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const PeriodDropdown(),
-                        if (!_isCloning)
-                          IconButton.filledTonal(
-                            onPressed: _duplicateSchedule,
-                            icon: const Icon(Icons.copy_all, size: 20),
-                            tooltip: 'Копировать неделю',
-                          )
-                        else
-                          const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (_groups.isNotEmpty || _teachers.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        if (_groups.isNotEmpty)
-                          Expanded(
-                            child: DropdownButtonFormField<String?>(
-                              decoration: const InputDecoration(
-                                labelText: 'Группа',
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              ),
-                              initialValue: _filterGroupId,
-                              isExpanded: true,
-                              items: [
-                                const DropdownMenuItem(child: Text('Все группы')),
-                                ..._groups.map(
-                                  (g) => DropdownMenuItem(
-                                    value: g.id,
-                                    child: Text(g.name, overflow: TextOverflow.ellipsis),
-                                  ),
-                                ),
-                              ],
-                              onChanged: (val) => setState(() => _filterGroupId = val),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Расписание занятий',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.primary),
                             ),
-                          ),
-                        if (_groups.isNotEmpty && _teachers.isNotEmpty) const SizedBox(width: AppSpacing.m),
-                        if (_teachers.isNotEmpty)
-                          Expanded(
-                            child: DropdownButtonFormField<String?>(
-                              decoration: const InputDecoration(
-                                labelText: 'Преподаватель',
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              ),
-                              initialValue: _filterTeacherId,
-                              isExpanded: true,
-                              items: [
-                                const DropdownMenuItem(child: Text('Все преп.')),
-                                ..._teachers.map(
-                                  (t) => DropdownMenuItem(
-                                    value: t.id,
-                                    child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
-                                  ),
-                                ),
-                              ],
-                              onChanged: (val) => setState(() => _filterTeacherId = val),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _loadSchedule,
-                    child:
-                        isLoading
-                            ? _buildScheduleListSkeleton()
-                            : displayedSchedules.isEmpty
-                            ? ListView(
-                              physics: const AlwaysScrollableScrollPhysics(),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                    child: Text(
-                                      _schedules.isEmpty
-                                          ? 'Расписание пустое'
-                                          : (_filterGroupId != null || _filterTeacherId != null)
-                                          ? 'Нет занятий по выбранным фильтрам'
-                                          : 'Нет занятий в выбранном периоде',
-                                      style: TextStyle(color: colors.onSurfaceVariant),
+                                const PeriodDropdown(),
+                                if (!_isCloning)
+                                  IconButton.filledTonal(
+                                    onPressed: _duplicateSchedule,
+                                    icon: const Icon(Icons.copy_all, size: 20),
+                                    tooltip: 'Копировать неделю',
+                                  )
+                                else
+                                  const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        if (_groups.isNotEmpty || _teachers.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Row(
+                              children: [
+                                if (_groups.isNotEmpty)
+                                  Expanded(
+                                    child: DropdownButtonFormField<String?>(
+                                      decoration: const InputDecoration(
+                                        labelText: 'Группа',
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      ),
+                                      initialValue: _filterGroupId,
+                                      isExpanded: true,
+                                      items: [
+                                        const DropdownMenuItem(child: Text('Все группы')),
+                                        ..._groups.map(
+                                          (g) => DropdownMenuItem(
+                                            value: g.id,
+                                            child: Text(g.name, overflow: TextOverflow.ellipsis),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged:
+                                          (val) => setState(() {
+                                            _filterGroupId = val;
+                                            _rebuildGrouped();
+                                          }),
                                     ),
                                   ),
-                                ),
+                                if (_groups.isNotEmpty && _teachers.isNotEmpty) const SizedBox(width: AppSpacing.m),
+                                if (_teachers.isNotEmpty)
+                                  Expanded(
+                                    child: DropdownButtonFormField<String?>(
+                                      decoration: const InputDecoration(
+                                        labelText: 'Преподаватель',
+                                        border: OutlineInputBorder(),
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      ),
+                                      initialValue: _filterTeacherId,
+                                      isExpanded: true,
+                                      items: [
+                                        const DropdownMenuItem(child: Text('Все преп.')),
+                                        ..._teachers.map(
+                                          (t) => DropdownMenuItem(
+                                            value: t.id,
+                                            child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged:
+                                          (val) => setState(() {
+                                            _filterTeacherId = val;
+                                            _rebuildGrouped();
+                                          }),
+                                    ),
+                                  ),
                               ],
-                            )
-                            : _buildScheduleList(displayedSchedules, colors, theme),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
+                if (isLoading)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
+                    sliver: SliverToBoxAdapter(child: _buildScheduleListSkeleton()),
+                  )
+                else if (_groupedSchedule.isEmpty)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 300,
+                      child: Center(
+                        child: Text(
+                          _schedules.isEmpty
+                              ? 'Расписание пустое'
+                              : (_filterGroupId != null || _filterTeacherId != null)
+                              ? 'Нет занятий по выбранным фильтрам'
+                              : 'Нет занятий в выбранном периоде',
+                          style: TextStyle(color: colors.onSurfaceVariant),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  _buildScheduleSliver(colors, theme),
+                const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.l)),
               ],
             ),
           ),
@@ -847,49 +903,48 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   }
 
   Widget _buildScheduleListSkeleton() {
-    return ListView.builder(
-      itemCount: 3,
-      itemBuilder:
-          (context, index) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Skeleton(height: 18, width: 18, borderRadius: 4),
-                      SizedBox(width: 8),
-                      Skeleton(height: 16, width: 180),
-                    ],
-                  ),
-                  const Divider(),
-                  ...List.generate(
-                    3,
-                    (_) => const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          Skeleton(height: 13, width: 65),
-                          SizedBox(width: 15),
-                          Skeleton(height: 13, width: 55),
-                          SizedBox(width: 15),
-                          Skeleton(height: 13, width: 90),
-                          SizedBox(width: 15),
-                          Skeleton(height: 13, width: 110),
-                        ],
-                      ),
+    final surface = Theme.of(context).colorScheme.surface;
+    return Column(
+      children: List.generate(
+        3,
+        (index) => Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(12)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Skeleton(height: 18, width: 18, borderRadius: 4),
+                    SizedBox(width: 8),
+                    Skeleton(height: 16, width: 180),
+                  ],
+                ),
+                const Divider(),
+                ...List.generate(
+                  3,
+                  (_) => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        Skeleton(height: 13, width: 65),
+                        SizedBox(width: 15),
+                        Skeleton(height: 13, width: 55),
+                        SizedBox(width: 15),
+                        Skeleton(height: 13, width: 90),
+                        SizedBox(width: 15),
+                        Skeleton(height: 13, width: 110),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
     );
   }
 }

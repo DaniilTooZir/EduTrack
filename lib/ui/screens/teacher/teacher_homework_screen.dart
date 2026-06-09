@@ -454,149 +454,6 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Текущие задания',
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colors.primary),
-                          ),
-                          TextButton.icon(
-                            onPressed: () {
-                              if (widget.onTabRequest != null) {
-                                widget.onTabRequest!(5);
-                              }
-                            },
-                            icon: const Icon(Icons.check_box_outlined),
-                            label: const Text('Проверка'),
-                            style: TextButton.styleFrom(foregroundColor: colors.primary),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.m),
-                      // Поиск
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Поиск по заголовку...',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon:
-                              _searchController.text.isNotEmpty
-                                  ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
-                                  : null,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Фильтр по группе + сортировка
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String?>(
-                              initialValue: _filterGroupId,
-                              decoration: InputDecoration(
-                                labelText: 'Группа',
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              ),
-                              items: [
-                                const DropdownMenuItem(child: Text('Все группы')),
-                                ..._groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
-                              ],
-                              onChanged: (val) => setState(() => _filterGroupId = val),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          DropdownButtonHideUnderline(
-                            child: DropdownButton<_HwSort>(
-                              value: _sortOrder,
-                              icon: const Icon(Icons.sort),
-                              borderRadius: BorderRadius.circular(12),
-                              items: const [
-                                DropdownMenuItem(value: _HwSort.dueDateAsc, child: Text('Срок ↑')),
-                                DropdownMenuItem(value: _HwSort.dueDateDesc, child: Text('Срок ↓')),
-                                DropdownMenuItem(value: _HwSort.titleAsc, child: Text('А–Я')),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) setState(() => _sortOrder = val);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.m),
-                      if (_homeworks.isEmpty)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Text('Нет активных заданий', style: TextStyle(color: colors.onSurfaceVariant)),
-                          ),
-                        )
-                      else if (_filteredHomeworks.isEmpty)
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Text('Ничего не найдено', style: TextStyle(color: colors.onSurfaceVariant)),
-                          ),
-                        )
-                      else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _filteredHomeworks.length,
-                          itemBuilder: (ctx, index) {
-                            final hw = _filteredHomeworks[index];
-                            return Card(
-                              elevation: 3,
-                              margin: const EdgeInsets.only(bottom: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              color: colors.surface,
-                              child: ListTile(
-                                title: Text(
-                                  hw.title,
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Группа: ${hw.group?.name ?? "—"}',
-                                      style: TextStyle(color: colors.onSurfaceVariant),
-                                    ),
-                                    if (hw.dueDate != null)
-                                      Text(
-                                        'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
-                                        style: TextStyle(
-                                          color:
-                                              hw.dueDate!.isBefore(DateTime.now())
-                                                  ? colors.error
-                                                  : colors.onSurfaceVariant,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.edit, color: colors.primary),
-                                      tooltip: 'Изменить',
-                                      onPressed: () => _showEditHomeworkDialog(hw),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.delete_outline, color: colors.error),
-                                      tooltip: 'Удалить',
-                                      onPressed: () => _confirmDeleteHomework(hw),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      const Divider(height: 40, thickness: 1.5),
                       Text(
                         'Создать новое задание',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.primary),
@@ -748,6 +605,149 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                           ),
                         ),
                       ),
+                      const Divider(height: 40, thickness: 1.5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Текущие задания',
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: colors.primary),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              if (widget.onTabRequest != null) {
+                                widget.onTabRequest!(5);
+                              }
+                            },
+                            icon: const Icon(Icons.check_box_outlined),
+                            label: const Text('Проверка'),
+                            style: TextButton.styleFrom(foregroundColor: colors.primary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.m),
+                      // Поиск
+                      TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Поиск по заголовку...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon:
+                              _searchController.text.isNotEmpty
+                                  ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
+                                  : null,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Фильтр по группе + сортировка
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String?>(
+                              initialValue: _filterGroupId,
+                              decoration: InputDecoration(
+                                labelText: 'Группа',
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
+                              items: [
+                                const DropdownMenuItem(child: Text('Все группы')),
+                                ..._groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
+                              ],
+                              onChanged: (val) => setState(() => _filterGroupId = val),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          DropdownButtonHideUnderline(
+                            child: DropdownButton<_HwSort>(
+                              value: _sortOrder,
+                              icon: const Icon(Icons.sort),
+                              borderRadius: BorderRadius.circular(12),
+                              items: const [
+                                DropdownMenuItem(value: _HwSort.dueDateAsc, child: Text('Срок ↑')),
+                                DropdownMenuItem(value: _HwSort.dueDateDesc, child: Text('Срок ↓')),
+                                DropdownMenuItem(value: _HwSort.titleAsc, child: Text('А–Я')),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) setState(() => _sortOrder = val);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.m),
+                      if (_homeworks.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text('Нет активных заданий', style: TextStyle(color: colors.onSurfaceVariant)),
+                          ),
+                        )
+                      else if (_filteredHomeworks.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text('Ничего не найдено', style: TextStyle(color: colors.onSurfaceVariant)),
+                          ),
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _filteredHomeworks.length,
+                          itemBuilder: (ctx, index) {
+                            final hw = _filteredHomeworks[index];
+                            return Card(
+                              elevation: 3,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              color: colors.surface,
+                              child: ListTile(
+                                title: Text(
+                                  hw.title,
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Группа: ${hw.group?.name ?? "—"}',
+                                      style: TextStyle(color: colors.onSurfaceVariant),
+                                    ),
+                                    if (hw.dueDate != null)
+                                      Text(
+                                        'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
+                                        style: TextStyle(
+                                          color:
+                                              hw.dueDate!.isBefore(DateTime.now())
+                                                  ? colors.error
+                                                  : colors.onSurfaceVariant,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit, color: colors.primary),
+                                      tooltip: 'Изменить',
+                                      onPressed: () => _showEditHomeworkDialog(hw),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete_outline, color: colors.error),
+                                      tooltip: 'Удалить',
+                                      onPressed: () => _confirmDeleteHomework(hw),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                     ],
                   ),
                 ),
