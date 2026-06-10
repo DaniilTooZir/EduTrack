@@ -59,6 +59,18 @@ class StudentService {
     }
   }
 
+  Future<AppResult<Map<String, dynamic>?>> getCuratorByGroupId(String groupId) async {
+    try {
+      final response =
+          await _client.from('groups').select('teacher:teachers(id, name, surname)').eq('id', groupId).single();
+      return AppResult.success(response['teacher'] as Map<String, dynamic>?);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке куратора: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось загрузить данные куратора.');
+    }
+  }
+
   Future<AppResult<void>> setHeadman(String groupId, String newHeadmanId) async {
     try {
       await _client.from('students').update({'isheadman': false}).eq('group_id', groupId);

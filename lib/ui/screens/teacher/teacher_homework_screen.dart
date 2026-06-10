@@ -1,3 +1,4 @@
+import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
@@ -6,7 +7,9 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:file_picker/file_picker.dart';
@@ -35,8 +38,12 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   List<Homework> _homeworks = [];
   List<Subject> _subjects = [];
   List<Group> _groups = [];
+  Map<String, List<Group>> _subjectGroups = {};
   String? _selectedSubjectId;
   String? _selectedGroupId;
+
+  List<Group> get _groupsForSelectedSubject =>
+      _selectedSubjectId != null ? (_subjectGroups[_selectedSubjectId] ?? []) : _groups;
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime? _dueDate;
@@ -118,12 +125,34 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
       MessengerHelper.showError(homeworksResult.errorMessage);
       return;
     }
+    List<dynamic> schedulePairs = [];
+    try {
+      schedulePairs = await SupabaseConnection.client
+          .from('schedule')
+          .select('group_id, subject_id')
+          .eq('teacher_id', userId);
+    } catch (_) {}
+
+    if (!mounted) return;
+    final allGroups = groupsResult.data;
+    final subjectGroupIds = <String, Set<String>>{};
+    for (final item in schedulePairs) {
+      final sId = item['subject_id']?.toString();
+      final gId = item['group_id']?.toString();
+      if (sId != null && gId != null) subjectGroupIds.putIfAbsent(sId, () => {}).add(gId);
+    }
+    final subjectGroups = {
+      for (final e in subjectGroupIds.entries) e.key: allGroups.where((g) => e.value.contains(g.id)).toList(),
+    };
+
     setState(() {
       _subjects = subjectsResult.data;
-      _groups = groupsResult.data;
+      _groups = allGroups;
+      _subjectGroups = subjectGroups;
       _homeworks = homeworksResult.data;
       if (_selectedSubjectId == null && _subjects.isNotEmpty) _selectedSubjectId = _subjects.first.id;
-      if (_selectedGroupId == null && _groups.isNotEmpty) _selectedGroupId = _groups.first.id;
+      final validGroups = _selectedSubjectId != null ? (subjectGroups[_selectedSubjectId] ?? []) : allGroups;
+      if (_selectedGroupId == null && validGroups.isNotEmpty) _selectedGroupId = validGroups.first.id;
       _isLoading = false;
     });
   }
@@ -346,9 +375,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              editDueDate == null
-                                  ? 'Дата сдачи не выбрана'
-                                  : 'Срок: ${editDueDate!.toLocal().toString().split(' ')[0]}',
+                              editDueDate == null ? 'Дата сдачи не выбрана' : 'Срок: ${formatDate(editDueDate!)}',
                               style: TextStyle(color: editDueDate == null ? colors.onSurfaceVariant : colors.onSurface),
                             ),
                           ),
@@ -448,7 +475,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
       body: SafeArea(
         child:
             _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? _buildSkeleton()
                 : SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.l),
                   child: Column(
@@ -475,15 +502,22 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                   decoration: const InputDecoration(labelText: 'Предмет', border: OutlineInputBorder()),
                                   items:
                                       _subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
-                                  onChanged: (val) => setState(() => _selectedSubjectId = val),
+                                  onChanged:
+                                      (val) => setState(() {
+                                        _selectedSubjectId = val;
+                                        _selectedGroupId = null;
+                                      }),
                                   validator: (val) => val == null ? 'Выберите предмет' : null,
                                 ),
                                 const SizedBox(height: AppSpacing.m),
                                 DropdownButtonFormField<String>(
+                                  key: ValueKey(_selectedSubjectId),
                                   initialValue: _selectedGroupId,
                                   decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
                                   items:
-                                      _groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
+                                      _groupsForSelectedSubject
+                                          .map((g) => DropdownMenuItem(value: g.id, child: Text(g.name)))
+                                          .toList(),
                                   onChanged: (val) => setState(() => _selectedGroupId = val),
                                   validator: (val) => val == null ? 'Выберите группу' : null,
                                 ),
@@ -561,9 +595,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: Text(
-                                          _dueDate == null
-                                              ? 'Срок сдачи не выбран'
-                                              : 'Срок: ${_dueDate!.toLocal().toString().split(' ')[0]}',
+                                          _dueDate == null ? 'Срок сдачи не выбран' : 'Срок: ${formatDate(_dueDate!)}',
                                           style: TextStyle(
                                             color: _dueDate == null ? colors.onSurfaceVariant : colors.onSurface,
                                           ),
@@ -718,7 +750,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                                     ),
                                     if (hw.dueDate != null)
                                       Text(
-                                        'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
+                                        'Срок: ${formatDate(hw.dueDate!)}',
                                         style: TextStyle(
                                           color:
                                               hw.dueDate!.isBefore(DateTime.now())
@@ -751,6 +783,34 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                     ],
                   ),
                 ),
+      ),
+    );
+  }
+
+  Widget _buildSkeleton() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Skeleton(height: 22, width: 220),
+          const SizedBox(height: AppSpacing.l),
+          const Skeleton(height: 280, width: double.infinity),
+          const SizedBox(height: 40),
+          const Skeleton(height: 22, width: 180),
+          const SizedBox(height: AppSpacing.m),
+          const Skeleton(height: 48, width: double.infinity),
+          const SizedBox(height: 8),
+          const Skeleton(height: 48, width: double.infinity),
+          const SizedBox(height: AppSpacing.m),
+          ...List.generate(
+            3,
+            (_) => const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Skeleton(height: 80, width: double.infinity),
+            ),
+          ),
+        ],
       ),
     );
   }

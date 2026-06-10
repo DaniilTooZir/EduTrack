@@ -3,11 +3,14 @@ import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_bottom_sheet.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+enum _SortMode { name, gradeDesc }
 
 Color _gradeColor(double avg) {
   if (avg >= 4.5) return Colors.green;
@@ -30,12 +33,66 @@ class CuratorGroupJournalScreen extends StatefulWidget {
 class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
   final _searchController = TextEditingController();
   String _query = '';
+  _SortMode _sortMode = _SortMode.name;
+  Map<String, double> _avgGrades = {};
+  Map<String, List<SubjectAnalytics>> _analyticsCache = {};
+  bool _gradesLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAllAverages();
+  }
+
+  Future<void> _loadAllAverages() async {
+    if (widget.students.isEmpty) {
+      if (mounted) setState(() => _gradesLoading = false);
+      return;
+    }
+    final gradeRepo = Provider.of<GradeRepository>(context, listen: false);
+    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
+    final results = await Future.wait(
+      widget.students.map(
+        (s) => gradeRepo.getStudentAnalytics(s.id, startDate: period?.startDate, endDate: period?.endDate),
+      ),
+    );
+    if (!mounted) return;
+    final avgs = <String, double>{};
+    final cache = <String, List<SubjectAnalytics>>{};
+    for (var i = 0; i < widget.students.length; i++) {
+      final result = results[i];
+      if (result.isSuccess) {
+        final analytics = result.data;
+        cache[widget.students[i].id] = analytics;
+        final allGrades = analytics.expand((a) => a.grades).toList();
+        if (allGrades.isNotEmpty) {
+          avgs[widget.students[i].id] = allGrades.fold<int>(0, (acc, g) => acc + g.value) / allGrades.length;
+        }
+      }
+    }
+    setState(() {
+      _analyticsCache = cache;
+      _avgGrades = avgs;
+      _gradesLoading = false;
+    });
+  }
 
   List<Student> get _filtered {
-    final base = [...widget.students]..sort((a, b) => a.surname.compareTo(b.surname));
-    if (_query.isEmpty) return base;
-    final q = _query.toLowerCase();
-    return base.where((s) => s.name.toLowerCase().contains(q) || s.surname.toLowerCase().contains(q)).toList();
+    var base = [...widget.students];
+    if (_query.isNotEmpty) {
+      final q = _query.toLowerCase();
+      base = base.where((s) => s.name.toLowerCase().contains(q) || s.surname.toLowerCase().contains(q)).toList();
+    }
+    if (_sortMode == _SortMode.gradeDesc) {
+      base.sort((a, b) {
+        final avgA = _avgGrades[a.id] ?? -1;
+        final avgB = _avgGrades[b.id] ?? -1;
+        return avgB.compareTo(avgA);
+      });
+    } else {
+      base.sort((a, b) => a.surname.compareTo(b.surname));
+    }
+    return base;
   }
 
   @override
@@ -45,7 +102,10 @@ class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
   }
 
   void _openStudentGrades(Student student) {
-    showAppBottomSheet(context, builder: (_) => _StudentGradesSheet(student: student));
+    showAppBottomSheet(
+      context,
+      builder: (_) => _StudentGradesSheet(student: student, preloaded: _analyticsCache[student.id]),
+    );
   }
 
   @override
@@ -62,7 +122,7 @@ class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -82,6 +142,24 @@ class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
                 isDense: true,
               ),
               onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Row(
+              children: [
+                ChoiceChip(
+                  label: const Text('По фамилии'),
+                  selected: _sortMode == _SortMode.name,
+                  onSelected: (_) => setState(() => _sortMode = _SortMode.name),
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text('По баллу'),
+                  selected: _sortMode == _SortMode.gradeDesc,
+                  onSelected: (_) => setState(() => _sortMode = _SortMode.gradeDesc),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -106,8 +184,12 @@ class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                       itemCount: filtered.length,
                       itemBuilder:
-                          (context, index) =>
-                              _StudentCard(student: filtered[index], onTap: () => _openStudentGrades(filtered[index])),
+                          (context, index) => _StudentCard(
+                            student: filtered[index],
+                            onTap: () => _openStudentGrades(filtered[index]),
+                            avgGrade: _gradesLoading ? null : _avgGrades[filtered[index].id],
+                            isGradesLoading: _gradesLoading,
+                          ),
                     ),
           ),
         ],
@@ -119,8 +201,10 @@ class _CuratorGroupJournalScreenState extends State<CuratorGroupJournalScreen> {
 class _StudentCard extends StatelessWidget {
   final Student student;
   final VoidCallback onTap;
+  final double? avgGrade;
+  final bool isGradesLoading;
 
-  const _StudentCard({required this.student, required this.onTap});
+  const _StudentCard({required this.student, required this.onTap, this.avgGrade, this.isGradesLoading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +244,20 @@ class _StudentCard extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Оценки', style: TextStyle(fontSize: 13, color: colors.primary)),
+                  if (isGradesLoading)
+                    const Skeleton(height: 28, width: 44, borderRadius: 14)
+                  else if (avgGrade != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _gradeColor(avgGrade!).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        avgGrade!.toStringAsFixed(1),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _gradeColor(avgGrade!)),
+                      ),
+                    ),
                   const SizedBox(width: 4),
                   Icon(Icons.chevron_right, color: colors.primary),
                 ],
@@ -175,7 +272,8 @@ class _StudentCard extends StatelessWidget {
 
 class _StudentGradesSheet extends StatefulWidget {
   final Student student;
-  const _StudentGradesSheet({required this.student});
+  final List<SubjectAnalytics>? preloaded;
+  const _StudentGradesSheet({required this.student, this.preloaded});
 
   @override
   State<_StudentGradesSheet> createState() => _StudentGradesSheetState();
@@ -191,7 +289,12 @@ class _StudentGradesSheetState extends State<_StudentGradesSheet> {
   void initState() {
     super.initState();
     _gradeService = Provider.of<GradeRepository>(context, listen: false);
-    _load();
+    if (widget.preloaded != null) {
+      _analytics = widget.preloaded!;
+      _isLoading = false;
+    } else {
+      _load();
+    }
   }
 
   Future<void> _load() async {

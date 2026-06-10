@@ -350,8 +350,29 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                             final student = _students[index];
                             final status = _statusMap[student.id];
                             final isCompleted = status?.isCompleted ?? false;
-                            final hasFile = status?.fileUrl != null;
-                            final hasComment = status?.studentComment != null;
+                            final hasAnswer = status?.fileUrl != null || status?.studentComment != null;
+
+                            final IconData stateIcon;
+                            final Color stateColor;
+                            final String stateText;
+                            if (isCompleted) {
+                              stateIcon = Icons.check_circle;
+                              stateColor = Colors.green;
+                              stateText = 'Принято';
+                            } else if (hasAnswer && status?.teacherComment != null) {
+                              stateIcon = Icons.refresh_rounded;
+                              stateColor = Colors.orange;
+                              stateText = 'На доработку';
+                            } else if (hasAnswer) {
+                              stateIcon = Icons.hourglass_empty_rounded;
+                              stateColor = colors.primary;
+                              stateText = 'Ожидает проверки';
+                            } else {
+                              stateIcon = Icons.circle_outlined;
+                              stateColor = colors.onSurfaceVariant;
+                              stateText = 'Не сдал';
+                            }
+
                             return Card(
                               elevation: 0,
                               color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
@@ -365,27 +386,18 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
                                 ),
                                 subtitle: Row(
                                   children: [
-                                    if (hasFile) ...[
-                                      Icon(Icons.attach_file, size: 14, color: colors.primary),
+                                    if (status?.fileUrl != null) ...[
+                                      Icon(Icons.attach_file, size: 14, color: stateColor),
                                       const SizedBox(width: 4),
                                     ],
-                                    if (hasComment) ...[
-                                      Icon(Icons.comment, size: 14, color: colors.primary),
+                                    if (status?.studentComment != null) ...[
+                                      Icon(Icons.comment, size: 14, color: stateColor),
                                       const SizedBox(width: 4),
                                     ],
-                                    Text(
-                                      hasFile || hasComment ? 'Есть ответ' : 'Нет ответа',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: hasFile || hasComment ? colors.primary : colors.onSurfaceVariant,
-                                      ),
-                                    ),
+                                    Text(stateText, style: TextStyle(fontSize: 12, color: stateColor)),
                                   ],
                                 ),
-                                trailing: Icon(
-                                  isCompleted ? Icons.check_circle : Icons.circle_outlined,
-                                  color: isCompleted ? Colors.green : colors.onSurfaceVariant,
-                                ),
+                                trailing: Icon(stateIcon, color: stateColor),
                               ),
                             );
                           },
@@ -445,8 +457,28 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final hasAnswer = widget.status?.studentComment != null || widget.status?.fileUrl != null;
+    final isAccepted = widget.status?.isCompleted == true;
     return AlertDialog(
-      title: Text('${widget.student.surname} ${widget.student.name}'),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text('${widget.student.surname} ${widget.student.name}', style: const TextStyle(fontSize: 16)),
+          ),
+          if (isAccepted)
+            Container(
+              margin: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'Принято',
+                style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w600),
+              ),
+            ),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,7 +540,7 @@ class _EvaluationDialogState extends State<_EvaluationDialog> {
         TextButton(onPressed: _isSubmitting ? null : () => Navigator.pop(context), child: const Text('Отмена')),
         ElevatedButton.icon(
           onPressed:
-              _isSubmitting
+              (!hasAnswer || _isSubmitting)
                   ? null
                   : () async {
                     final navigator = Navigator.of(context);

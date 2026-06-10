@@ -1,4 +1,4 @@
-﻿import 'package:edu_track/data/services/file_service.dart';
+import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/lesson_comment.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -21,14 +21,12 @@ class LessonCommentsScreen extends StatefulWidget {
 class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
   final _service = LessonCommentService();
   final _fileService = FileService();
-  final TextEditingController _messageController = TextEditingController();
+  final _messageController = TextEditingController();
 
-  List<LessonComment> _comments = [];
-  bool _isLoading = true;
+  final Map<String, Future<String>> _senderNameFutures = {};
+
   bool _isSending = false;
   PlatformFile? _selectedFile;
-
-  String get lessonId => widget.lessonId;
   String? userId;
   String? userRole;
 
@@ -38,7 +36,6 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     final provider = Provider.of<UserProvider>(context, listen: false);
     userId = provider.userId;
     userRole = provider.role;
-    _loadComments();
   }
 
   @override
@@ -47,19 +44,8 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     super.dispose();
   }
 
-  Future<void> _loadComments() async {
-    final result = await _service.getCommentsByLessonId(lessonId.toString());
-    if (!mounted) return;
-    if (result.isFailure) {
-      setState(() => _isLoading = false);
-      MessengerHelper.showError(result.errorMessage);
-      return;
-    }
-    setState(() {
-      _comments = result.data;
-      _isLoading = false;
-    });
-  }
+  Future<String> _getSenderFuture(String id, String role) =>
+      _senderNameFutures.putIfAbsent(id, () => _service.getSenderName(id, role));
 
   Future<void> _pickFile() async {
     final result = await _fileService.pickFile();
@@ -72,20 +58,23 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty && _selectedFile == null) return;
     setState(() => _isSending = true);
+
     String? fileUrl;
     String? fileName;
     if (_selectedFile != null) {
       final uploadResult = await _fileService.uploadFile(file: _selectedFile!, folderName: 'lesson_chat_files');
+      if (!mounted) return;
       if (uploadResult.isFailure) {
-        if (mounted) setState(() => _isSending = false);
+        setState(() => _isSending = false);
         MessengerHelper.showError(uploadResult.errorMessage);
         return;
       }
       fileUrl = uploadResult.data;
       fileName = _selectedFile!.name;
     }
+
     final comment = LessonComment(
-      lessonId: lessonId.toString(),
+      lessonId: widget.lessonId,
       senderTeacherId: userRole == 'teacher' ? userId : null,
       senderStudentId: userRole == 'student' ? userId : null,
       message: text.isEmpty ? null : text,
@@ -93,16 +82,16 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
       fileName: fileName,
       timestamp: DateTime.now(),
     );
-    final commentResult = await _service.addComment(comment);
+
+    final result = await _service.addComment(comment);
     if (!mounted) return;
     setState(() => _isSending = false);
-    if (commentResult.isFailure) {
-      MessengerHelper.showError(commentResult.errorMessage);
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
       return;
     }
     _messageController.clear();
     setState(() => _selectedFile = null);
-    await _loadComments();
   }
 
   Future<void> _openFile(String url) async {
@@ -114,6 +103,77 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Комментарии')),
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder<List<LessonComment>>(
+              stream: _service.getCommentsStream(widget.lessonId),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Ошибка загрузки', style: TextStyle(color: colors.error)));
+                }
+                if (!snapshot.hasData) return _buildLoadingSkeleton();
+                final comments = snapshot.data!;
+                if (comments.isEmpty) {
+                  return Center(child: Text('Нет комментариев', style: TextStyle(color: colors.onSurfaceVariant)));
+                }
+                return ListView.builder(
+                  reverse: true,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  itemCount: comments.length,
+                  itemBuilder: (context, index) {
+                    final comment = comments[index];
+                    final showSeparator =
+                        index == comments.length - 1 || !_sameDay(comment.timestamp, comments[index + 1].timestamp);
+                    return Column(
+                      children: [
+                        if (showSeparator) _buildDateSeparator(comment.timestamp, colors),
+                        _buildCommentBubble(comment, colors),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          Divider(height: 1, color: colors.outlineVariant),
+          _buildInputArea(colors),
+        ],
+      ),
+    );
+  }
+
+  bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+  Widget _buildDateSeparator(DateTime date, ColorScheme colors) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(_formatSeparatorDate(date), style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+        ),
+      ),
+    );
+  }
+
+  String _formatSeparatorDate(DateTime date) {
+    final now = DateTime.now();
+    if (_sameDay(date, now)) return 'Сегодня';
+    final yesterday = now.subtract(const Duration(days: 1));
+    if (_sameDay(date, yesterday)) return 'Вчера';
+    return formatShortDate(date);
+  }
+
   Widget _buildCommentBubble(LessonComment comment, ColorScheme colors) {
     final isMe =
         (userRole == 'teacher' && comment.senderTeacherId == userId) ||
@@ -121,6 +181,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     final align = isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     final bubbleColor = isMe ? colors.primaryContainer : colors.surfaceContainerHighest;
     final textColor = isMe ? colors.onPrimaryContainer : colors.onSurface;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -140,18 +201,11 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
           crossAxisAlignment: align,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (comment.senderStudentId != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Студент',
-                  style: TextStyle(fontSize: 10, color: colors.primary, fontWeight: FontWeight.bold),
-                ),
-              ),
+            if (!isMe) _buildSenderLabel(comment, colors),
             if (comment.message != null && comment.message!.isNotEmpty)
               Text(comment.message!, style: TextStyle(color: textColor, fontSize: 15)),
             if (comment.fileUrl != null) ...[
-              if (comment.message != null) const SizedBox(height: 8),
+              if (comment.message != null && comment.message!.isNotEmpty) const SizedBox(height: 8),
               InkWell(
                 onTap: () => _openFile(comment.fileUrl!),
                 child: Container(
@@ -179,7 +233,7 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
             ],
             const SizedBox(height: 4),
             Text(
-              _formatTimestamp(comment.timestamp),
+              formatTime(comment.timestamp.toLocal()),
               style: TextStyle(fontSize: 10, color: textColor.withValues(alpha: 0.6)),
             ),
           ],
@@ -188,134 +242,108 @@ class _LessonCommentsScreenState extends State<LessonCommentsScreen> {
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) => formatTimeOfDay(TimeOfDay.fromDateTime(timestamp.toLocal()));
+  Widget _buildSenderLabel(LessonComment comment, ColorScheme colors) {
+    final String? senderId;
+    final String role;
+    if (comment.senderTeacherId != null) {
+      senderId = comment.senderTeacherId;
+      role = 'teacher';
+    } else if (comment.senderStudentId != null) {
+      senderId = comment.senderStudentId;
+      role = 'student';
+    } else {
+      return const SizedBox.shrink();
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Комментарии'),
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _isLoading ? null : _loadComments)],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child:
-                _isLoading
-                    ? _buildLoadingSkeleton()
-                    : RefreshIndicator(
-                      onRefresh: _loadComments,
-                      child:
-                          _comments.isEmpty
-                              ? ListView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                children: [
-                                  SizedBox(
-                                    height: MediaQuery.of(context).size.height * 0.5,
-                                    child: Center(
-                                      child: Text('Нет комментариев', style: TextStyle(color: colors.onSurfaceVariant)),
-                                    ),
-                                  ),
-                                ],
-                              )
-                              : ListView.builder(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                reverse: true,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                itemCount: _comments.length,
-                                itemBuilder: (context, index) {
-                                  final comment = _comments[index];
-                                  return _buildCommentBubble(comment, colors);
-                                },
-                              ),
-                    ),
-          ),
-          Divider(height: 1, color: colors.outlineVariant),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(color: colors.surface),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  if (_selectedFile != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: colors.secondaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.attach_file, size: 20, color: colors.onSecondaryContainer),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _selectedFile!.name,
-                              style: TextStyle(color: colors.onSecondaryContainer),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            constraints: const BoxConstraints(),
-                            padding: EdgeInsets.zero,
-                            icon: Icon(Icons.close, size: 20, color: colors.onSecondaryContainer),
-                            onPressed: () => setState(() => _selectedFile = null),
-                          ),
-                        ],
-                      ),
-                    ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.attach_file, color: colors.onSurfaceVariant),
-                        onPressed: _isSending ? null : _pickFile,
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          textCapitalization: TextCapitalization.sentences,
-                          minLines: 1,
-                          maxLines: 4,
-                          style: TextStyle(color: colors.onSurface),
-                          decoration: InputDecoration(
-                            hintText: 'Сообщение...',
-                            hintStyle: TextStyle(color: colors.onSurfaceVariant),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: colors.surfaceContainerHighest,
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        icon:
-                            _isSending
-                                ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
-                                )
-                                : const Icon(Icons.send),
-                        style: IconButton.styleFrom(backgroundColor: colors.primary, foregroundColor: colors.onPrimary),
-                        onPressed:
-                            (_messageController.text.trim().isEmpty && _selectedFile == null) || _isSending
-                                ? null
-                                : _sendComment,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: FutureBuilder<String>(
+        future: _getSenderFuture(senderId!, role),
+        builder:
+            (context, snapshot) => Text(
+              snapshot.data ?? '...',
+              style: TextStyle(fontSize: 10, color: colors.primary, fontWeight: FontWeight.bold),
             ),
-          ),
-        ],
+      ),
+    );
+  }
+
+  Widget _buildInputArea(ColorScheme colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(color: colors.surface),
+      child: SafeArea(
+        child: Column(
+          children: [
+            if (_selectedFile != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(color: colors.secondaryContainer, borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    Icon(Icons.attach_file, size: 20, color: colors.onSecondaryContainer),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _selectedFile!.name,
+                        style: TextStyle(color: colors.onSecondaryContainer),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      icon: Icon(Icons.close, size: 20, color: colors.onSecondaryContainer),
+                      onPressed: () => setState(() => _selectedFile = null),
+                    ),
+                  ],
+                ),
+              ),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.attach_file, color: colors.onSurfaceVariant),
+                  onPressed: _isSending ? null : _pickFile,
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    textCapitalization: TextCapitalization.sentences,
+                    minLines: 1,
+                    maxLines: 4,
+                    style: TextStyle(color: colors.onSurface),
+                    decoration: InputDecoration(
+                      hintText: 'Сообщение...',
+                      hintStyle: TextStyle(color: colors.onSurfaceVariant),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                      filled: true,
+                      fillColor: colors.surfaceContainerHighest,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  icon:
+                      _isSending
+                          ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
+                          )
+                          : const Icon(Icons.send),
+                  style: IconButton.styleFrom(backgroundColor: colors.primary, foregroundColor: colors.onPrimary),
+                  onPressed:
+                      (_messageController.text.trim().isEmpty && _selectedFile == null) || _isSending
+                          ? null
+                          : _sendComment,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

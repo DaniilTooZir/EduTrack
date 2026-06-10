@@ -5,6 +5,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +39,16 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markChatAsRead());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markChatAsRead();
+      _preloadMemberNames();
+    });
+  }
+
+  Future<void> _preloadMemberNames() async {
+    final members = await _chatService.getChatMembers(widget.chatId);
+    await Future.wait(members.map((m) => _getUserName(m['user_id'] as String, m['user_role'] as String)));
+    if (mounted) setState(() {});
   }
 
   @override
@@ -296,7 +306,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         children: [
                           if (isMe) const SizedBox(width: 20),
                           Text(
-                            "${message.createdAt.hour}:${message.createdAt.minute.toString().padLeft(2, '0')}",
+                            formatTime(message.createdAt),
                             style: TextStyle(
                               fontSize: 10,
                               color:

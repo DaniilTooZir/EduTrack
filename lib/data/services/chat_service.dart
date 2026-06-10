@@ -336,6 +336,15 @@ class ChatService {
         .map((maps) => maps.map(Message.fromMap).toList());
   }
 
+  Future<List<Map<String, dynamic>>> getChatMembers(String chatId) async {
+    try {
+      final response = await _client.from('chat_members').select('user_id, user_role').eq('chat_id', chatId);
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (_) {
+      return [];
+    }
+  }
+
   Future<AppResult<void>> markAsRead(String chatId, String userId) async {
     try {
       await _client

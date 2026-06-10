@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:edu_track/data/services/chat_service.dart';
+import 'package:edu_track/data/services/users_fetch_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -120,107 +121,147 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  void _showNewChatBottomSheet() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.userId;
+    final userRole = userProvider.role;
+    final institutionId = userProvider.institutionId;
+    if (userId == null || userRole == null || institutionId == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder:
+          (_) => _NewChatSheet(
+            userId: userId,
+            userRole: userRole,
+            institutionId: institutionId,
+            onChatCreated: (chatId, title) async {
+              await Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId, title: title)));
+              if (mounted) await _loadChats();
+            },
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
-      child:
-          _isLoading
-              ? _buildSkeleton(colors)
-              : Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Поиск по чатам...',
-                            prefixIcon: const Icon(Icons.search),
-                            suffixIcon:
-                                _searchController.text.isNotEmpty
-                                    ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
-                                    : null,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+          child:
+              _isLoading
+                  ? _buildSkeleton(colors)
+                  : Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: Column(
                           children: [
-                            FilterChip(
-                              label: const Text('Непрочитанные'),
-                              selected: _onlyUnread,
-                              onSelected: (v) => setState(() => _onlyUnread = v),
-                              avatar: Icon(
-                                Icons.mark_chat_unread_outlined,
-                                size: 16,
-                                color: _onlyUnread ? colors.onSecondaryContainer : colors.onSurfaceVariant,
+                            TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Поиск по чатам...',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon:
+                                    _searchController.text.isNotEmpty
+                                        ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
+                                        : null,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                               ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                FilterChip(
+                                  label: const Text('Непрочитанные'),
+                                  selected: _onlyUnread,
+                                  onSelected: (v) => setState(() => _onlyUnread = v),
+                                  avatar: Icon(
+                                    Icons.mark_chat_unread_outlined,
+                                    size: 16,
+                                    color: _onlyUnread ? colors.onSecondaryContainer : colors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: _loadChats,
-                      child:
-                          _chats.isEmpty
-                              ? ListView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                children: [
-                                  SizedBox(
-                                    height: MediaQuery.of(context).size.height * 0.5,
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.chat_bubble_outline,
-                                            size: 64,
-                                            color: colors.onSurfaceVariant.withValues(alpha: 0.5),
+                      ),
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: _loadChats,
+                          child:
+                              _chats.isEmpty
+                                  ? ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(
+                                        height: MediaQuery.of(context).size.height * 0.5,
+                                        child: Center(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.chat_bubble_outline,
+                                                size: 64,
+                                                color: colors.onSurfaceVariant.withValues(alpha: 0.5),
+                                              ),
+                                              const SizedBox(height: AppSpacing.l),
+                                              Text(
+                                                'У вас пока нет диалогов',
+                                                style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: AppSpacing.l),
-                                          Text(
-                                            'У вас пока нет диалогов',
-                                            style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                  : _filteredChats.isEmpty
+                                  ? ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(
+                                        height: MediaQuery.of(context).size.height * 0.4,
+                                        child: Center(
+                                          child: Text(
+                                            'Ничего не найдено',
+                                            style: TextStyle(color: colors.onSurfaceVariant),
                                           ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
+                                    ],
+                                  )
+                                  : ListView.builder(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.all(AppSpacing.l),
+                                    itemCount: _filteredChats.length,
+                                    itemBuilder: (context, index) => _buildChatTile(_filteredChats[index], colors),
                                   ),
-                                ],
-                              )
-                              : _filteredChats.isEmpty
-                              ? ListView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                children: [
-                                  SizedBox(
-                                    height: MediaQuery.of(context).size.height * 0.4,
-                                    child: Center(
-                                      child: Text(
-                                        'Ничего не найдено',
-                                        style: TextStyle(color: colors.onSurfaceVariant),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              )
-                              : ListView.builder(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.all(AppSpacing.l),
-                                itemCount: _filteredChats.length,
-                                itemBuilder: (context, index) => _buildChatTile(_filteredChats[index], colors),
-                              ),
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+        ),
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton(
+            heroTag: 'new_chat_fab',
+            onPressed: _showNewChatBottomSheet,
+            tooltip: 'Новое сообщение',
+            child: const Icon(Icons.edit_outlined),
+          ),
+        ),
+      ],
     );
   }
 
@@ -319,6 +360,222 @@ class _ChatListScreenState extends State<ChatListScreen> {
               ),
             ),
           ),
+    );
+  }
+}
+
+class _ContactEntry {
+  final String id;
+  final String role;
+  final String displayName;
+  final String subtitle;
+  const _ContactEntry({required this.id, required this.role, required this.displayName, required this.subtitle});
+}
+
+class _NewChatSheet extends StatefulWidget {
+  final String userId;
+  final String userRole;
+  final String institutionId;
+  final Future<void> Function(String chatId, String title) onChatCreated;
+
+  const _NewChatSheet({
+    required this.userId,
+    required this.userRole,
+    required this.institutionId,
+    required this.onChatCreated,
+  });
+
+  @override
+  State<_NewChatSheet> createState() => _NewChatSheetState();
+}
+
+class _NewChatSheetState extends State<_NewChatSheet> {
+  final _chatService = ChatService();
+  final _usersFetchService = UsersFetchService();
+  final _searchController = TextEditingController();
+  bool _isLoading = true;
+  bool _isStarting = false;
+  List<_ContactEntry> _contacts = [];
+
+  List<_ContactEntry> get _filtered {
+    final q = _searchController.text.trim().toLowerCase();
+    if (q.isEmpty) return _contacts;
+    return _contacts
+        .where((c) => c.displayName.toLowerCase().contains(q) || c.subtitle.toLowerCase().contains(q))
+        .toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadContacts() async {
+    final results = await Future.wait([
+      _usersFetchService.fetchTeachers(widget.institutionId),
+      _usersFetchService.fetchStudents(widget.institutionId),
+      _usersFetchService.fetchScheduleOperators(widget.institutionId),
+    ]);
+    final contacts = <_ContactEntry>[];
+    if (results[0].isSuccess) {
+      for (final t in results[0].data) {
+        final id = t['id'] as String;
+        if (id == widget.userId) continue;
+        contacts.add(
+          _ContactEntry(
+            id: id,
+            role: 'teacher',
+            displayName: '${t['surname']} ${t['name']}',
+            subtitle: 'Преподаватель',
+          ),
+        );
+      }
+    }
+    if (results[1].isSuccess) {
+      for (final s in results[1].data) {
+        final id = s['id'] as String;
+        if (id == widget.userId) continue;
+        contacts.add(
+          _ContactEntry(
+            id: id,
+            role: 'student',
+            displayName: '${s['surname']} ${s['name']}',
+            subtitle: s['group_name'] as String? ?? 'Студент',
+          ),
+        );
+      }
+    }
+    if (results[2].isSuccess) {
+      for (final o in results[2].data) {
+        final id = o['id'] as String;
+        if (id == widget.userId) continue;
+        contacts.add(
+          _ContactEntry(
+            id: id,
+            role: 'schedule_operator',
+            displayName: '${o['surname']} ${o['name']}',
+            subtitle: 'Оператор расписания',
+          ),
+        );
+      }
+    }
+    contacts.sort((a, b) => a.displayName.compareTo(b.displayName));
+    if (mounted) {
+      setState(() {
+        _contacts = contacts;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _startChat(_ContactEntry contact) async {
+    if (_isStarting) return;
+    setState(() => _isStarting = true);
+    final result = await _chatService.getOrCreateDirectChat(
+      myId: widget.userId,
+      myRole: widget.userRole,
+      otherId: contact.id,
+      otherRole: contact.role,
+    );
+    if (!mounted) return;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      setState(() => _isStarting = false);
+      return;
+    }
+    Navigator.pop(context);
+    await widget.onChatCreated(result.data, contact.displayName);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(color: colors.outlineVariant, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                'Новое сообщение',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Поиск...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon:
+                      _searchController.text.isNotEmpty
+                          ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
+                          : null,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _filtered.isEmpty
+                      ? Center(
+                        child: Text(
+                          _contacts.isEmpty ? 'Нет доступных контактов' : 'Ничего не найдено',
+                          style: TextStyle(color: colors.onSurfaceVariant),
+                        ),
+                      )
+                      : ListView.builder(
+                        controller: scrollController,
+                        itemCount: _filtered.length,
+                        itemBuilder: (context, index) {
+                          final c = _filtered[index];
+                          final isTeacher = c.role == 'teacher';
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isTeacher ? colors.secondaryContainer : colors.primaryContainer,
+                              child: Text(
+                                c.displayName.isNotEmpty ? c.displayName[0] : '?',
+                                style: TextStyle(
+                                  color: isTeacher ? colors.onSecondaryContainer : colors.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                            title: Text(c.displayName),
+                            subtitle: Text(c.subtitle, style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+                            onTap: _isStarting ? null : () => _startChat(c),
+                          );
+                        },
+                      ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

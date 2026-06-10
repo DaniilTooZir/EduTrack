@@ -1,9 +1,13 @@
+import 'dart:async';
+
+import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/avatar_service.dart';
 import 'package:edu_track/data/services/education_head_service.dart';
 import 'package:edu_track/data/services/institution_service.dart';
 import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/phone_mask_formatter.dart';
@@ -23,6 +27,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -33,6 +38,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   bool _isPasswordVisible = false;
   late final EducationHeadService _headService;
   late final InstitutionService _institutionService;
+  late final AppDatabase _db;
   final _avatarService = AvatarService();
   EducationHead? _admin;
   Institution? _institution;
@@ -42,38 +48,51 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     super.initState();
     _headService = EducationHeadService();
     _institutionService = InstitutionService();
+    _db = Provider.of<AppDatabase>(context, listen: false);
     _loadAdminData();
   }
 
   Future<void> _loadAdminData() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId == null) return;
-    setState(() => _isLoading = true);
 
+    final cachedAdmin = await _db.getAdminProfileById(userId);
+    final cachedInstitution = cachedAdmin != null ? await _db.getInstitutionById(cachedAdmin.institutionId) : null;
+    if (cachedAdmin != null && mounted) {
+      setState(() {
+        _admin = cachedAdmin;
+        _institution = cachedInstitution;
+        _fillControllers();
+        _isLoading = false;
+      });
+      unawaited(_refreshAdminFromNetwork(userId));
+      return;
+    }
+    await _refreshAdminFromNetwork(userId);
+  }
+
+  Future<void> _refreshAdminFromNetwork(String userId) async {
     final adminResult = await _headService.getHeadById(userId);
     if (!mounted) return;
-    if (adminResult.isFailure) {
-      MessengerHelper.showError(adminResult.errorMessage);
+    if (adminResult.isFailure || adminResult.data == null) {
       setState(() => _isLoading = false);
+      if (adminResult.isFailure) MessengerHelper.showError(adminResult.errorMessage);
       return;
     }
-    final admin = adminResult.data;
-    if (admin == null) {
-      setState(() => _isLoading = false);
-      return;
-    }
+    final admin = adminResult.data!;
+    unawaited(_db.saveAdminProfile(admin));
 
+    Institution? inst;
     final instResult = await _institutionService.getInstitutionById(admin.institutionId);
     if (!mounted) return;
-    if (instResult.isFailure) {
-      MessengerHelper.showError(instResult.errorMessage);
-      setState(() => _isLoading = false);
-      return;
+    if (instResult.isSuccess && instResult.data != null) {
+      inst = instResult.data;
+      unawaited(_db.saveInstitution(inst!));
     }
 
     setState(() {
       _admin = admin;
-      _institution = instResult.data;
+      _institution = inst ?? _institution;
       _fillControllers();
       _isLoading = false;
     });
@@ -108,6 +127,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     }
 
     MessengerHelper.showSuccess('Фото профиля обновлено');
+    unawaited(_db.saveAdminProfile(_admin!.copyWith(avatarUrl: url)));
     setState(() => _isSaving = false);
     await _loadAdminData();
   }
@@ -116,6 +136,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     if (_admin == null) return;
     _nameController.text = _admin!.name;
     _surnameController.text = _admin!.surname;
+    _emailController.text = _admin!.email;
     _phoneController.text = PhoneMaskFormatter.format(_admin!.phone);
     _loginController.text = _admin!.login;
   }
@@ -135,6 +156,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     }
     if (_nameController.text.trim() != _admin!.name) updatedData['name'] = _nameController.text.trim();
     if (_surnameController.text.trim() != _admin!.surname) updatedData['surname'] = _surnameController.text.trim();
+    if (_emailController.text.trim() != _admin!.email) updatedData['email'] = _emailController.text.trim();
     if (_phoneController.text.trim() != _admin!.phone) updatedData['phone'] = _phoneController.text.trim();
     if (_loginController.text.trim() != _admin!.login) updatedData['login'] = _loginController.text.trim();
     if (password.isNotEmpty) updatedData['password'] = password;
@@ -156,6 +178,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     }
 
     MessengerHelper.showSuccess('Профиль обновлён');
+    unawaited(
+      _db.saveAdminProfile(
+        _admin!.copyWith(
+          name: _nameController.text.trim(),
+          surname: _surnameController.text.trim(),
+          email: _emailController.text.trim(),
+          phone: _phoneController.text.trim(),
+          login: _loginController.text.trim(),
+        ),
+      ),
+    );
     setState(() {
       _isEditing = false;
       _isSaving = false;
@@ -176,6 +209,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _surnameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _loginController.dispose();
     _passwordController.dispose();
@@ -190,7 +224,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       backgroundColor: Colors.transparent,
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? _buildProfileSkeleton()
               : SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -251,6 +285,43 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   },
                 ),
               ),
+    );
+  }
+
+  Widget _buildProfileSkeleton() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.l),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: Skeleton(width: 120, height: 120, borderRadius: 60)),
+                    const SizedBox(height: AppSpacing.l),
+                    const Center(child: Skeleton(width: 200, height: 24)),
+                    const SizedBox(height: 8),
+                    const Center(child: Skeleton(width: 150, height: 16)),
+                    const Divider(height: 32),
+                    const Skeleton(width: 120, height: 18),
+                    const SizedBox(height: 8),
+                    ...List.generate(
+                      3,
+                      (_) => const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Skeleton(height: 16)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -344,6 +415,12 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
             validator: (val) => Validators.validateName(val, 'Фамилия'),
           ),
           _buildField(
+            controller: _emailController,
+            label: 'Email',
+            type: TextInputType.emailAddress,
+            validator: Validators.validateEmail,
+          ),
+          _buildField(
             controller: _phoneController,
             label: 'Телефон',
             type: TextInputType.phone,
@@ -362,6 +439,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
             child: TextFormField(
               controller: _passwordController,
               obscureText: !_isPasswordVisible,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: 'Новый пароль',
                 border: const OutlineInputBorder(),
@@ -386,6 +464,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 child: TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: !_isPasswordVisible,
+                  textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(labelText: 'Подтвердите пароль', border: OutlineInputBorder()),
                   validator: (val) {
                     if (val != _passwordController.text) return 'Пароли не совпадают';
@@ -437,6 +516,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
     String? hintText,
+    TextInputAction textInputAction = TextInputAction.next,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -447,6 +527,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         validator: validator,
         inputFormatters: inputFormatters,
         autovalidateMode: AutovalidateMode.onUserInteraction,
+        textInputAction: textInputAction,
       ),
     );
   }

@@ -53,6 +53,31 @@ class UsersFetchService {
     }
   }
 
+  Future<AppResult<void>> updateUser({
+    required String id,
+    required String role,
+    required String name,
+    required String surname,
+    required String email,
+    String? groupId,
+  }) async {
+    final table = switch (role) {
+      'teacher' => 'teachers',
+      'schedule_operator' => 'schedule_operators',
+      _ => 'students',
+    };
+    try {
+      final data = <String, dynamic>{'name': name, 'surname': surname, 'email': email};
+      if (role == 'student' && groupId != null) data['group_id'] = groupId;
+      await _client.from(table).update(data).eq('id', id);
+      return AppResult.success(null);
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при обновлении: ${e.message}');
+    } catch (_) {
+      return AppResult.failure('Не удалось обновить пользователя.');
+    }
+  }
+
   Future<AppResult<void>> deleteUserById(String id, String role) async {
     try {
       String table;

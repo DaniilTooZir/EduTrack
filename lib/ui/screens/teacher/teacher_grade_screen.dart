@@ -25,6 +25,7 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
   List<Student> _students = [];
   final Map<String, int?> _grades = {};
   bool _isLoading = true;
+  bool _hasModifiedGrades = false;
 
   final _searchController = TextEditingController();
   bool _onlyUngraded = false;
@@ -129,176 +130,213 @@ class _TeacherGradeScreenState extends State<TeacherGradeScreen> {
       return;
     }
     MessengerHelper.showSuccess('Оценки сохранены');
-    Navigator.pop(context);
+    setState(() => _hasModifiedGrades = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.pop(context);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Оценка студентов')),
-      body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
-        child: SafeArea(
-          child:
-              _isLoading
-                  ? _buildGradesSkeleton()
-                  : Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: Column(
-                          children: [
-                            TextField(
-                              controller: _searchController,
-                              decoration: InputDecoration(
-                                hintText: 'Поиск по имени...',
-                                prefixIcon: const Icon(Icons.search),
-                                suffixIcon:
-                                    _searchController.text.isNotEmpty
-                                        ? IconButton(icon: const Icon(Icons.clear), onPressed: _searchController.clear)
-                                        : null,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+    return PopScope(
+      canPop: !_hasModifiedGrades,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder:
+              (ctx) => AlertDialog(
+                title: const Text('Выйти без сохранения?'),
+                content: const Text('Оценки не были сохранены. Покинуть экран?'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Остаться')),
+                  FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Выйти')),
+                ],
+              ),
+        );
+        if (confirmed == true) {
+          setState(() => _hasModifiedGrades = false);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) Navigator.pop(context);
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Оценка студентов')),
+        body: Container(
+          decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
+          child: SafeArea(
+            child:
+                _isLoading
+                    ? _buildGradesSkeleton()
+                    : Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: _searchController,
+                                decoration: InputDecoration(
+                                  hintText: 'Поиск по имени...',
+                                  prefixIcon: const Icon(Icons.search),
+                                  suffixIcon:
+                                      _searchController.text.isNotEmpty
+                                          ? IconButton(
+                                            icon: const Icon(Icons.clear),
+                                            onPressed: _searchController.clear,
+                                          )
+                                          : null,
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                FilterChip(
-                                  label: const Text('Без оценки'),
-                                  selected: _onlyUngraded,
-                                  onSelected: (v) => setState(() => _onlyUngraded = v),
-                                  avatar: Icon(
-                                    Icons.remove_circle_outline,
-                                    size: 16,
-                                    color: _onlyUngraded ? colors.onSecondaryContainer : colors.onSurfaceVariant,
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  FilterChip(
+                                    label: const Text('Без оценки'),
+                                    selected: _onlyUngraded,
+                                    onSelected: (v) => setState(() => _onlyUngraded = v),
+                                    avatar: Icon(
+                                      Icons.remove_circle_outline,
+                                      size: 16,
+                                      color: _onlyUngraded ? colors.onSecondaryContainer : colors.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${_filteredStudents.length} из ${_students.length}',
-                                  style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: RefreshIndicator(
-                          onRefresh: _loadData,
-                          child:
-                              _filteredStudents.isEmpty
-                                  ? ListView(
-                                    children: [
-                                      SizedBox(
-                                        height: 200,
-                                        child: Center(
-                                          child: Text(
-                                            'Ничего не найдено',
-                                            style: TextStyle(color: colors.onSurfaceVariant),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                  : ListView.separated(
-                                    padding: const EdgeInsets.all(AppSpacing.l),
-                                    itemCount: _filteredStudents.length,
-                                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      final student = _filteredStudents[index];
-                                      return Card(
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                        color: colors.surface,
-                                        child: ListTile(
-                                          leading: CircleAvatar(
-                                            backgroundColor: colors.primaryContainer,
-                                            child: Text(
-                                              student.name[0],
-                                              style: TextStyle(
-                                                color: colors.onPrimaryContainer,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          title: Text(
-                                            '${student.surname} ${student.name}',
-                                            style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
-                                          ),
-                                          trailing: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                                            decoration: BoxDecoration(
-                                              color: colors.surfaceContainerHighest,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: DropdownButtonHideUnderline(
-                                              child: DropdownButton<int>(
-                                                value: _grades[student.id],
-                                                dropdownColor: colors.surface,
-                                                icon: Icon(Icons.arrow_drop_down, color: colors.primary),
-                                                items:
-                                                    [2, 3, 4, 5]
-                                                        .map(
-                                                          (grade) => DropdownMenuItem(
-                                                            value: grade,
-                                                            child: Text(
-                                                              grade.toString(),
-                                                              style: TextStyle(
-                                                                fontWeight: FontWeight.bold,
-                                                                color:
-                                                                    grade >= 4
-                                                                        ? Colors.green
-                                                                        : (grade == 3 ? Colors.orange : Colors.red),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        )
-                                                        .toList(),
-                                                hint: Text('—', style: TextStyle(color: colors.onSurfaceVariant)),
-                                                onChanged: (val) {
-                                                  setState(() {
-                                                    _grades[student.id] = val;
-                                                  });
-                                                },
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_filteredStudents.length} из ${_students.length}',
+                                    style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
                                   ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.l),
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, -5),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.save),
-                          label: const Text('Сохранить оценки'),
-                          onPressed: _submitGrades,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50),
-                            backgroundColor: colors.primary,
-                            foregroundColor: colors.onPrimary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: _loadData,
+                            child:
+                                _filteredStudents.isEmpty
+                                    ? ListView(
+                                      children: [
+                                        SizedBox(
+                                          height: 200,
+                                          child: Center(
+                                            child: Text(
+                                              'Ничего не найдено',
+                                              style: TextStyle(color: colors.onSurfaceVariant),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                    : ListView.separated(
+                                      padding: const EdgeInsets.all(AppSpacing.l),
+                                      itemCount: _filteredStudents.length,
+                                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                      itemBuilder: (context, index) {
+                                        final student = _filteredStudents[index];
+                                        return Card(
+                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          color: colors.surface,
+                                          child: ListTile(
+                                            leading: CircleAvatar(
+                                              backgroundColor: colors.primaryContainer,
+                                              child: Text(
+                                                student.name[0],
+                                                style: TextStyle(
+                                                  color: colors.onPrimaryContainer,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            title: Text(
+                                              '${student.surname} ${student.name}',
+                                              style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface),
+                                            ),
+                                            trailing: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children:
+                                                  [2, 3, 4, 5].map((grade) {
+                                                    final isSelected = _grades[student.id] == grade;
+                                                    final gradeColor =
+                                                        grade >= 4
+                                                            ? Colors.green
+                                                            : (grade == 3 ? Colors.orange : Colors.red);
+                                                    return GestureDetector(
+                                                      onTap:
+                                                          () => setState(() {
+                                                            _grades[student.id] = isSelected ? null : grade;
+                                                            _hasModifiedGrades = true;
+                                                          }),
+                                                      child: AnimatedContainer(
+                                                        duration: const Duration(milliseconds: 120),
+                                                        width: 34,
+                                                        height: 34,
+                                                        margin: const EdgeInsets.only(left: 4),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              isSelected
+                                                                  ? gradeColor.withValues(alpha: 0.15)
+                                                                  : colors.surfaceContainerHighest,
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          border:
+                                                              isSelected
+                                                                  ? Border.all(color: gradeColor, width: 1.5)
+                                                                  : null,
+                                                        ),
+                                                        child: Center(
+                                                          child: Text(
+                                                            grade.toString(),
+                                                            style: TextStyle(
+                                                              fontWeight: FontWeight.bold,
+                                                              fontSize: 15,
+                                                              color: isSelected ? gradeColor : colors.onSurfaceVariant,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.l),
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, -5),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.save),
+                            label: const Text('Сохранить оценки'),
+                            onPressed: _submitGrades,
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(50),
+                              backgroundColor: colors.primary,
+                              foregroundColor: colors.onPrimary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+          ),
         ),
       ),
     );

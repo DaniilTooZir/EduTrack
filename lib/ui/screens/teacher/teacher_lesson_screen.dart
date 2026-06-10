@@ -48,6 +48,11 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   String? get teacherId => Provider.of<UserProvider>(context, listen: false).userId;
   String? get institutionId => Provider.of<UserProvider>(context, listen: false).institutionId;
 
+  List<Group> get _relevantGroups {
+    final groupIds = _scheduleCache.values.map((s) => s.groupId).toSet();
+    return _groups.where((g) => groupIds.contains(g.id)).toList();
+  }
+
   List<Lesson> get _displayedLessons {
     final list =
         _lessons.where((l) {
@@ -231,7 +236,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
               style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
             ),
             subtitle: Text(
-              '$dateStr • $groupName • ${schedule.startTime}',
+              '$dateStr • $groupName • ${schedule.startTime.substring(0, 5)}',
               style: TextStyle(color: colors.onSurfaceVariant),
             ),
             trailing: IconButton(
@@ -271,24 +276,20 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     Group? selectedGroup;
     Schedule? selectedSchedule;
     List<Schedule> availableSchedules = [];
-    bool isDialogLoading = false;
     await showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            Future<void> updateSchedules() async {
+            void updateSchedules() {
               if (selectedGroup == null || selectedSubject == null) return;
-              setStateDialog(() => isDialogLoading = true);
-              final result = await _scheduleService.getScheduleForTeacher(teacherId!);
               final filtered =
-                  result.data
+                  _scheduleCache.values
                       .where((s) => s.groupId == selectedGroup!.id && s.subjectId == selectedSubject!.id)
                       .toList();
               setStateDialog(() {
                 availableSchedules = filtered;
                 selectedSchedule = null;
-                isDialogLoading = false;
               });
             }
 
@@ -317,7 +318,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                       DropdownButtonFormField<Group>(
                         decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder()),
                         initialValue: selectedGroup,
-                        items: _groups.map((g) => DropdownMenuItem(value: g, child: Text(g.name))).toList(),
+                        items: _relevantGroups.map((g) => DropdownMenuItem(value: g, child: Text(g.name))).toList(),
                         onChanged:
                             selectedSubject == null
                                 ? null
@@ -329,9 +330,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                         hint: selectedSubject == null ? const Text('Сначала выберите предмет') : null,
                       ),
                       const SizedBox(height: AppSpacing.m),
-                      if (isDialogLoading)
-                        const Center(child: CircularProgressIndicator())
-                      else if (availableSchedules.isNotEmpty)
+                      if (availableSchedules.isNotEmpty)
                         DropdownButtonFormField<Schedule>(
                           isExpanded: true,
                           decoration: const InputDecoration(labelText: 'Время урока', border: OutlineInputBorder()),
@@ -457,7 +456,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                                 ),
                                 items: [
                                   const DropdownMenuItem(child: Text('Все')),
-                                  ..._groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
+                                  ..._relevantGroups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
                                 ],
                                 onChanged: (v) => setState(() => _filterGroupId = v),
                               ),

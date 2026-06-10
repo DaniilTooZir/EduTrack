@@ -8,6 +8,7 @@ import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_bottom_sheet.dart';
 import 'package:edu_track/utils/app_constants.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -242,7 +243,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
                               const SizedBox(height: 4),
                               if (hw.dueDate != null)
                                 Text(
-                                  'Срок: ${hw.dueDate!.toLocal().toString().split(' ')[0]}',
+                                  'Срок: ${formatDate(hw.dueDate!.toLocal())}',
                                   style: TextStyle(
                                     color:
                                         hw.dueDate!.isBefore(DateTime.now()) && !isDone
@@ -363,11 +364,12 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png', 'zip', 'rar'],
-      allowMultiple: true,
     );
     if (result != null) {
       setState(() {
-        _selectedFiles.addAll(result.files);
+        _selectedFiles
+          ..clear()
+          ..addAll(result.files);
       });
     }
   }
@@ -422,6 +424,25 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
     }
     Navigator.pop(context);
     MessengerHelper.showSuccess('Сдача отменена');
+  }
+
+  Future<void> _showCancelDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Отменить сдачу?'),
+            content: const Text('Ваш ответ будет удалён и задание вернётся в список актуальных.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Нет')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text('Да, отменить', style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
+              ),
+            ],
+          ),
+    );
+    if (confirmed == true) await _cancelSubmission();
   }
 
   Future<void> _openFile(String url) async {
@@ -598,8 +619,8 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.l),
-                    // ── Завершено / На проверке / На доработку ──────────────
                     if (_isDone || hasContent) ...[
+                      // Teacher remarks
                       if (status?.teacherComment != null && status!.teacherComment!.isNotEmpty) ...[
                         Container(
                           width: double.infinity,
@@ -633,53 +654,8 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                           ),
                         ),
                       ],
-                      if (isReturnedForRevision)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            'Ваш предыдущий ответ:',
-                            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
-                          ),
-                        ),
-                      if (status?.studentComment != null && status!.studentComment!.isNotEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(AppSpacing.l),
-                          decoration: BoxDecoration(
-                            color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: colors.outlineVariant),
-                          ),
-                          child: Text(status.studentComment!),
-                        ),
-                      const SizedBox(height: AppSpacing.m),
-                      if (status?.fileUrl != null)
-                        InkWell(
-                          onTap: () => _openFile(status.fileUrl!),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: colors.primaryContainer.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.description, color: colors.primary),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    status!.fileName ?? 'Ваш файл',
-                                    style: TextStyle(color: colors.onPrimaryContainer),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      // ── Форма пересдачи (только когда вернули на доработку) ──
+                      // New answer form first (when revision needed)
                       if (isReturnedForRevision) ...[
-                        const Divider(height: 32),
                         Text(
                           'Новый ответ:',
                           style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold, fontSize: 15),
@@ -770,14 +746,54 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             label: const Text('Сдать повторно'),
                           ),
                         ),
+                        const Divider(height: 32),
+                        Text('Ваш предыдущий ответ:', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13)),
+                        const SizedBox(height: 8),
                       ],
-                      // ── Кнопка отмены (на проверке и завершённые) ───────────
-                      if (!isReturnedForRevision) ...[
+                      // Previous answer (context for all states)
+                      if (status?.studentComment != null && status!.studentComment!.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.l),
+                          decoration: BoxDecoration(
+                            color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colors.outlineVariant),
+                          ),
+                          child: Text(status.studentComment!),
+                        ),
+                      const SizedBox(height: AppSpacing.m),
+                      if (status?.fileUrl != null)
+                        InkWell(
+                          onTap: () => _openFile(status.fileUrl!),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: colors.primaryContainer.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.description, color: colors.primary),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    status!.fileName ?? 'Ваш файл',
+                                    style: TextStyle(color: colors.onPrimaryContainer),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      // Cancel button only for "on review" state (not done, not revision)
+                      if (!isReturnedForRevision && !_isDone) ...[
                         const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
-                            onPressed: _isSubmitting ? null : _cancelSubmission,
+                            onPressed: _isSubmitting ? null : _showCancelDialog,
                             icon: const Icon(Icons.undo),
                             label: const Text('Отменить сдачу'),
                             style: OutlinedButton.styleFrom(
@@ -789,7 +805,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                         ),
                       ],
                     ] else ...[
-                      // ── Первичная сдача ──────────────────────────────────────
+                      // Primary submission form
                       TextField(
                         controller: _commentController,
                         maxLines: 4,
@@ -814,10 +830,7 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             children: [
                               Icon(Icons.upload_file, color: colors.primary),
                               const SizedBox(width: AppSpacing.m),
-                              Text(
-                                'Прикрепить файлы (необязательно)',
-                                style: TextStyle(color: colors.onSurfaceVariant),
-                              ),
+                              Text('Прикрепить файл (необязательно)', style: TextStyle(color: colors.onSurfaceVariant)),
                             ],
                           ),
                         ),
@@ -852,14 +865,6 @@ class _HomeworkSubmissionSheetState extends State<_HomeworkSubmissionSheet> {
                             ),
                           ),
                         ),
-                        if (_selectedFiles.length > 1)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4, bottom: 8),
-                            child: Text(
-                              'Будет отправлен только первый файл: ${_selectedFiles.first.name}',
-                              style: TextStyle(color: colors.error, fontSize: 11, fontStyle: FontStyle.italic),
-                            ),
-                          ),
                       ],
                       const SizedBox(height: 24),
                       SizedBox(

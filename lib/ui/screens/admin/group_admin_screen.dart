@@ -33,6 +33,14 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   final _groupNameRegex = RegExp(r'^[a-zA-Zа-яА-ЯёЁ0-9-]+$');
   final _groupNameAllowList = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9-]');
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  List<Group> get _filteredGroups {
+    if (_searchQuery.isEmpty) return _groups;
+    final q = _searchQuery.toLowerCase();
+    return _groups.where((g) => g.name.toLowerCase().contains(q)).toList();
+  }
 
   @override
   void initState() {
@@ -43,6 +51,7 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -248,49 +257,23 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                       autovalidateMode: _autovalidateMode,
                       child: Column(
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _nameController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Название группы',
-                                    hintText: 'Например: ИСП-11',
-                                    prefixIcon: Icon(Icons.group_work, color: colors.primary),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                    isDense: true,
-                                    counterText: '',
-                                  ),
-                                  maxLength: 10,
-                                  inputFormatters: [FilteringTextInputFormatter.allow(_groupNameAllowList)],
-                                  validator: (val) {
-                                    if (val == null || val.trim().isEmpty) return 'Введите название';
-                                    if (!_groupNameRegex.hasMatch(val)) return 'Только буквы, цифры и "-"';
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.l),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colors.primary,
-                                  foregroundColor: colors.onPrimary,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  minimumSize: const Size(0, 50),
-                                ),
-                                onPressed: _isAdding ? null : _addGroup,
-                                child:
-                                    _isAdding
-                                        ? SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
-                                        )
-                                        : const Icon(Icons.add),
-                              ),
-                            ],
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              labelText: 'Название группы',
+                              hintText: 'Например: ИСП-11',
+                              prefixIcon: Icon(Icons.group_work, color: colors.primary),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              isDense: true,
+                              counterText: '',
+                            ),
+                            maxLength: 10,
+                            inputFormatters: [FilteringTextInputFormatter.allow(_groupNameAllowList)],
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) return 'Введите название';
+                              if (!_groupNameRegex.hasMatch(val)) return 'Только буквы, цифры и "-"';
+                              return null;
+                            },
                           ),
                           const SizedBox(height: AppSpacing.m),
                           DropdownButtonFormField<String>(
@@ -311,6 +294,27 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                             ],
                             onChanged: (val) => setState(() => _selectedCuratorId = val),
                           ),
+                          const SizedBox(height: AppSpacing.l),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                backgroundColor: colors.primary,
+                                foregroundColor: colors.onPrimary,
+                              ),
+                              onPressed: _isAdding ? null : _addGroup,
+                              child:
+                                  _isAdding
+                                      ? SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
+                                      )
+                                      : const Text('Добавить группу'),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -322,13 +326,24 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold, color: colors.primary, fontSize: 20),
                 ),
                 const SizedBox(height: AppSpacing.m),
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    labelText: 'Поиск группы',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    isDense: true,
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+                const SizedBox(height: AppSpacing.m),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadData,
                     child:
                         _isLoading
                             ? _buildListSkeleton()
-                            : _groups.isEmpty
+                            : _filteredGroups.isEmpty
                             ? ListView(
                               physics: const AlwaysScrollableScrollPhysics(),
                               children: [
@@ -342,10 +357,10 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                             )
                             : ListView.separated(
                               physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: _groups.length,
+                              itemCount: _filteredGroups.length,
                               separatorBuilder: (_, __) => const SizedBox(height: 8),
                               itemBuilder: (context, index) {
-                                final group = _groups[index];
+                                final group = _filteredGroups[index];
                                 return Card(
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                   elevation: 3,

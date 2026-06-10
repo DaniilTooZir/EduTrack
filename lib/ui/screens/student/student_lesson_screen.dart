@@ -1,5 +1,6 @@
 ﻿import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
+import 'package:edu_track/data/services/lesson_comment_service.dart';
 import 'package:edu_track/models/lesson.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -23,16 +24,29 @@ class StudentLessonScreen extends StatefulWidget {
 class _StudentLessonScreenState extends State<StudentLessonScreen> {
   LessonRepository get _lessonRepository => Provider.of<LessonRepository>(context, listen: false);
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
+  final _commentService = LessonCommentService();
 
   bool _loading = true;
   List<Lesson> _lessons = [];
   Map<String, Schedule> _scheduleCache = {};
+  Map<String, int> _teacherCommentCounts = {};
   _LessonSort _sortOrder = _LessonSort.dateDesc;
+  String? _filterSubject;
 
   String? get studentId => Provider.of<UserProvider>(context, listen: false).userId;
 
+  List<String> get _subjectNames {
+    final names =
+        _scheduleCache.values.map((s) => s.subject?.name).where((n) => n != null).cast<String>().toSet().toList()
+          ..sort();
+    return names;
+  }
+
   List<Lesson> get _displayedLessons {
-    final list = List<Lesson>.from(_lessons);
+    var list = List<Lesson>.from(_lessons);
+    if (_filterSubject != null) {
+      list = list.where((l) => _scheduleCache[l.scheduleId]?.subject?.name == _filterSubject).toList();
+    }
     list.sort((a, b) {
       final sa = _scheduleCache[a.scheduleId];
       final sb = _scheduleCache[b.scheduleId];
@@ -83,10 +97,15 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
     }
     final cache = {for (final s in schedulesResult.data) s.id: s};
     final lessonsResult = await _lessonRepository.getLessonsByScheduleIds(cache.keys.toList());
+    if (!mounted) return;
+    final lessonsList = lessonsResult.isSuccess ? lessonsResult.data : <Lesson>[];
+    final lessonIds = lessonsList.map((l) => l.id).whereType<String>().toList();
+    final countsResult = await _commentService.getTeacherCommentCountsForLessons(lessonIds);
     if (mounted) {
       setState(() {
-        _lessons = lessonsResult.isSuccess ? lessonsResult.data : [];
+        _lessons = lessonsList;
         _scheduleCache = cache;
+        _teacherCommentCounts = countsResult.isSuccess ? countsResult.data : {};
         _loading = false;
       });
     }
@@ -100,9 +119,44 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
   Widget _buildLessonCard(Lesson lesson, Schedule schedule, ColorScheme colors) {
     final subjectName = schedule.subject?.name ?? 'Предмет';
     final date = schedule.date;
-    final day = date != null ? date.day.toString().padLeft(2, '0') : '--';
-    final month = date != null ? _getMonthName(date.month) : '';
     final timeStr = '${schedule.startTime.substring(0, 5)} - ${schedule.endTime.substring(0, 5)}';
+    final hasTeacherComments = (lesson.id != null) && (_teacherCommentCounts[lesson.id] ?? 0) > 0;
+
+    final dateBadge =
+        date != null
+            ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(color: colors.primaryContainer, borderRadius: BorderRadius.circular(12)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    date.day.toString().padLeft(2, '0'),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onPrimaryContainer),
+                  ),
+                  Text(
+                    _getMonthName(date.month),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.onPrimaryContainer),
+                  ),
+                ],
+              ),
+            )
+            : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(color: colors.secondaryContainer, borderRadius: BorderRadius.circular(12)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.repeat, size: 20, color: colors.onSecondaryContainer),
+                  const SizedBox(height: 2),
+                  Text(
+                    'еженед.',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: colors.onSecondaryContainer),
+                  ),
+                ],
+              ),
+            );
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       decoration: BoxDecoration(
@@ -119,23 +173,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
             padding: const EdgeInsets.all(AppSpacing.l),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(color: colors.primaryContainer, borderRadius: BorderRadius.circular(12)),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        day,
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onPrimaryContainer),
-                      ),
-                      Text(
-                        month,
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.onPrimaryContainer),
-                      ),
-                    ],
-                  ),
-                ),
+                dateBadge,
                 const SizedBox(width: AppSpacing.l),
                 Expanded(
                   child: Column(
@@ -164,14 +202,29 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: colors.secondaryContainer),
-                  child: IconButton(
-                    icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                    color: colors.onSecondaryContainer,
-                    tooltip: 'Открыть чат',
-                    onPressed: () => context.push(AppRoutes.studentLessonCommentsPath(lesson.id!)),
-                  ),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: colors.secondaryContainer),
+                      child: IconButton(
+                        icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                        color: colors.onSecondaryContainer,
+                        tooltip: 'Открыть чат урока',
+                        onPressed: () => context.push(AppRoutes.studentLessonCommentsPath(lesson.id!)),
+                      ),
+                    ),
+                    if (hasTeacherComments)
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(color: colors.error, shape: BoxShape.circle),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -237,6 +290,35 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                           ],
                         ),
                       ),
+                      if (_subjectNames.isNotEmpty)
+                        SizedBox(
+                          height: 40,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: FilterChip(
+                                  label: const Text('Все'),
+                                  selected: _filterSubject == null,
+                                  onSelected: (_) => setState(() => _filterSubject = null),
+                                ),
+                              ),
+                              ..._subjectNames.map(
+                                (name) => Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: FilterChip(
+                                    label: Text(name),
+                                    selected: _filterSubject == name,
+                                    onSelected:
+                                        (_) => setState(() => _filterSubject = _filterSubject == name ? null : name),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       Expanded(
                         child: RefreshIndicator(
                           onRefresh: _loadLessons,

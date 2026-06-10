@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:edu_track/data/services/auth_service.dart';
+import 'package:edu_track/models/education_head.dart';
 import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/homework.dart';
@@ -162,6 +163,22 @@ class LocalTeacherProfiles extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// Полные профили администраторов (для экрана профиля)
+class LocalAdminProfiles extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get surname => text()();
+  TextColumn get email => text()();
+  TextColumn get login => text()();
+  TextColumn get institutionId => text()();
+  TextColumn get phone => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  TextColumn get avatarUrl => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // Учреждения (для экранов профиля)
 class LocalInstitutions extends Table {
   TextColumn get id => text()();
@@ -196,6 +213,7 @@ class LocalLessons extends Table {
     LocalStudents,
     LocalGroupDetails,
     LocalTeacherProfiles,
+    LocalAdminProfiles,
     LocalInstitutions,
     LocalLessons,
   ],
@@ -204,7 +222,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -228,6 +246,7 @@ class AppDatabase extends _$AppDatabase {
     await delete(localStudents).go();
     await delete(localGroupDetails).go();
     await delete(localTeacherProfiles).go();
+    await delete(localAdminProfiles).go();
     await delete(localInstitutions).go();
     await delete(localLessons).go();
   }
@@ -716,6 +735,39 @@ class AppDatabase extends _$AppDatabase {
       password: '',
       institutionId: row.institutionId,
       department: row.department,
+      createdAt: row.createdAt,
+      avatarUrl: row.avatarUrl,
+    );
+  }
+
+  Future<void> saveAdminProfile(EducationHead admin) async {
+    await into(localAdminProfiles).insertOnConflictUpdate(
+      LocalAdminProfilesCompanion.insert(
+        id: admin.id,
+        name: admin.name,
+        surname: admin.surname,
+        email: admin.email,
+        login: admin.login,
+        institutionId: admin.institutionId,
+        phone: admin.phone,
+        createdAt: admin.createdAt,
+        avatarUrl: Value(admin.avatarUrl),
+      ),
+    );
+  }
+
+  Future<EducationHead?> getAdminProfileById(String id) async {
+    final row = await (select(localAdminProfiles)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (row == null) return null;
+    return EducationHead(
+      id: row.id,
+      name: row.name,
+      surname: row.surname,
+      email: row.email,
+      login: row.login,
+      password: '',
+      institutionId: row.institutionId,
+      phone: row.phone,
       createdAt: row.createdAt,
       avatarUrl: row.avatarUrl,
     );

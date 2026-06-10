@@ -51,45 +51,32 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     if (instId == null) return;
     setState(() => _isLoading = true);
 
-    final studentResult = await _dashboardService.getStudentCount(instId);
-    if (studentResult.isFailure) {
-      MessengerHelper.showError(studentResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
+    final results = await Future.wait([
+      _dashboardService.getStudentCount(instId),
+      _dashboardService.getTeacherCount(instId),
+      _dashboardService.getGroupCount(instId),
+      _dashboardService.getSubjectCount(instId),
+    ]);
+
+    if (!mounted) return;
+
+    for (final r in results) {
+      if (r.isFailure) {
+        MessengerHelper.showError(r.errorMessage);
+        setState(() => _isLoading = false);
+        return;
+      }
     }
 
-    final teacherResult = await _dashboardService.getTeacherCount(instId);
-    if (teacherResult.isFailure) {
-      MessengerHelper.showError(teacherResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
-    final groupResult = await _dashboardService.getGroupCount(instId);
-    if (groupResult.isFailure) {
-      MessengerHelper.showError(groupResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
-    final subjectResult = await _dashboardService.getSubjectCount(instId);
-    if (subjectResult.isFailure) {
-      MessengerHelper.showError(subjectResult.errorMessage);
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _stats = {
-          'students': studentResult.data,
-          'teachers': teacherResult.data,
-          'groups': groupResult.data,
-          'subjects': subjectResult.data,
-        };
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _stats = {
+        'students': results[0].data,
+        'teachers': results[1].data,
+        'groups': results[2].data,
+        'subjects': results[3].data,
+      };
+      _isLoading = false;
+    });
   }
 
   void _navigateToTab(int index) {
@@ -132,7 +119,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         bodyContent = const UserListScreen();
         break;
       case 2:
-        bodyContent = const AddUserScreen();
+        bodyContent = AddUserScreen(onUserAdded: () => _navigateToTab(1));
         break;
       case 3:
         bodyContent = const SubjectAdminScreen();
@@ -165,6 +152,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           IconButton(icon: const Icon(Icons.logout), tooltip: 'Выйти', onPressed: () => _confirmLogout(context)),
         ],
       ),
+      floatingActionButton:
+          _selectedIndex == 1
+              ? FloatingActionButton.extended(
+                onPressed: () => _navigateToTab(2),
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                label: const Text('Добавить'),
+              )
+              : null,
       drawer: AppDrawer(
         title: 'Меню администратора',
         selectedIndex: _selectedIndex,
@@ -172,7 +167,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         items: const [
           AppDrawerItem(icon: Icons.dashboard_rounded, title: 'Главная', tabIndex: 0),
           AppDrawerItem(icon: Icons.people_alt_rounded, title: 'Пользователи', tabIndex: 1),
-          AppDrawerItem(icon: Icons.person_add_alt_1_rounded, title: 'Добавить пользователя', tabIndex: 2),
           AppDrawerItem(icon: Icons.menu_book_rounded, title: 'Предметы', tabIndex: 3),
           AppDrawerItem(icon: Icons.groups_rounded, title: 'Группы', tabIndex: 4),
           AppDrawerItem(icon: Icons.calendar_month_rounded, title: 'Учебные периоды', tabIndex: 5),
@@ -190,10 +184,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   Widget _buildDashboard(ColorScheme colors) {
     return RefreshIndicator(
-      onRefresh: () async {
-        await _loadDashboardData();
-        await Future.delayed(const Duration(seconds: 1));
-      },
+      onRefresh: _loadDashboardData,
       color: colors.primary,
       child: Center(
         child: ConstrainedBox(

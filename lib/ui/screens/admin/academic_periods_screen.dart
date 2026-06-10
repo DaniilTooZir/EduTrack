@@ -2,6 +2,7 @@ import 'package:edu_track/data/services/academic_period_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/date_utils.dart';
@@ -135,6 +136,10 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
                         MessengerHelper.showError('Заполните все поля');
                         return;
                       }
+                      if (endDate!.isBefore(startDate!)) {
+                        MessengerHelper.showError('Дата окончания не может быть раньше даты начала');
+                        return;
+                      }
                       Navigator.pop(ctx, true);
                     },
                     child: const Text('Сохранить'),
@@ -218,7 +223,7 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
   }
 
   Widget _buildBody(ColorScheme colors) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return _buildSkeleton();
     if (_error != null) return AppErrorView(message: _error!, onRetry: _load);
     if (_periods.isEmpty) {
       return Center(
@@ -301,6 +306,38 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+      itemCount: 5,
+      itemBuilder:
+          (_, __) => Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            elevation: 3,
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.card),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+              child: Row(
+                children: [
+                  const Skeleton(height: 48, width: 48),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Skeleton(height: 14, width: 160),
+                        SizedBox(height: 6),
+                        Skeleton(height: 12, width: 120),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
     );
   }
 }

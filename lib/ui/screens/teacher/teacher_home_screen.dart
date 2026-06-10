@@ -149,12 +149,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     }
   }
 
-  Future<void> _showJournalSelectorSheet({bool switchToTab = false}) async {
+  Future<void> _showJournalSelectorSheet({bool switchToTab = false, String? initialSubjectId}) async {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
     final result = await showAppBottomSheet<Map<String, String>>(
       context,
-      builder: (ctx) => _JournalSelectorSheet(teacherId: teacherId),
+      builder: (ctx) => _JournalSelectorSheet(teacherId: teacherId, initialSubjectId: initialSubjectId),
     );
     if (result != null && mounted) {
       unawaited(_saveJournalSelection(result));
@@ -265,38 +265,20 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         elevation: 0,
         title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
-        leadingWidth: _selectedIndex == 8 ? 248 : 56,
-        leading:
-            _selectedIndex == 8
-                ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Builder(
-                      builder:
-                          (ctx) =>
-                              IconButton(icon: const Icon(Icons.menu), onPressed: () => Scaffold.of(ctx).openDrawer()),
-                    ),
-                    TextButton.icon(
-                      onPressed: _showJournalSelectorSheet,
-                      icon: const Icon(Icons.swap_horiz_rounded, size: 18, color: Colors.white),
-                      label: const Text('Сменить предмет', style: TextStyle(color: Colors.white, fontSize: 12)),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                    if (_journalExportCallback != null)
-                      IconButton(
-                        icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 22),
-                        tooltip: 'Экспорт в PDF',
-                        onPressed: _journalExportCallback,
-                      ),
-                  ],
-                )
-                : null,
         actions: [
-          const PeriodDropdown(),
+          if (_selectedIndex == 8)
+            IconButton(
+              icon: const Icon(Icons.swap_horiz_rounded),
+              tooltip: 'Сменить предмет',
+              onPressed: _showJournalSelectorSheet,
+            ),
+          if (_selectedIndex == 8 && _journalExportCallback != null)
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              tooltip: 'Экспорт в PDF',
+              onPressed: _journalExportCallback,
+            ),
+          if (_selectedIndex != 4 && _selectedIndex != 7) const PeriodDropdown(),
           if (_selectedIndex == 0)
             IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _refreshDashboard),
           if (_selectedIndex == 8 && _journalRefreshCallback != null)
@@ -338,10 +320,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Widget _buildDashboard(ColorScheme colors) {
     final firstName = Provider.of<UserProvider>(context, listen: false).userName ?? 'преподаватель';
     return RefreshIndicator(
-      onRefresh: () async {
-        _refreshDashboard();
-        await Future.delayed(const Duration(seconds: 1));
-      },
+      onRefresh: _loadData,
       color: colors.primary,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -425,7 +404,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       color: colors.surface,
       child: InkWell(
         borderRadius: AppRadius.card,
-        onTap: () => _navigateToTab(2),
+        onTap: () => _showJournalSelectorSheet(initialSubjectId: subject.id, switchToTab: true),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
@@ -451,7 +430,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   children: [
                     Text(subject.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     Text(
-                      'Нажмите, чтобы перейти к урокам',
+                      'Нажмите, чтобы открыть журнал',
                       style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
                     ),
                   ],
@@ -523,7 +502,8 @@ class _SchedulePair {
 
 class _JournalSelectorSheet extends StatefulWidget {
   final String teacherId;
-  const _JournalSelectorSheet({required this.teacherId});
+  final String? initialSubjectId;
+  const _JournalSelectorSheet({required this.teacherId, this.initialSubjectId});
 
   @override
   State<_JournalSelectorSheet> createState() => _JournalSelectorSheetState();
@@ -579,6 +559,9 @@ class _JournalSelectorSheetState extends State<_JournalSelectorSheet> {
         _subjects = uniqueSubjects.values.toList()..sort((a, b) => a.name.compareTo(b.name));
         _isLoading = false;
       });
+      if (widget.initialSubjectId != null && _subjects.any((s) => s.id == widget.initialSubjectId)) {
+        _onSubjectChanged(widget.initialSubjectId);
+      }
     } catch (_) {
       setState(() {
         _errorMessage = 'Не удалось загрузить данные расписания';

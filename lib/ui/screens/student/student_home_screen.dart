@@ -37,6 +37,7 @@ class StudentHomeScreen extends StatefulWidget {
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _selectedIndex = 0;
   bool _isDashboardLoading = true;
+  bool _isGroupChatLoading = false;
   String? _dashboardError;
   int _totalHomework = 0;
   int _completedHomework = 0;
@@ -83,24 +84,26 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       }
       return;
     }
-    final homeworksResult = await _homeworkRepository.getHomeworksForStudentGroup(studentId, groupId ?? '');
+    final (homeworksResult, statusesResult, avg, scheduleResult) =
+        await (
+          _homeworkRepository.getHomeworksForStudentGroup(studentId, groupId ?? ''),
+          _homeworkRepository.getStatusesForStudent(studentId),
+          _gradeRepository.getStudentAverage(studentId),
+          _scheduleRepository.getScheduleForStudent(studentId, groupId),
+        ).wait;
+    if (!mounted) return;
     if (homeworksResult.isFailure) {
-      if (mounted) {
-        setState(() {
-          _dashboardError = homeworksResult.errorMessage;
-          _isDashboardLoading = false;
-        });
-      }
+      setState(() {
+        _dashboardError = homeworksResult.errorMessage;
+        _isDashboardLoading = false;
+      });
       return;
     }
-    final statusesResult = await _homeworkRepository.getStatusesForStudent(studentId);
     if (statusesResult.isFailure) {
-      if (mounted) {
-        setState(() {
-          _dashboardError = statusesResult.errorMessage;
-          _isDashboardLoading = false;
-        });
-      }
+      setState(() {
+        _dashboardError = statusesResult.errorMessage;
+        _isDashboardLoading = false;
+      });
       return;
     }
     final homeworks = homeworksResult.data;
@@ -116,22 +119,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         pending++;
       }
     }
-    final avg = await _gradeRepository.getStudentAverage(studentId);
-    final scheduleResult = await _scheduleRepository.getScheduleForStudent(studentId, groupId);
     Schedule? nextLesson;
-    if (scheduleResult.isSuccess) {
-      nextLesson = findNextLesson(scheduleResult.data);
-    }
-    if (mounted) {
-      setState(() {
-        _totalHomework = homeworks.length;
-        _completedHomework = completed;
-        _pendingHomework = pending;
-        _overallAverage = avg;
-        _nextLesson = nextLesson;
-        _isDashboardLoading = false;
-      });
-    }
+    if (scheduleResult.isSuccess) nextLesson = findNextLesson(scheduleResult.data);
+    setState(() {
+      _totalHomework = homeworks.length;
+      _completedHomework = completed;
+      _pendingHomework = pending;
+      _overallAverage = avg;
+      _nextLesson = nextLesson;
+      _isDashboardLoading = false;
+    });
   }
 
   void _onItemTapped(int index) {
@@ -203,7 +200,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         title: Text(_titles[_selectedIndex], style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: [
-          const PeriodDropdown(),
+          if (_selectedIndex != 4 && _selectedIndex != 5) const PeriodDropdown(),
           if (_selectedIndex == 0)
             IconButton(icon: const Icon(Icons.refresh), tooltip: 'Обновить', onPressed: _loadDashboardData),
           IconButton(icon: const Icon(Icons.logout), tooltip: 'Выйти', onPressed: () => _confirmLogout(context)),
@@ -287,7 +284,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   QuickActionCard(icon: Icons.calendar_month, label: 'Расписание', onTap: () => _onItemTapped(3)),
                   QuickActionCard(icon: Icons.menu_book, label: 'Уроки', onTap: () => _onItemTapped(2)),
                   QuickActionCard(icon: Icons.bar_chart_rounded, label: 'Аналитика', onTap: () => _onItemTapped(6)),
-                  QuickActionCard(icon: Icons.forum, label: 'Чат группы', onTap: () => _openGroupChat(context)),
+                  QuickActionCard(
+                    icon: Icons.forum,
+                    label: 'Чат группы',
+                    onTap: () => _openGroupChat(context),
+                    isLoading: _isGroupChatLoading,
+                  ),
                 ],
               ),
             ),
@@ -375,24 +377,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   Future<void> _openGroupChat(BuildContext context) async {
+    if (_isGroupChatLoading) return;
+    setState(() => _isGroupChatLoading = true);
     final navigator = Navigator.of(context);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final groupId = userProvider.groupId;
     final groupName = userProvider.groupName;
     if (groupId == null) {
       MessengerHelper.showError('Не удалось получить данные группы');
+      if (mounted) setState(() => _isGroupChatLoading = false);
       return;
     }
     final chatResult = await ChatService().getOrCreateGroupChat(groupId, groupName ?? groupId);
+    if (!mounted) return;
     if (chatResult.isFailure) {
       MessengerHelper.showError(chatResult.errorMessage);
+      setState(() => _isGroupChatLoading = false);
       return;
     }
-    if (mounted) {
-      await navigator.push(
-        MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatResult.data, title: 'Группа $groupName')),
-      );
-    }
+    setState(() => _isGroupChatLoading = false);
+    await navigator.push(
+      MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatResult.data, title: 'Группа $groupName')),
+    );
   }
 
   Widget _buildDashboardSkeleton(ColorScheme colors) {

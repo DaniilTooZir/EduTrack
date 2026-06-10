@@ -1,4 +1,6 @@
-﻿import 'package:edu_track/data/services/users_fetch_service.dart';
+﻿import 'package:edu_track/data/services/group_service.dart';
+import 'package:edu_track/data/services/users_fetch_service.dart';
+import 'package:edu_track/models/group.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
@@ -19,10 +21,12 @@ class _UserListScreenState extends State<UserListScreen> {
   List<Map<String, dynamic>> _allStudents = [];
   List<Map<String, dynamic>> _allOperators = [];
   List<Map<String, dynamic>> _filteredUsers = [];
+  List<Group> _groups = [];
   bool _isLoading = true;
   String _searchQuery = '';
   String _selectedRole = 'all';
   bool _sortAsc = true;
+  final _groupService = GroupService();
 
   @override
   void initState() {
@@ -43,10 +47,8 @@ class _UserListScreenState extends State<UserListScreen> {
       service.fetchTeachers(institutionId),
       service.fetchStudents(institutionId),
       service.fetchScheduleOperators(institutionId),
+      _groupService.getGroups(institutionId),
     ]);
-    final teachersResult = results[0];
-    final studentsResult = results[1];
-    final operatorsResult = results[2];
 
     for (final result in results) {
       if (result.isFailure) {
@@ -58,9 +60,10 @@ class _UserListScreenState extends State<UserListScreen> {
 
     if (!mounted) return;
     setState(() {
-      _allTeachers = teachersResult.data;
-      _allStudents = studentsResult.data;
-      _allOperators = operatorsResult.data;
+      _allTeachers = results[0].data as List<Map<String, dynamic>>;
+      _allStudents = results[1].data as List<Map<String, dynamic>>;
+      _allOperators = results[2].data as List<Map<String, dynamic>>;
+      _groups = results[3].data as List<Group>;
       _filteredUsers = _computeFiltered();
       _isLoading = false;
     });
@@ -243,25 +246,23 @@ class _UserListScreenState extends State<UserListScreen> {
     final role = user['role'] as String;
     final isTeacher = role == 'teacher';
     final isOperator = role == 'schedule_operator';
-    Color avatarColor;
-    IconData icon;
+    final Color avatarColor;
+    final IconData icon;
     if (isTeacher) {
-      avatarColor = const Color(0xFF9575CD);
+      avatarColor = Colors.deepOrange.shade400;
       icon = Icons.school;
     } else if (isOperator) {
-      avatarColor = Colors.orange.shade400;
+      avatarColor = Colors.teal.shade400;
       icon = Icons.edit_calendar;
     } else {
-      avatarColor = const Color(0xFF673AB7);
+      avatarColor = Colors.blue.shade600;
       icon = Icons.person;
     }
-    String subtitle;
-    if (isTeacher) {
-      subtitle = '${user['email']} • ${user['login']}';
-    } else if (isOperator) {
-      subtitle = '${user['email']} • ${user['login']} (Оператор)';
+    final String subtitle;
+    if (isTeacher || isOperator) {
+      subtitle = user['email'] as String? ?? '';
     } else {
-      subtitle = '${user['email']} • ${user['login']} • Группа ${user['group_name']}';
+      subtitle = 'Группа ${user['group_name']}';
     }
     return Card(
       elevation: 3,
@@ -270,13 +271,32 @@ class _UserListScreenState extends State<UserListScreen> {
         leading: CircleAvatar(backgroundColor: avatarColor, child: Icon(icon, color: Colors.white)),
         title: Text(fullName, style: TextStyle(fontWeight: FontWeight.w600, color: colors.onSurface)),
         subtitle: Text(subtitle, style: TextStyle(color: colors.onSurfaceVariant)),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.redAccent),
-          tooltip: 'Удалить пользователя',
-          onPressed: () => _confirmDelete(user),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.edit_outlined, color: colors.primary),
+              tooltip: 'Редактировать',
+              onPressed: () => _showEditDialog(user),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              tooltip: 'Удалить пользователя',
+              onPressed: () => _confirmDelete(user),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  void _showEditDialog(Map<String, dynamic> user) {
+    showDialog<bool>(
+      context: context,
+      builder: (_) => _EditUserDialog(user: user, groups: _groups, service: UsersFetchService()),
+    ).then((updated) {
+      if (updated == true) _loadUsers();
+    });
   }
 
   void _confirmDelete(Map<String, dynamic> user) {
@@ -312,6 +332,142 @@ class _UserListScreenState extends State<UserListScreen> {
             subtitle: const Skeleton(height: 12, width: 200),
             trailing: Skeleton(height: 32, width: 32, borderRadius: 8),
           ),
+    );
+  }
+}
+
+class _EditUserDialog extends StatefulWidget {
+  final Map<String, dynamic> user;
+  final List<Group> groups;
+  final UsersFetchService service;
+
+  const _EditUserDialog({required this.user, required this.groups, required this.service});
+
+  @override
+  State<_EditUserDialog> createState() => _EditUserDialogState();
+}
+
+class _EditUserDialogState extends State<_EditUserDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _surnameController;
+  late final TextEditingController _emailController;
+  Group? _selectedGroup;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.user['name'] as String? ?? '');
+    _surnameController = TextEditingController(text: widget.user['surname'] as String? ?? '');
+    _emailController = TextEditingController(text: widget.user['email'] as String? ?? '');
+    if (widget.user['role'] == 'student') {
+      final groupId = widget.user['group_id']?.toString();
+      _selectedGroup = widget.groups.where((g) => g.id == groupId).firstOrNull;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _surnameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameController.text.trim();
+    final surname = _surnameController.text.trim();
+    final email = _emailController.text.trim();
+    if (name.isEmpty || surname.isEmpty || email.isEmpty) {
+      MessengerHelper.showError('Заполните все поля');
+      return;
+    }
+    setState(() => _isSaving = true);
+    final result = await widget.service.updateUser(
+      id: widget.user['id'].toString(),
+      role: widget.user['role'] as String,
+      name: name,
+      surname: surname,
+      email: email,
+      groupId: _selectedGroup?.id,
+    );
+    if (!mounted) return;
+    if (result.isFailure) {
+      MessengerHelper.showError(result.errorMessage);
+      setState(() => _isSaving = false);
+      return;
+    }
+    MessengerHelper.showSuccess('Данные обновлены');
+    Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isStudent = widget.user['role'] == 'student';
+    return AlertDialog(
+      title: const Text('Редактировать пользователя'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(labelText: 'Имя', border: OutlineInputBorder(), isDense: true),
+                      textInputAction: TextInputAction.next,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.m),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _surnameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Фамилия',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      textInputAction: TextInputAction.next,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.m),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder(), isDense: true),
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.done,
+              ),
+              if (isStudent && widget.groups.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.m),
+                DropdownButtonFormField<Group>(
+                  decoration: const InputDecoration(labelText: 'Группа', border: OutlineInputBorder(), isDense: true),
+                  initialValue: _selectedGroup,
+                  isExpanded: true,
+                  items: widget.groups.map((g) => DropdownMenuItem(value: g, child: Text(g.name))).toList(),
+                  onChanged: (g) => setState(() => _selectedGroup = g),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.s),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: _isSaving ? null : () => Navigator.pop(context, false), child: const Text('Отмена')),
+        FilledButton(
+          onPressed: _isSaving ? null : _save,
+          child:
+              _isSaving
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Сохранить'),
+        ),
+      ],
     );
   }
 }

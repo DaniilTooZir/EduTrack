@@ -10,13 +10,13 @@ import 'package:edu_track/models/student.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/screens/chat_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   const StudentProfileScreen({super.key});
@@ -43,6 +43,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   final _avatarService = AvatarService();
   Student? _student;
   Institution? _institution;
+  String? _groupName;
+  Map<String, dynamic>? _curatorInfo;
 
   @override
   void initState() {
@@ -53,13 +55,12 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     _loadStudentData();
   }
 
-  Map<String, dynamic>? _curatorInfo;
-
   Future<void> _loadStudentData() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final userId = userProvider.userId;
     final institutionId = userProvider.institutionId;
     if (userId == null) return;
+    _groupName = userProvider.groupName;
 
     final cachedStudent = await _db.getStudentById(userId);
     final cachedInstitution = institutionId != null ? await _db.getInstitutionById(institutionId) : null;
@@ -96,15 +97,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
 
     Map<String, dynamic>? curator;
     if (student.groupId != null) {
-      try {
-        final groupResponse =
-            await Supabase.instance.client
-                .from('groups')
-                .select('teacher:teachers(id, name, surname)')
-                .eq('id', student.groupId!)
-                .single();
-        curator = groupResponse['teacher'] as Map<String, dynamic>?;
-      } catch (_) {}
+      final curatorResult = await _studentService.getCuratorByGroupId(student.groupId!);
+      if (curatorResult.isSuccess) curator = curatorResult.data;
     }
     if (mounted) {
       setState(() {
@@ -229,7 +223,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         child: SafeArea(
           child:
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? _buildProfileSkeleton()
                   : SingleChildScrollView(
                     padding: const EdgeInsets.all(AppSpacing.l),
                     child: Center(
@@ -309,6 +303,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                                 _infoRow('Логин', _student!.login),
                                 _infoRow('Email', _student!.email),
                                 _infoRow('Учреждение', _institution?.name ?? '—'),
+                                _infoRow('Группа', _groupName ?? '—'),
                                 const SizedBox(height: 24),
                                 AnimatedCrossFade(
                                   firstChild: _editButton(),
@@ -344,6 +339,41 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChatScreen(chatId: result.data, title: '${_curatorInfo!['surname']} ${_curatorInfo!['name']}'),
+      ),
+    );
+  }
+
+  Widget _buildProfileSkeleton() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.l),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Card(
+            elevation: 8,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Center(child: Skeleton(width: 120, height: 120, borderRadius: 60)),
+                  const SizedBox(height: AppSpacing.l),
+                  const Center(child: Skeleton(width: 200, height: 24)),
+                  const SizedBox(height: 8),
+                  const Center(child: Skeleton(width: 150, height: 16)),
+                  const Divider(height: 32),
+                  const Skeleton(width: 120, height: 18),
+                  const SizedBox(height: 8),
+                  ...List.generate(
+                    4,
+                    (_) => const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Skeleton(height: 16)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -454,6 +484,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             child: TextFormField(
               controller: _passwordController,
               obscureText: !_isPasswordVisible,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: 'Новый пароль',
                 border: const OutlineInputBorder(),
@@ -478,6 +509,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                 child: TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: !_isPasswordVisible,
+                  textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(labelText: 'Подтвердите пароль', border: OutlineInputBorder()),
                   validator: (val) {
                     if (val != _passwordController.text) return 'Пароли не совпадают';
@@ -528,6 +560,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     TextInputType type = TextInputType.text,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
+    TextInputAction textInputAction = TextInputAction.next,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -538,6 +571,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         validator: validator,
         inputFormatters: inputFormatters,
         autovalidateMode: AutovalidateMode.onUserInteraction,
+        textInputAction: textInputAction,
       ),
     );
   }

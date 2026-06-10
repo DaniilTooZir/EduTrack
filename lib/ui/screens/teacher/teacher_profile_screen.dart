@@ -7,6 +7,7 @@ import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:edu_track/utils/validators.dart';
@@ -211,7 +212,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       backgroundColor: Colors.transparent,
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? _buildProfileSkeleton()
               : SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -273,6 +274,43 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   },
                 ),
               ),
+    );
+  }
+
+  Widget _buildProfileSkeleton() {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.l),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: Skeleton(width: 120, height: 120, borderRadius: 60)),
+                    const SizedBox(height: AppSpacing.l),
+                    const Center(child: Skeleton(width: 200, height: 24)),
+                    const SizedBox(height: 8),
+                    const Center(child: Skeleton(width: 150, height: 16)),
+                    const Divider(height: 32),
+                    const Skeleton(width: 120, height: 18),
+                    const SizedBox(height: 8),
+                    ...List.generate(
+                      3,
+                      (_) => const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Skeleton(height: 16)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -383,6 +421,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
             child: TextFormField(
               controller: _passwordController,
               obscureText: !_isPasswordVisible,
+              textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: 'Новый пароль',
                 border: const OutlineInputBorder(),
@@ -407,6 +446,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                 child: TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: !_isPasswordVisible,
+                  textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(labelText: 'Подтвердите пароль', border: OutlineInputBorder()),
                   validator: (val) {
                     if (val != _passwordController.text) return 'Пароли не совпадают';
@@ -455,6 +495,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     TextInputType type = TextInputType.text,
     String? Function(String?)? validator,
     List<TextInputFormatter>? inputFormatters,
+    TextInputAction textInputAction = TextInputAction.next,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -465,6 +506,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         validator: validator,
         inputFormatters: inputFormatters,
         autovalidateMode: AutovalidateMode.onUserInteraction,
+        textInputAction: textInputAction,
       ),
     );
   }

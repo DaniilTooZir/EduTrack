@@ -15,7 +15,6 @@ import 'package:edu_track/ui/screens/teacher/teacher_grade_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_home_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_homework_status_screen.dart';
 import 'package:edu_track/ui/screens/teacher/teacher_journal_screen.dart';
-import 'package:edu_track/ui/screens/teacher/teacher_lesson_comment_screen.dart';
 import 'package:edu_track/ui/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

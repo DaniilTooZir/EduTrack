@@ -83,12 +83,27 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
     MessengerHelper.showSuccess('${student.name} назначен(а) старостой');
   }
 
+  Future<void> _confirmSetHeadman(Student student) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Назначить старосту?'),
+            content: Text('${student.surname} ${student.name} будет назначен(а) старостой группы.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Назначить')),
+            ],
+          ),
+    );
+    if (confirmed == true) await _setHeadman(student);
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Кураторство')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _myGroup == null ? null : _openGroupChat,
         label: const Text('Чат группы'),
@@ -252,17 +267,13 @@ class _TeacherMyGroupScreenState extends State<TeacherMyGroupScreen> {
                                         tooltip: 'Написать сообщение',
                                         onPressed: () => _openDirectChat(student),
                                       ),
-                                      Tooltip(
-                                        message: 'Назначить старостой',
-                                        child: Switch(
-                                          value: student.isHeadman,
-                                          activeThumbColor: Colors.amber,
-                                          onChanged: (value) {
-                                            if (value) {
-                                              _setHeadman(student);
-                                            }
-                                          },
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.workspace_premium_rounded,
+                                          color: student.isHeadman ? Colors.amber : colors.onSurfaceVariant,
                                         ),
+                                        tooltip: student.isHeadman ? 'Уже является старостой' : 'Назначить старостой',
+                                        onPressed: student.isHeadman ? null : () => _confirmSetHeadman(student),
                                       ),
                                     ],
                                   ),

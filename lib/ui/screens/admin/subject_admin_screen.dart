@@ -25,8 +25,16 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadin
   String? _institutionId;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
   final _subjectNameAllowList = RegExp(r'[a-zA-Zа-яА-ЯёЁ0-9\s\-\.\(\)]');
+
+  List<Subject> get _filteredSubjects {
+    if (_searchQuery.isEmpty) return _subjects;
+    final q = _searchQuery.toLowerCase();
+    return _subjects.where((s) => s.name.toLowerCase().contains(q)).toList();
+  }
 
   @override
   void initState() {
@@ -44,6 +52,7 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadin
   @override
   void dispose() {
     _nameController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -217,13 +226,24 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadin
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: colors.primary),
                 ),
                 const SizedBox(height: AppSpacing.m),
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    labelText: 'Поиск предмета',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    isDense: true,
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+                const SizedBox(height: AppSpacing.m),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadData,
                     child:
                         isLoading
                             ? _buildListSkeleton()
-                            : _subjects.isEmpty
+                            : _filteredSubjects.isEmpty
                             ? ListView(
                               physics: const AlwaysScrollableScrollPhysics(),
                               children: [
@@ -240,10 +260,10 @@ class _SubjectAdminScreenState extends State<SubjectAdminScreen> with DataLoadin
                             )
                             : ListView.separated(
                               physics: const AlwaysScrollableScrollPhysics(),
-                              itemCount: _subjects.length,
+                              itemCount: _filteredSubjects.length,
                               separatorBuilder: (_, __) => const SizedBox(height: 8),
                               itemBuilder: (context, index) {
-                                final subject = _subjects[index];
+                                final subject = _filteredSubjects[index];
                                 return Card(
                                   elevation: 3,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

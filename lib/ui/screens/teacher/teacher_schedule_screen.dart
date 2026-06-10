@@ -34,12 +34,14 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with Data
     if (teacherId == null) return;
     await loadAsync(
       _scheduleService.getScheduleForTeacher(teacherId),
-      showError: false,
       onSuccess: (list) {
         final now = DateTime.now();
         final mondayThisWeek = DateTime(now.year, now.month, now.day - (now.weekday - 1));
         final endDate = DateTime(mondayThisWeek.year, mondayThisWeek.month, mondayThisWeek.day + 13, 23, 59, 59);
         list.removeWhere((s) => s.date != null && (s.date!.isBefore(mondayThisWeek) || s.date!.isAfter(endDate)));
+        final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
+        final isPeriodActive = period == null || period.isCurrent();
+        if (!isPeriodActive) list.removeWhere((s) => s.date == null);
         list.sort((a, b) {
           if (a.date == null && b.date != null) return -1;
           if (a.date != null && b.date == null) return 1;

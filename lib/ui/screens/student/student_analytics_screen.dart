@@ -7,6 +7,7 @@ import 'package:edu_track/models/grade.dart';
 import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/ui/widgets/app_error_view.dart';
+import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:edu_track/utils/date_utils.dart';
@@ -35,7 +36,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   Map<String, String> _commentMap = {};
   Map<String, FinalGrade> _finalGradeMap = {};
   AcademicPeriod? _loadedPeriod;
-  _AnalyticsSort _sortOrder = _AnalyticsSort.gradeAsc;
+  _AnalyticsSort _sortOrder = _AnalyticsSort.nameAsc;
 
   List<SubjectAnalytics> get _sortedAnalytics {
     final list = List<SubjectAnalytics>.from(_analytics);
@@ -133,7 +134,7 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return _buildLoadingSkeleton();
     if (_error != null) return AppErrorView(message: _error!, onRetry: _load);
     if (_analytics.isEmpty) {
       return Center(
@@ -246,6 +247,12 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
                   Icon(Icons.menu_book_rounded, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
                   const SizedBox(height: AppSpacing.l),
                   Text('Нет оценок для отображения', style: TextStyle(color: colors.onSurfaceVariant, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Предметы появятся здесь,\nкогда учитель выставит первую оценку',
+                    style: TextStyle(color: colors.onSurfaceVariant.withValues(alpha: 0.6), fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -317,6 +324,63 @@ class _StudentAnalyticsScreenState extends State<StudentAnalyticsScreen> {
       default:
         return 'предметам';
     }
+  }
+
+  Widget _buildLoadingSkeleton() {
+    return Column(
+      children: [
+        const SizedBox(height: 48),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Skeleton(height: 100, width: double.infinity, borderRadius: AppRadius.card.topLeft.x),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Row(
+            children: const [
+              Skeleton(height: 14, width: 80),
+              SizedBox(width: 12),
+              Skeleton(height: 32, width: 180, borderRadius: 8),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            itemCount: 5,
+            itemBuilder:
+                (_, __) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.l),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: AppRadius.card,
+                    ),
+                    child: const Row(
+                      children: [
+                        Skeleton(height: 56, width: 56),
+                        SizedBox(width: AppSpacing.l),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Skeleton(height: 15, width: 160),
+                              SizedBox(height: 6),
+                              Skeleton(height: 11, width: 80),
+                              SizedBox(height: 8),
+                              Skeleton(height: 6, width: double.infinity),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

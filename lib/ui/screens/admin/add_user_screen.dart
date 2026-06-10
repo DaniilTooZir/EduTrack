@@ -13,7 +13,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class AddUserScreen extends StatefulWidget {
-  const AddUserScreen({super.key});
+  final VoidCallback? onUserAdded;
+  const AddUserScreen({super.key, this.onUserAdded});
 
   @override
   State<AddUserScreen> createState() => _AddUserScreenState();
@@ -123,23 +124,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
     MessengerHelper.showSuccess('Пользователь успешно добавлен');
     if (mounted) {
-      _resetForm();
       setState(() => _isSubmitting = false);
+      widget.onUserAdded?.call();
     }
-  }
-
-  void _resetForm() {
-    _formKey.currentState?.reset();
-    _loginController.clear();
-    _passwordController.clear();
-    _nameController.clear();
-    _surnameController.clear();
-    _emailController.clear();
-    setState(() {
-      _selectedRole = null;
-      _selectedGroup = null;
-      _autovalidateMode = AutovalidateMode.disabled;
-    });
   }
 
   @override
@@ -182,6 +169,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                   prefixIcon: Icon(Icons.person),
                                   border: OutlineInputBorder(),
                                 ),
+                                textInputAction: TextInputAction.next,
+                                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                 validator: (val) => Validators.validateName(val, 'Имя'),
                               ),
                             ),
@@ -194,53 +183,12 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                   prefixIcon: Icon(Icons.person_outline),
                                   border: OutlineInputBorder(),
                                 ),
+                                textInputAction: TextInputAction.next,
+                                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                                 validator: (val) => Validators.validateName(val, 'Фамилия'),
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: AppSpacing.l),
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email),
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: Validators.validateEmail,
-                        ),
-                        const SizedBox(height: AppSpacing.l),
-                        TextFormField(
-                          controller: _loginController,
-                          decoration: const InputDecoration(
-                            labelText: 'Логин',
-                            prefixIcon: Icon(Icons.account_circle),
-                            border: OutlineInputBorder(),
-                            helperText: 'Только латинские буквы и цифры',
-                          ),
-                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._-]'))],
-                          validator: (val) => Validators.requiredField(val, fieldName: 'Логин'),
-                        ),
-                        const SizedBox(height: AppSpacing.l),
-                        TextFormField(
-                          controller: _passwordController,
-                          decoration: InputDecoration(
-                            labelText: 'Пароль',
-                            prefixIcon: const Icon(Icons.lock),
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                            ),
-                          ),
-                          obscureText: !_isPasswordVisible,
-                          validator: (val) {
-                            final req = Validators.requiredField(val, fieldName: 'Пароль');
-                            if (req != null) return req;
-                            if (val!.length < 6) return 'Пароль должен быть не менее 6 символов';
-                            return null;
-                          },
                         ),
                         const SizedBox(height: AppSpacing.l),
                         DropdownButtonFormField<String>(
@@ -276,6 +224,55 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             validator: (val) => _selectedRole == 'student' && val == null ? 'Выберите группу' : null,
                           ),
                         ],
+                        const SizedBox(height: AppSpacing.l),
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                          validator: Validators.validateEmail,
+                        ),
+                        const SizedBox(height: AppSpacing.l),
+                        TextFormField(
+                          controller: _loginController,
+                          decoration: const InputDecoration(
+                            labelText: 'Логин',
+                            prefixIcon: Icon(Icons.account_circle),
+                            border: OutlineInputBorder(),
+                            helperText: 'Только латинские буквы и цифры',
+                          ),
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._-]'))],
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                          validator: (val) => Validators.requiredField(val, fieldName: 'Логин'),
+                        ),
+                        const SizedBox(height: AppSpacing.l),
+                        TextFormField(
+                          controller: _passwordController,
+                          decoration: InputDecoration(
+                            labelText: 'Пароль',
+                            prefixIcon: const Icon(Icons.lock),
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                              onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                            ),
+                          ),
+                          obscureText: !_isPasswordVisible,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _isSubmitting ? null : _addUser(),
+                          validator: (val) {
+                            final req = Validators.requiredField(val, fieldName: 'Пароль');
+                            if (req != null) return req;
+                            if (val!.length < 6) return 'Пароль должен быть не менее 6 символов';
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 24),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(

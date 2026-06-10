@@ -56,7 +56,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   TimeOfDay? _endTime;
 
   bool _isAdding = false;
-  bool _isFormExpanded = false;
+  bool _isFormExpanded = true;
   List<Subject> _subjects = [];
   List<Group> _groups = [];
   List<Teacher> _teachers = [];
@@ -341,59 +341,24 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   }
 
   Future<void> _duplicateSchedule() async {
-    final pickedSource = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      helpText: 'Выберите любой день НЕДЕЛИ-ИСТОЧНИКА',
-    );
-    if (pickedSource == null || !mounted) return;
+    final result = await showDialog<(DateTime, DateTime)>(context: context, builder: (_) => const _CopyWeekDialog());
+    if (result == null || !mounted) return;
 
-    final startOfSource = pickedSource.subtract(Duration(days: pickedSource.weekday - 1));
-
-    final pickedTarget = await showDatePicker(
-      context: context,
-      initialDate: startOfSource.add(const Duration(days: 7)),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      helpText: 'Выберите любой день НЕДЕЛИ-НАЗНАЧЕНИЯ',
-    );
-    if (pickedTarget == null || !mounted) return;
-
-    final startOfTarget = pickedTarget.subtract(Duration(days: pickedTarget.weekday - 1));
+    final (sourceDate, targetDate) = result;
+    final startOfSource = sourceDate.subtract(Duration(days: sourceDate.weekday - 1));
+    final startOfTarget = targetDate.subtract(Duration(days: targetDate.weekday - 1));
 
     if (startOfTarget == startOfSource) {
       MessengerHelper.showError('Нельзя скопировать неделю саму на себя');
       return;
     }
 
-    String fmt(DateTime d) => '${d.day}.${d.month}';
-    final endOfSource = startOfSource.add(const Duration(days: 6));
-    final endOfTarget = startOfTarget.add(const Duration(days: 6));
-    final sourceRange = '${fmt(startOfSource)}–${fmt(endOfSource)}';
-    final targetRange = '${fmt(startOfTarget)}–${fmt(endOfTarget)}';
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Копирование недели'),
-            content: Text('Скопировать занятия с $sourceRange на $targetRange?'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Да, копировать')),
-            ],
-          ),
-    );
-    if (confirmed != true) return;
-
     setState(() => _isCloning = true);
-    final result = await _scheduleService.copyScheduleToWeek(_institutionId!, startOfSource, startOfTarget);
-    if (result.isFailure) {
-      MessengerHelper.showError(result.errorMessage);
+    final cloneResult = await _scheduleService.copyScheduleToWeek(_institutionId!, startOfSource, startOfTarget);
+    if (cloneResult.isFailure) {
+      MessengerHelper.showError(cloneResult.errorMessage);
     } else {
-      final (:copied, :skipped) = result.data;
+      final (:copied, :skipped) = cloneResult.data;
       if (skipped > 0) {
         MessengerHelper.showWarning('Скопировано $copied занятий. Пропущено $skipped (конфликт времени).');
       } else {
@@ -442,6 +407,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
             teachers: _teachers,
             institutionId: _institutionId!,
             scheduleService: _scheduleService,
+            timeGrids: _timeGrids,
           ),
     );
     if (updated == true && mounted) await _loadSchedule();
@@ -562,12 +528,12 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
               margin: EdgeInsets.zero,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               color: colors.surface,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                    child: Row(
                       children: [
                         Icon(Icons.calendar_today, size: 18, color: colors.primary),
                         const SizedBox(width: 8),
@@ -580,66 +546,78 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                         ),
                       ],
                     ),
-                    const Divider(),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columnSpacing: 15,
-                        horizontalMargin: 5,
-                        headingRowHeight: 30,
-                        dataRowMinHeight: 40,
-                        columns: const [
-                          DataColumn(label: Text('Время')),
-                          DataColumn(label: Text('Группа')),
-                          DataColumn(label: Text('Предмет')),
-                          DataColumn(label: Text('Препод.')),
-                          DataColumn(label: Text('')),
-                        ],
-                        rows:
-                            items.map((s) {
-                              final subjectName = s.subject?.name ?? '—';
-                              final groupName = s.group?.name ?? '—';
-                              final teacherName = s.teacherName;
-                              final timeRange = '${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)}';
-                              return DataRow(
-                                cells: [
-                                  DataCell(
-                                    Text(timeRange, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                  ),
-                                  DataCell(Text(groupName)),
-                                  DataCell(Text(subjectName)),
-                                  DataCell(
-                                    SizedBox(width: 100, child: Text(teacherName, overflow: TextOverflow.ellipsis)),
-                                  ),
-                                  DataCell(
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(Icons.edit_outlined, color: colors.primary, size: 20),
-                                          onPressed: () => _showEditDialog(s),
-                                          tooltip: 'Редактировать',
-                                        ),
-                                        IconButton(
-                                          icon: Icon(Icons.delete, color: colors.error, size: 20),
-                                          onPressed: () => _deleteScheduleEntry(s.id),
-                                          tooltip: 'Удалить',
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const Divider(height: 1),
+                  ...items.asMap().entries.map(
+                    (e) => _buildLessonTile(e.value, colors, isLast: e.key == items.length - 1),
+                  ),
+                ],
               ),
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildLessonTile(Schedule s, ColorScheme colors, {required bool isLast}) {
+    final timeRange = '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}';
+    final subjectName = s.subject?.name ?? '—';
+    final groupName = s.group?.name ?? '—';
+    final teacherName = s.teacherName;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: colors.primaryContainer, borderRadius: BorderRadius.circular(8)),
+                child: Text(
+                  timeRange,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: colors.onPrimaryContainer),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subjectName,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$groupName · $teacherName',
+                      style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.edit_outlined, color: colors.primary, size: 20),
+                onPressed: () => _showEditDialog(s),
+                tooltip: 'Редактировать',
+                padding: const EdgeInsets.all(6),
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: Icon(Icons.delete_outline, color: colors.error, size: 20),
+                onPressed: () => _deleteScheduleEntry(s.id),
+                tooltip: 'Удалить',
+                padding: const EdgeInsets.all(6),
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ),
+        if (!isLast) const Divider(height: 1, indent: 12, endIndent: 12),
+      ],
     );
   }
 
@@ -937,57 +915,67 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                               children: [
                                 if (_groups.isNotEmpty)
                                   Expanded(
-                                    child: DropdownButtonFormField<String?>(
+                                    child: InputDecorator(
                                       decoration: const InputDecoration(
                                         labelText: 'Группа',
                                         border: OutlineInputBorder(),
                                         isDense: true,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                       ),
-                                      initialValue: _filterGroupId,
-                                      isExpanded: true,
-                                      items: [
-                                        const DropdownMenuItem(child: Text('Все группы')),
-                                        ..._groups.map(
-                                          (g) => DropdownMenuItem(
-                                            value: g.id,
-                                            child: Text(g.name, overflow: TextOverflow.ellipsis),
-                                          ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<String?>(
+                                          value: _filterGroupId,
+                                          isExpanded: true,
+                                          isDense: true,
+                                          items: [
+                                            const DropdownMenuItem(child: Text('Все группы')),
+                                            ..._groups.map(
+                                              (g) => DropdownMenuItem(
+                                                value: g.id,
+                                                child: Text(g.name, overflow: TextOverflow.ellipsis),
+                                              ),
+                                            ),
+                                          ],
+                                          onChanged:
+                                              (val) => setState(() {
+                                                _filterGroupId = val;
+                                                _rebuildGrouped();
+                                              }),
                                         ),
-                                      ],
-                                      onChanged:
-                                          (val) => setState(() {
-                                            _filterGroupId = val;
-                                            _rebuildGrouped();
-                                          }),
+                                      ),
                                     ),
                                   ),
                                 if (_groups.isNotEmpty && _teachers.isNotEmpty) const SizedBox(width: AppSpacing.m),
                                 if (_teachers.isNotEmpty)
                                   Expanded(
-                                    child: DropdownButtonFormField<String?>(
+                                    child: InputDecorator(
                                       decoration: const InputDecoration(
                                         labelText: 'Преподаватель',
                                         border: OutlineInputBorder(),
                                         isDense: true,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                       ),
-                                      initialValue: _filterTeacherId,
-                                      isExpanded: true,
-                                      items: [
-                                        const DropdownMenuItem(child: Text('Все преп.')),
-                                        ..._teachers.map(
-                                          (t) => DropdownMenuItem(
-                                            value: t.id,
-                                            child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
-                                          ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<String?>(
+                                          value: _filterTeacherId,
+                                          isExpanded: true,
+                                          isDense: true,
+                                          items: [
+                                            const DropdownMenuItem(child: Text('Все преп.')),
+                                            ..._teachers.map(
+                                              (t) => DropdownMenuItem(
+                                                value: t.id,
+                                                child: Text('${t.surname} ${t.name}', overflow: TextOverflow.ellipsis),
+                                              ),
+                                            ),
+                                          ],
+                                          onChanged:
+                                              (val) => setState(() {
+                                                _filterTeacherId = val;
+                                                _rebuildGrouped();
+                                              }),
                                         ),
-                                      ],
-                                      onChanged:
-                                          (val) => setState(() {
-                                            _filterTeacherId = val;
-                                            _rebuildGrouped();
-                                          }),
+                                      ),
                                     ),
                                   ),
                               ],
@@ -1097,6 +1085,7 @@ class _EditLessonDialog extends StatefulWidget {
   final List<Teacher> teachers;
   final String institutionId;
   final ScheduleRepository scheduleService;
+  final List<TimeGrid> timeGrids;
 
   const _EditLessonDialog({
     required this.lesson,
@@ -1105,6 +1094,7 @@ class _EditLessonDialog extends StatefulWidget {
     required this.teachers,
     required this.institutionId,
     required this.scheduleService,
+    required this.timeGrids,
   });
 
   @override
@@ -1118,6 +1108,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
   late String _subjectId;
   late String _groupId;
   late String _teacherId;
+  String? _selectedGridId;
 
   String? _conflictError;
   bool _isCheckingConflict = false;
@@ -1262,6 +1253,50 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
     );
   }
 
+  Widget _buildSlotChips(ColorScheme colors) {
+    if (widget.timeGrids.isEmpty) return const SizedBox.shrink();
+    final activeGrid = widget.timeGrids.firstWhere(
+      (g) => g.id == (_selectedGridId ?? widget.timeGrids.first.id),
+      orElse: () => widget.timeGrids.first,
+    );
+    if (activeGrid.slots.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.timeGrids.length > 1) ...[
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(labelText: 'Сетка времени', border: OutlineInputBorder(), isDense: true),
+            initialValue: _selectedGridId ?? widget.timeGrids.first.id,
+            items: widget.timeGrids.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
+            onChanged: (val) => setState(() => _selectedGridId = val),
+          ),
+          const SizedBox(height: AppSpacing.m),
+        ],
+        Text('Быстрый выбор:', style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children:
+              activeGrid.slots.map((slot) {
+                final chipLabel = slot.label != null ? '${slot.label}\n${slot.timeRange}' : slot.timeRange;
+                return ActionChip(
+                  label: Text(chipLabel, style: const TextStyle(fontSize: 12), textAlign: TextAlign.center),
+                  onPressed: () {
+                    setState(() {
+                      _startTime = _parseTime(slot.startTime);
+                      _endTime = _parseTime(slot.endTime);
+                    });
+                    _scheduleConflictValidation();
+                  },
+                );
+              }).toList(),
+        ),
+        const SizedBox(height: AppSpacing.m),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -1297,6 +1332,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                 ),
               ),
               const SizedBox(height: AppSpacing.m),
+              _buildSlotChips(colors),
               Row(
                 children: [
                   Expanded(child: _buildTimePicker('Начало', _startTime, (t) => setState(() => _startTime = t))),
@@ -1405,6 +1441,108 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
               _isSaving
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('Сохранить'),
+        ),
+      ],
+    );
+  }
+}
+
+class _CopyWeekDialog extends StatefulWidget {
+  const _CopyWeekDialog();
+
+  @override
+  State<_CopyWeekDialog> createState() => _CopyWeekDialogState();
+}
+
+class _CopyWeekDialogState extends State<_CopyWeekDialog> {
+  DateTime? _sourceDate;
+  DateTime? _targetDate;
+
+  String _weekRange(DateTime anyDay) {
+    final mon = anyDay.subtract(Duration(days: anyDay.weekday - 1));
+    final sun = mon.add(const Duration(days: 6));
+    String f(DateTime d) => '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}';
+    return '${f(mon)} – ${f(sun)}';
+  }
+
+  Widget _weekTile({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    required ColorScheme colors,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          suffixIcon: Icon(Icons.calendar_month, color: colors.primary),
+        ),
+        child: Text(
+          date != null ? _weekRange(date) : 'Нажмите для выбора',
+          style: TextStyle(color: date == null ? colors.onSurfaceVariant : colors.onSurface),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return AlertDialog(
+      title: const Text('Копировать неделю'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _weekTile(
+              label: 'Неделя-источник',
+              date: _sourceDate,
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _sourceDate ?? DateTime.now(),
+                  firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  helpText: 'Выберите любой день недели-источника',
+                );
+                if (picked != null) setState(() => _sourceDate = picked);
+              },
+              colors: colors,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.s),
+              child: Icon(Icons.arrow_downward, color: colors.onSurfaceVariant),
+            ),
+            _weekTile(
+              label: 'Неделя-назначение',
+              date: _targetDate,
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _targetDate ?? (_sourceDate?.add(const Duration(days: 7)) ?? DateTime.now()),
+                  firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  helpText: 'Выберите любой день недели-назначения',
+                );
+                if (picked != null) setState(() => _targetDate = picked);
+              },
+              colors: colors,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+        FilledButton(
+          onPressed:
+              (_sourceDate != null && _targetDate != null)
+                  ? () => Navigator.pop(context, (_sourceDate!, _targetDate!))
+                  : null,
+          child: const Text('Копировать'),
         ),
       ],
     );

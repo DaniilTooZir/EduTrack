@@ -1,11 +1,18 @@
-﻿import 'package:edu_track/data/repositories/schedule_repository.dart';
+﻿import 'dart:async';
+
+import 'package:edu_track/data/repositories/lesson_repository.dart';
+import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
+import 'package:edu_track/ui/widgets/app_error_view.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/date_utils.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class StudentScheduleScreen extends StatefulWidget {
@@ -17,8 +24,10 @@ class StudentScheduleScreen extends StatefulWidget {
 
 class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
+  LessonRepository get _lessonRepository => Provider.of<LessonRepository>(context, listen: false);
   bool _isLoading = true;
   bool _initialized = false;
+  String? _error;
   List<Schedule> _scheduleList = [];
   Map<String, List<Schedule>> _groupedSchedule = {};
 
@@ -43,9 +52,15 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     if (studentId == null) return;
     final result = await _scheduleService.getScheduleForStudent(studentId, groupId);
     if (result.isFailure) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = result.errorMessage;
+        });
+      }
       return;
     }
+    _error = null;
     final now = DateTime.now();
     final mondayThisWeek = DateTime(now.year, now.month, now.day - (now.weekday - 1));
     final endDate = DateTime(mondayThisWeek.year, mondayThisWeek.month, mondayThisWeek.day + 13, 23, 59, 59);
@@ -89,11 +104,22 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     return 'День $weekday';
   }
 
+  Future<void> _navigateToLesson(Schedule schedule) async {
+    final result = await _lessonRepository.getLessonsByScheduleIds([schedule.id]);
+    if (!mounted) return;
+    if (result.isFailure || result.data.isEmpty) {
+      MessengerHelper.showWarning('Урок по этому занятию ещё не проведён');
+      return;
+    }
+    unawaited(context.push(AppRoutes.studentLessonCommentsPath(result.data.first.id!)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
     if (_isLoading) return _buildLoadingSkeleton();
+    if (_error != null) return AppErrorView(message: _error!, onRetry: _loadSchedule);
     if (_scheduleList.isEmpty) {
       return RefreshIndicator(
         onRefresh: _loadSchedule,
@@ -147,43 +173,56 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       color: colors.surface.withValues(alpha: 0.9),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.access_time, size: 20, color: colors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _navigateToLesson(s),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, size: 20, color: colors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.book, size: 20, color: colors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            s.subjectName ?? 'Предмет',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.person, size: 20, color: colors.onSurfaceVariant),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(s.teacherName, style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.book, size: 20, color: colors.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    s.subjectName ?? 'Предмет',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.person, size: 20, color: colors.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Expanded(child: Text(s.teacherName, style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant))),
-              ],
-            ),
-          ],
+              ),
+              Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+            ],
+          ),
         ),
       ),
     );
