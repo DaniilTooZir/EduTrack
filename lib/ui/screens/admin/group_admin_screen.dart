@@ -4,6 +4,7 @@ import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/teacher.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/admin/group_import_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
@@ -313,6 +314,22 @@ class _GroupAdminScreenState extends State<GroupAdminScreen> {
                                         child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                       )
                                       : const Text('Добавить группу'),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.m),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed:
+                                  () => Navigator.of(
+                                    context,
+                                  ).push(MaterialPageRoute(builder: (_) => GroupImportScreen(onImportDone: _loadData))),
+                              icon: const Icon(Icons.upload_file_outlined),
+                              label: const Text('Импорт из CSV'),
                             ),
                           ),
                         ],

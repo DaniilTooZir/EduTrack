@@ -2,6 +2,8 @@ import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/user_add_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/admin/csv_import_screen.dart';
+import 'package:edu_track/ui/screens/admin/teacher_import_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
@@ -293,6 +295,34 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                     'Добавить пользователя',
                                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed:
+                              () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => CsvImportScreen(onImportDone: widget.onUserAdded)),
+                              ),
+                          icon: const Icon(Icons.upload_file_outlined),
+                          label: const Text('Импорт студентов из CSV'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed:
+                              () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => TeacherImportScreen(onImportDone: widget.onUserAdded),
+                                ),
+                              ),
+                          icon: const Icon(Icons.upload_file_outlined),
+                          label: const Text('Импорт преподавателей из CSV'),
                         ),
                       ],
                     ),

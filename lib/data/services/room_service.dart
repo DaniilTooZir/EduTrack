@@ -1,6 +1,7 @@
 import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/models/room.dart';
 import 'package:edu_track/utils/app_result.dart';
+import 'package:edu_track/utils/bulk_import_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RoomService {
@@ -44,6 +45,38 @@ class RoomService {
       return AppResult.failure('Ошибка при обновлении аудитории: ${e.message}');
     } catch (e) {
       return AppResult.failure('Не удалось обновить аудиторию.');
+    }
+  }
+
+  Future<AppResult<BulkImportResult>> bulkAddRooms({required List<String> names, required String institutionId}) async {
+    if (names.isEmpty) return AppResult.success(const BulkImportResult(imported: 0, skippedReasons: []));
+    try {
+      final existing = await _client.from('rooms').select('name').eq('institution_id', institutionId);
+      final existingNames = (existing as List).map((e) => (e['name'] as String).toLowerCase()).toSet();
+
+      final toInsert = <String>[];
+      final skippedReasons = <String>[];
+      final seenInFile = <String>{};
+
+      for (final name in names) {
+        final key = name.toLowerCase();
+        if (existingNames.contains(key)) {
+          skippedReasons.add('"$name" уже существует');
+        } else if (seenInFile.contains(key)) {
+          skippedReasons.add('"$name" дубль в файле');
+        } else {
+          toInsert.add(name);
+          seenInFile.add(key);
+        }
+      }
+      if (toInsert.isNotEmpty) {
+        await _client.from('rooms').insert(toInsert.map((n) => {'name': n, 'institution_id': institutionId}).toList());
+      }
+      return AppResult.success(BulkImportResult(imported: toInsert.length, skippedReasons: skippedReasons));
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка базы данных: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось выполнить импорт аудиторий.');
     }
   }
 

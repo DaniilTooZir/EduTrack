@@ -1,6 +1,7 @@
 import 'package:edu_track/data/services/room_service.dart';
 import 'package:edu_track/models/room.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/ui/screens/admin/simple_name_import_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
@@ -208,6 +209,36 @@ class _RoomAdminScreenState extends State<RoomAdminScreen> with DataLoadingMixin
                                         child: CircularProgressIndicator(strokeWidth: 2, color: colors.onPrimary),
                                       )
                                       : const Text('Добавить аудиторию'),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.m),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed:
+                                  () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) => SimpleNameImportScreen(
+                                            title: 'Импорт аудиторий из CSV',
+                                            entitySingular: 'аудитория',
+                                            entityIcon: Icons.meeting_room_outlined,
+                                            templateExample: '101\n202А\nАктовый зал',
+                                            onBulkImport:
+                                                (names) => _roomService.bulkAddRooms(
+                                                  names: names,
+                                                  institutionId: _institutionId!,
+                                                ),
+                                            onImportDone: _loadData,
+                                          ),
+                                    ),
+                                  ),
+                              icon: const Icon(Icons.upload_file_outlined),
+                              label: const Text('Импорт из CSV'),
                             ),
                           ),
                         ],

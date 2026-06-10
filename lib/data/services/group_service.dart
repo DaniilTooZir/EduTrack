@@ -2,6 +2,16 @@ import 'package:edu_track/models/group.dart';
 import 'package:edu_track/utils/app_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class BulkGroupResult {
+  final List<Map<String, String>> createdGroups;
+  final List<String> skippedReasons;
+
+  const BulkGroupResult({required this.createdGroups, required this.skippedReasons});
+
+  int get imported => createdGroups.length;
+  int get skipped => skippedReasons.length;
+}
+
 class GroupService {
   final _client = Supabase.instance.client;
 
@@ -32,6 +42,47 @@ class GroupService {
       return AppResult.failure('Ошибка базы данных при создании группы: ${e.message}');
     } catch (e) {
       return AppResult.failure('Не удалось создать группу.');
+    }
+  }
+
+  Future<AppResult<BulkGroupResult>> bulkAddGroups({
+    required List<Map<String, dynamic>> groups,
+    required String institutionId,
+  }) async {
+    if (groups.isEmpty) {
+      return AppResult.success(const BulkGroupResult(createdGroups: [], skippedReasons: []));
+    }
+    try {
+      final existing = await _client.from('groups').select('name').eq('institution_id', institutionId);
+      final existingNames = (existing as List).map((e) => (e['name'] as String).toLowerCase()).toSet();
+
+      final toInsert = <Map<String, dynamic>>[];
+      final skippedReasons = <String>[];
+      final seenInFile = <String>{};
+
+      for (final g in groups) {
+        final key = (g['name'] as String).toLowerCase();
+        if (existingNames.contains(key)) {
+          skippedReasons.add('"${g['name']}" уже существует');
+        } else if (seenInFile.contains(key)) {
+          skippedReasons.add('"${g['name']}" дубль в файле');
+        } else {
+          toInsert.add({...g, 'institution_id': institutionId});
+          seenInFile.add(key);
+        }
+      }
+      final createdGroups = <Map<String, String>>[];
+      if (toInsert.isNotEmpty) {
+        final response = await _client.from('groups').insert(toInsert).select('id, name');
+        for (final row in response as List) {
+          createdGroups.add({'id': row['id'].toString(), 'name': row['name'].toString()});
+        }
+      }
+      return AppResult.success(BulkGroupResult(createdGroups: createdGroups, skippedReasons: skippedReasons));
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка базы данных: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось выполнить импорт групп.');
     }
   }
 
