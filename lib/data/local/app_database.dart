@@ -10,6 +10,7 @@ import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/lesson.dart';
+import 'package:edu_track/models/room.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject.dart';
@@ -19,12 +20,22 @@ import 'package:path_provider/path_provider.dart';
 
 part 'app_database.g.dart';
 
+class LocalRooms extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get institutionId => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class LocalSchedules extends Table {
   TextColumn get id => text()();
   TextColumn get institutionId => text()();
   TextColumn get subjectId => text().references(LocalSubjects, #id)();
   TextColumn get groupId => text().references(LocalGroups, #id)();
   TextColumn get teacherId => text().references(LocalTeachers, #id)();
+  TextColumn get roomId => text().nullable().references(LocalRooms, #id)();
   DateTimeColumn get date => dateTime().nullable()();
   IntColumn get weekday => integer()();
   TextColumn get startTime => text()();
@@ -202,6 +213,7 @@ class LocalLessons extends Table {
 
 @DriftDatabase(
   tables: [
+    LocalRooms,
     LocalSchedules,
     LocalSubjects,
     LocalGroups,
@@ -222,7 +234,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -236,6 +248,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> clearAll() async {
     await delete(localSchedules).go();
+    await delete(localRooms).go();
     await delete(localSubjects).go();
     await delete(localGroups).go();
     await delete(localTeachers).go();
@@ -273,6 +286,11 @@ class AppDatabase extends _$AppDatabase {
             LocalTeachersCompanion.insert(id: s.teacher!.id, name: s.teacher!.name, surname: s.teacher!.surname),
           );
         }
+        if (s.room != null) {
+          await into(localRooms).insertOnConflictUpdate(
+            LocalRoomsCompanion.insert(id: s.room!.id, name: s.room!.name, institutionId: s.room!.institutionId),
+          );
+        }
         await into(localSchedules).insertOnConflictUpdate(
           LocalSchedulesCompanion.insert(
             id: s.id,
@@ -284,6 +302,7 @@ class AppDatabase extends _$AppDatabase {
             startTime: s.startTime,
             endTime: s.endTime,
             date: Value(s.date),
+            roomId: Value(s.roomId),
           ),
         );
       }
@@ -295,6 +314,7 @@ class AppDatabase extends _$AppDatabase {
       leftOuterJoin(localSubjects, localSubjects.id.equalsExp(localSchedules.subjectId)),
       leftOuterJoin(localGroups, localGroups.id.equalsExp(localSchedules.groupId)),
       leftOuterJoin(localTeachers, localTeachers.id.equalsExp(localSchedules.teacherId)),
+      leftOuterJoin(localRooms, localRooms.id.equalsExp(localSchedules.roomId)),
     ]);
     query.where(localSchedules.groupId.equals(groupId));
     query.orderBy([OrderingTerm(expression: localSchedules.date), OrderingTerm(expression: localSchedules.startTime)]);
@@ -304,12 +324,14 @@ class AppDatabase extends _$AppDatabase {
       final subjectRow = row.readTableOrNull(localSubjects);
       final groupRow = row.readTableOrNull(localGroups);
       final teacherRow = row.readTableOrNull(localTeachers);
+      final roomRow = row.readTableOrNull(localRooms);
       return Schedule(
         id: scheduleRow.id,
         institutionId: scheduleRow.institutionId,
         subjectId: scheduleRow.subjectId,
         groupId: scheduleRow.groupId,
         teacherId: scheduleRow.teacherId,
+        roomId: scheduleRow.roomId,
         weekday: scheduleRow.weekday,
         startTime: scheduleRow.startTime,
         endTime: scheduleRow.endTime,
@@ -340,6 +362,7 @@ class AppDatabase extends _$AppDatabase {
                   createdAt: DateTime.now(),
                 )
                 : null,
+        room: roomRow != null ? Room(id: roomRow.id, name: roomRow.name, institutionId: roomRow.institutionId) : null,
       );
     }).toList();
   }
@@ -348,6 +371,7 @@ class AppDatabase extends _$AppDatabase {
     final query = select(localSchedules).join([
       leftOuterJoin(localSubjects, localSubjects.id.equalsExp(localSchedules.subjectId)),
       leftOuterJoin(localGroups, localGroups.id.equalsExp(localSchedules.groupId)),
+      leftOuterJoin(localRooms, localRooms.id.equalsExp(localSchedules.roomId)),
     ]);
     query.where(localSchedules.teacherId.equals(teacherId));
     query.orderBy([OrderingTerm(expression: localSchedules.date), OrderingTerm(expression: localSchedules.startTime)]);
@@ -356,12 +380,14 @@ class AppDatabase extends _$AppDatabase {
       final scheduleRow = row.readTable(localSchedules);
       final subjectRow = row.readTableOrNull(localSubjects);
       final groupRow = row.readTableOrNull(localGroups);
+      final roomRow = row.readTableOrNull(localRooms);
       return Schedule(
         id: scheduleRow.id,
         institutionId: scheduleRow.institutionId,
         subjectId: scheduleRow.subjectId,
         groupId: scheduleRow.groupId,
         teacherId: scheduleRow.teacherId,
+        roomId: scheduleRow.roomId,
         weekday: scheduleRow.weekday,
         startTime: scheduleRow.startTime,
         endTime: scheduleRow.endTime,
@@ -379,6 +405,7 @@ class AppDatabase extends _$AppDatabase {
             groupRow != null
                 ? Group(id: groupRow.id, name: groupRow.name, institutionId: groupRow.institutionId)
                 : null,
+        room: roomRow != null ? Room(id: roomRow.id, name: roomRow.name, institutionId: roomRow.institutionId) : null,
       );
     }).toList();
   }

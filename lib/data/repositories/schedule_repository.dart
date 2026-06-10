@@ -67,6 +67,7 @@ class ScheduleRepository {
     required DateTime date,
     required String startTime,
     required String endTime,
+    String? roomId,
   }) => _remote.addScheduleEntry(
     institutionId: institutionId,
     subjectId: subjectId,
@@ -75,6 +76,7 @@ class ScheduleRepository {
     date: date,
     startTime: startTime,
     endTime: endTime,
+    roomId: roomId,
   );
 
   Future<AppResult<void>> deleteScheduleEntry(String id) => _remote.deleteScheduleEntry(id);
@@ -111,6 +113,7 @@ class ScheduleRepository {
     required DateTime date,
     required String startTime,
     required String endTime,
+    String? roomId,
   }) => _remote.updateScheduleEntry(
     id: id,
     subjectId: subjectId,
@@ -119,5 +122,6 @@ class ScheduleRepository {
     date: date,
     startTime: startTime,
     endTime: endTime,
+    roomId: roomId,
   );
 }

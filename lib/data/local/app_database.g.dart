@@ -3,7 +3,276 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
-class $LocalSubjectsTable extends LocalSubjects with TableInfo<$LocalSubjectsTable, LocalSubject> {
+class $LocalRoomsTable extends LocalRooms
+    with TableInfo<$LocalRoomsTable, LocalRoom> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalRoomsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
+  @override
+  late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
+    'institution_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, institutionId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_rooms';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalRoom> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('institution_id')) {
+      context.handle(
+        _institutionIdMeta,
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_institutionIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalRoom map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalRoom(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
+    );
+  }
+
+  @override
+  $LocalRoomsTable createAlias(String alias) {
+    return $LocalRoomsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalRoom extends DataClass implements Insertable<LocalRoom> {
+  final String id;
+  final String name;
+  final String institutionId;
+  const LocalRoom({
+    required this.id,
+    required this.name,
+    required this.institutionId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['institution_id'] = Variable<String>(institutionId);
+    return map;
+  }
+
+  LocalRoomsCompanion toCompanion(bool nullToAbsent) {
+    return LocalRoomsCompanion(
+      id: Value(id),
+      name: Value(name),
+      institutionId: Value(institutionId),
+    );
+  }
+
+  factory LocalRoom.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalRoom(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      institutionId: serializer.fromJson<String>(json['institutionId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'institutionId': serializer.toJson<String>(institutionId),
+    };
+  }
+
+  LocalRoom copyWith({String? id, String? name, String? institutionId}) =>
+      LocalRoom(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        institutionId: institutionId ?? this.institutionId,
+      );
+  LocalRoom copyWithCompanion(LocalRoomsCompanion data) {
+    return LocalRoom(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalRoom(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('institutionId: $institutionId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, institutionId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalRoom &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.institutionId == this.institutionId);
+}
+
+class LocalRoomsCompanion extends UpdateCompanion<LocalRoom> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> institutionId;
+  final Value<int> rowid;
+  const LocalRoomsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.institutionId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalRoomsCompanion.insert({
+    required String id,
+    required String name,
+    required String institutionId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       institutionId = Value(institutionId);
+  static Insertable<LocalRoom> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? institutionId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (institutionId != null) 'institution_id': institutionId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalRoomsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? institutionId,
+    Value<int>? rowid,
+  }) {
+    return LocalRoomsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      institutionId: institutionId ?? this.institutionId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (institutionId.present) {
+      map['institution_id'] = Variable<String>(institutionId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalRoomsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('institutionId: $institutionId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalSubjectsTable extends LocalSubjects
+    with TableInfo<$LocalSubjectsTable, LocalSubject> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -26,7 +295,9 @@ class $LocalSubjectsTable extends LocalSubjects with TableInfo<$LocalSubjectsTab
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _institutionIdMeta = const VerificationMeta('institutionId');
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
   @override
   late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
     'institution_id',
@@ -43,7 +314,10 @@ class $LocalSubjectsTable extends LocalSubjects with TableInfo<$LocalSubjectsTab
   String get actualTableName => $name;
   static const String $name = 'local_subjects';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalSubject> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalSubject> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -52,14 +326,20 @@ class $LocalSubjectsTable extends LocalSubjects with TableInfo<$LocalSubjectsTab
       context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('institution_id')) {
       context.handle(
         _institutionIdMeta,
-        institutionId.isAcceptableOrUnknown(data['institution_id']!, _institutionIdMeta),
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
       );
     } else if (isInserting) {
       context.missing(_institutionIdMeta);
@@ -73,9 +353,21 @@ class $LocalSubjectsTable extends LocalSubjects with TableInfo<$LocalSubjectsTab
   LocalSubject map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalSubject(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      institutionId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}institution_id'])!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
     );
   }
 
@@ -89,7 +381,11 @@ class LocalSubject extends DataClass implements Insertable<LocalSubject> {
   final String id;
   final String name;
   final String institutionId;
-  const LocalSubject({required this.id, required this.name, required this.institutionId});
+  const LocalSubject({
+    required this.id,
+    required this.name,
+    required this.institutionId,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -100,10 +396,17 @@ class LocalSubject extends DataClass implements Insertable<LocalSubject> {
   }
 
   LocalSubjectsCompanion toCompanion(bool nullToAbsent) {
-    return LocalSubjectsCompanion(id: Value(id), name: Value(name), institutionId: Value(institutionId));
+    return LocalSubjectsCompanion(
+      id: Value(id),
+      name: Value(name),
+      institutionId: Value(institutionId),
+    );
   }
 
-  factory LocalSubject.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalSubject.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalSubject(
       id: serializer.fromJson<String>(json['id']),
@@ -122,12 +425,19 @@ class LocalSubject extends DataClass implements Insertable<LocalSubject> {
   }
 
   LocalSubject copyWith({String? id, String? name, String? institutionId}) =>
-      LocalSubject(id: id ?? this.id, name: name ?? this.name, institutionId: institutionId ?? this.institutionId);
+      LocalSubject(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        institutionId: institutionId ?? this.institutionId,
+      );
   LocalSubject copyWithCompanion(LocalSubjectsCompanion data) {
     return LocalSubject(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
-      institutionId: data.institutionId.present ? data.institutionId.value : this.institutionId,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
     );
   }
 
@@ -229,7 +539,8 @@ class LocalSubjectsCompanion extends UpdateCompanion<LocalSubject> {
   }
 }
 
-class $LocalGroupsTable extends LocalGroups with TableInfo<$LocalGroupsTable, LocalGroup> {
+class $LocalGroupsTable extends LocalGroups
+    with TableInfo<$LocalGroupsTable, LocalGroup> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -252,7 +563,9 @@ class $LocalGroupsTable extends LocalGroups with TableInfo<$LocalGroupsTable, Lo
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _institutionIdMeta = const VerificationMeta('institutionId');
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
   @override
   late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
     'institution_id',
@@ -269,7 +582,10 @@ class $LocalGroupsTable extends LocalGroups with TableInfo<$LocalGroupsTable, Lo
   String get actualTableName => $name;
   static const String $name = 'local_groups';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalGroup> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalGroup> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -278,14 +594,20 @@ class $LocalGroupsTable extends LocalGroups with TableInfo<$LocalGroupsTable, Lo
       context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('institution_id')) {
       context.handle(
         _institutionIdMeta,
-        institutionId.isAcceptableOrUnknown(data['institution_id']!, _institutionIdMeta),
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
       );
     } else if (isInserting) {
       context.missing(_institutionIdMeta);
@@ -299,9 +621,21 @@ class $LocalGroupsTable extends LocalGroups with TableInfo<$LocalGroupsTable, Lo
   LocalGroup map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalGroup(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      institutionId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}institution_id'])!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
     );
   }
 
@@ -315,7 +649,11 @@ class LocalGroup extends DataClass implements Insertable<LocalGroup> {
   final String id;
   final String name;
   final String institutionId;
-  const LocalGroup({required this.id, required this.name, required this.institutionId});
+  const LocalGroup({
+    required this.id,
+    required this.name,
+    required this.institutionId,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -326,10 +664,17 @@ class LocalGroup extends DataClass implements Insertable<LocalGroup> {
   }
 
   LocalGroupsCompanion toCompanion(bool nullToAbsent) {
-    return LocalGroupsCompanion(id: Value(id), name: Value(name), institutionId: Value(institutionId));
+    return LocalGroupsCompanion(
+      id: Value(id),
+      name: Value(name),
+      institutionId: Value(institutionId),
+    );
   }
 
-  factory LocalGroup.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalGroup.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalGroup(
       id: serializer.fromJson<String>(json['id']),
@@ -348,12 +693,19 @@ class LocalGroup extends DataClass implements Insertable<LocalGroup> {
   }
 
   LocalGroup copyWith({String? id, String? name, String? institutionId}) =>
-      LocalGroup(id: id ?? this.id, name: name ?? this.name, institutionId: institutionId ?? this.institutionId);
+      LocalGroup(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        institutionId: institutionId ?? this.institutionId,
+      );
   LocalGroup copyWithCompanion(LocalGroupsCompanion data) {
     return LocalGroup(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
-      institutionId: data.institutionId.present ? data.institutionId.value : this.institutionId,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
     );
   }
 
@@ -455,7 +807,8 @@ class LocalGroupsCompanion extends UpdateCompanion<LocalGroup> {
   }
 }
 
-class $LocalTeachersTable extends LocalTeachers with TableInfo<$LocalTeachersTable, LocalTeacher> {
+class $LocalTeachersTable extends LocalTeachers
+    with TableInfo<$LocalTeachersTable, LocalTeacher> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -478,7 +831,9 @@ class $LocalTeachersTable extends LocalTeachers with TableInfo<$LocalTeachersTab
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _surnameMeta = const VerificationMeta('surname');
+  static const VerificationMeta _surnameMeta = const VerificationMeta(
+    'surname',
+  );
   @override
   late final GeneratedColumn<String> surname = GeneratedColumn<String>(
     'surname',
@@ -495,7 +850,10 @@ class $LocalTeachersTable extends LocalTeachers with TableInfo<$LocalTeachersTab
   String get actualTableName => $name;
   static const String $name = 'local_teachers';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalTeacher> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalTeacher> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -504,12 +862,18 @@ class $LocalTeachersTable extends LocalTeachers with TableInfo<$LocalTeachersTab
       context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('surname')) {
-      context.handle(_surnameMeta, surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta));
+      context.handle(
+        _surnameMeta,
+        surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta),
+      );
     } else if (isInserting) {
       context.missing(_surnameMeta);
     }
@@ -522,9 +886,21 @@ class $LocalTeachersTable extends LocalTeachers with TableInfo<$LocalTeachersTab
   LocalTeacher map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalTeacher(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      surname: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}surname'])!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      surname:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}surname'],
+          )!,
     );
   }
 
@@ -538,7 +914,11 @@ class LocalTeacher extends DataClass implements Insertable<LocalTeacher> {
   final String id;
   final String name;
   final String surname;
-  const LocalTeacher({required this.id, required this.name, required this.surname});
+  const LocalTeacher({
+    required this.id,
+    required this.name,
+    required this.surname,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -549,10 +929,17 @@ class LocalTeacher extends DataClass implements Insertable<LocalTeacher> {
   }
 
   LocalTeachersCompanion toCompanion(bool nullToAbsent) {
-    return LocalTeachersCompanion(id: Value(id), name: Value(name), surname: Value(surname));
+    return LocalTeachersCompanion(
+      id: Value(id),
+      name: Value(name),
+      surname: Value(surname),
+    );
   }
 
-  factory LocalTeacher.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalTeacher.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalTeacher(
       id: serializer.fromJson<String>(json['id']),
@@ -571,7 +958,11 @@ class LocalTeacher extends DataClass implements Insertable<LocalTeacher> {
   }
 
   LocalTeacher copyWith({String? id, String? name, String? surname}) =>
-      LocalTeacher(id: id ?? this.id, name: name ?? this.name, surname: surname ?? this.surname);
+      LocalTeacher(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        surname: surname ?? this.surname,
+      );
   LocalTeacher copyWithCompanion(LocalTeachersCompanion data) {
     return LocalTeacher(
       id: data.id.present ? data.id.value : this.id,
@@ -595,7 +986,10 @@ class LocalTeacher extends DataClass implements Insertable<LocalTeacher> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is LocalTeacher && other.id == this.id && other.name == this.name && other.surname == this.surname);
+      (other is LocalTeacher &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.surname == this.surname);
 }
 
 class LocalTeachersCompanion extends UpdateCompanion<LocalTeacher> {
@@ -631,7 +1025,12 @@ class LocalTeachersCompanion extends UpdateCompanion<LocalTeacher> {
     });
   }
 
-  LocalTeachersCompanion copyWith({Value<String>? id, Value<String>? name, Value<String>? surname, Value<int>? rowid}) {
+  LocalTeachersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? surname,
+    Value<int>? rowid,
+  }) {
     return LocalTeachersCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -670,7 +1069,8 @@ class LocalTeachersCompanion extends UpdateCompanion<LocalTeacher> {
   }
 }
 
-class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedulesTable, LocalSchedule> {
+class $LocalSchedulesTable extends LocalSchedules
+    with TableInfo<$LocalSchedulesTable, LocalSchedule> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -684,7 +1084,9 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _institutionIdMeta = const VerificationMeta('institutionId');
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
   @override
   late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
     'institution_id',
@@ -693,7 +1095,9 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _subjectIdMeta = const VerificationMeta('subjectId');
+  static const VerificationMeta _subjectIdMeta = const VerificationMeta(
+    'subjectId',
+  );
   @override
   late final GeneratedColumn<String> subjectId = GeneratedColumn<String>(
     'subject_id',
@@ -701,9 +1105,13 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES local_subjects (id)'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_subjects (id)',
+    ),
   );
-  static const VerificationMeta _groupIdMeta = const VerificationMeta('groupId');
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
   @override
   late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
     'group_id',
@@ -711,9 +1119,13 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES local_groups (id)'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_groups (id)',
+    ),
   );
-  static const VerificationMeta _teacherIdMeta = const VerificationMeta('teacherId');
+  static const VerificationMeta _teacherIdMeta = const VerificationMeta(
+    'teacherId',
+  );
   @override
   late final GeneratedColumn<String> teacherId = GeneratedColumn<String>(
     'teacher_id',
@@ -721,7 +1133,21 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('REFERENCES local_teachers (id)'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_teachers (id)',
+    ),
+  );
+  static const VerificationMeta _roomIdMeta = const VerificationMeta('roomId');
+  @override
+  late final GeneratedColumn<String> roomId = GeneratedColumn<String>(
+    'room_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_rooms (id)',
+    ),
   );
   static const VerificationMeta _dateMeta = const VerificationMeta('date');
   @override
@@ -732,7 +1158,9 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _weekdayMeta = const VerificationMeta('weekday');
+  static const VerificationMeta _weekdayMeta = const VerificationMeta(
+    'weekday',
+  );
   @override
   late final GeneratedColumn<int> weekday = GeneratedColumn<int>(
     'weekday',
@@ -741,7 +1169,9 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _startTimeMeta = const VerificationMeta('startTime');
+  static const VerificationMeta _startTimeMeta = const VerificationMeta(
+    'startTime',
+  );
   @override
   late final GeneratedColumn<String> startTime = GeneratedColumn<String>(
     'start_time',
@@ -750,7 +1180,9 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _endTimeMeta = const VerificationMeta('endTime');
+  static const VerificationMeta _endTimeMeta = const VerificationMeta(
+    'endTime',
+  );
   @override
   late final GeneratedColumn<String> endTime = GeneratedColumn<String>(
     'end_time',
@@ -766,6 +1198,7 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     subjectId,
     groupId,
     teacherId,
+    roomId,
     date,
     weekday,
     startTime,
@@ -777,7 +1210,10 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
   String get actualTableName => $name;
   static const String $name = 'local_schedules';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalSchedule> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalSchedule> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -788,41 +1224,71 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
     if (data.containsKey('institution_id')) {
       context.handle(
         _institutionIdMeta,
-        institutionId.isAcceptableOrUnknown(data['institution_id']!, _institutionIdMeta),
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
       );
     } else if (isInserting) {
       context.missing(_institutionIdMeta);
     }
     if (data.containsKey('subject_id')) {
-      context.handle(_subjectIdMeta, subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta));
+      context.handle(
+        _subjectIdMeta,
+        subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_subjectIdMeta);
     }
     if (data.containsKey('group_id')) {
-      context.handle(_groupIdMeta, groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta));
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_groupIdMeta);
     }
     if (data.containsKey('teacher_id')) {
-      context.handle(_teacherIdMeta, teacherId.isAcceptableOrUnknown(data['teacher_id']!, _teacherIdMeta));
+      context.handle(
+        _teacherIdMeta,
+        teacherId.isAcceptableOrUnknown(data['teacher_id']!, _teacherIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_teacherIdMeta);
     }
+    if (data.containsKey('room_id')) {
+      context.handle(
+        _roomIdMeta,
+        roomId.isAcceptableOrUnknown(data['room_id']!, _roomIdMeta),
+      );
+    }
     if (data.containsKey('date')) {
-      context.handle(_dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
     }
     if (data.containsKey('weekday')) {
-      context.handle(_weekdayMeta, weekday.isAcceptableOrUnknown(data['weekday']!, _weekdayMeta));
+      context.handle(
+        _weekdayMeta,
+        weekday.isAcceptableOrUnknown(data['weekday']!, _weekdayMeta),
+      );
     } else if (isInserting) {
       context.missing(_weekdayMeta);
     }
     if (data.containsKey('start_time')) {
-      context.handle(_startTimeMeta, startTime.isAcceptableOrUnknown(data['start_time']!, _startTimeMeta));
+      context.handle(
+        _startTimeMeta,
+        startTime.isAcceptableOrUnknown(data['start_time']!, _startTimeMeta),
+      );
     } else if (isInserting) {
       context.missing(_startTimeMeta);
     }
     if (data.containsKey('end_time')) {
-      context.handle(_endTimeMeta, endTime.isAcceptableOrUnknown(data['end_time']!, _endTimeMeta));
+      context.handle(
+        _endTimeMeta,
+        endTime.isAcceptableOrUnknown(data['end_time']!, _endTimeMeta),
+      );
     } else if (isInserting) {
       context.missing(_endTimeMeta);
     }
@@ -835,15 +1301,54 @@ class $LocalSchedulesTable extends LocalSchedules with TableInfo<$LocalSchedules
   LocalSchedule map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalSchedule(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      institutionId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}institution_id'])!,
-      subjectId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}subject_id'])!,
-      groupId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}group_id'])!,
-      teacherId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}teacher_id'])!,
-      date: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}date']),
-      weekday: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}weekday'])!,
-      startTime: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}start_time'])!,
-      endTime: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}end_time'])!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
+      subjectId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}subject_id'],
+          )!,
+      groupId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}group_id'],
+          )!,
+      teacherId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}teacher_id'],
+          )!,
+      roomId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}room_id'],
+      ),
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      ),
+      weekday:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}weekday'],
+          )!,
+      startTime:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}start_time'],
+          )!,
+      endTime:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}end_time'],
+          )!,
     );
   }
 
@@ -859,6 +1364,7 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
   final String subjectId;
   final String groupId;
   final String teacherId;
+  final String? roomId;
   final DateTime? date;
   final int weekday;
   final String startTime;
@@ -869,6 +1375,7 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
     required this.subjectId,
     required this.groupId,
     required this.teacherId,
+    this.roomId,
     this.date,
     required this.weekday,
     required this.startTime,
@@ -882,6 +1389,9 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
     map['subject_id'] = Variable<String>(subjectId);
     map['group_id'] = Variable<String>(groupId);
     map['teacher_id'] = Variable<String>(teacherId);
+    if (!nullToAbsent || roomId != null) {
+      map['room_id'] = Variable<String>(roomId);
+    }
     if (!nullToAbsent || date != null) {
       map['date'] = Variable<DateTime>(date);
     }
@@ -898,6 +1408,8 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
       subjectId: Value(subjectId),
       groupId: Value(groupId),
       teacherId: Value(teacherId),
+      roomId:
+          roomId == null && nullToAbsent ? const Value.absent() : Value(roomId),
       date: date == null && nullToAbsent ? const Value.absent() : Value(date),
       weekday: Value(weekday),
       startTime: Value(startTime),
@@ -905,7 +1417,10 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
     );
   }
 
-  factory LocalSchedule.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalSchedule.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalSchedule(
       id: serializer.fromJson<String>(json['id']),
@@ -913,6 +1428,7 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
       subjectId: serializer.fromJson<String>(json['subjectId']),
       groupId: serializer.fromJson<String>(json['groupId']),
       teacherId: serializer.fromJson<String>(json['teacherId']),
+      roomId: serializer.fromJson<String?>(json['roomId']),
       date: serializer.fromJson<DateTime?>(json['date']),
       weekday: serializer.fromJson<int>(json['weekday']),
       startTime: serializer.fromJson<String>(json['startTime']),
@@ -928,6 +1444,7 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
       'subjectId': serializer.toJson<String>(subjectId),
       'groupId': serializer.toJson<String>(groupId),
       'teacherId': serializer.toJson<String>(teacherId),
+      'roomId': serializer.toJson<String?>(roomId),
       'date': serializer.toJson<DateTime?>(date),
       'weekday': serializer.toJson<int>(weekday),
       'startTime': serializer.toJson<String>(startTime),
@@ -941,6 +1458,7 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
     String? subjectId,
     String? groupId,
     String? teacherId,
+    Value<String?> roomId = const Value.absent(),
     Value<DateTime?> date = const Value.absent(),
     int? weekday,
     String? startTime,
@@ -951,6 +1469,7 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
     subjectId: subjectId ?? this.subjectId,
     groupId: groupId ?? this.groupId,
     teacherId: teacherId ?? this.teacherId,
+    roomId: roomId.present ? roomId.value : this.roomId,
     date: date.present ? date.value : this.date,
     weekday: weekday ?? this.weekday,
     startTime: startTime ?? this.startTime,
@@ -959,10 +1478,14 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
   LocalSchedule copyWithCompanion(LocalSchedulesCompanion data) {
     return LocalSchedule(
       id: data.id.present ? data.id.value : this.id,
-      institutionId: data.institutionId.present ? data.institutionId.value : this.institutionId,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
       subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
       groupId: data.groupId.present ? data.groupId.value : this.groupId,
       teacherId: data.teacherId.present ? data.teacherId.value : this.teacherId,
+      roomId: data.roomId.present ? data.roomId.value : this.roomId,
       date: data.date.present ? data.date.value : this.date,
       weekday: data.weekday.present ? data.weekday.value : this.weekday,
       startTime: data.startTime.present ? data.startTime.value : this.startTime,
@@ -978,6 +1501,7 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
           ..write('subjectId: $subjectId, ')
           ..write('groupId: $groupId, ')
           ..write('teacherId: $teacherId, ')
+          ..write('roomId: $roomId, ')
           ..write('date: $date, ')
           ..write('weekday: $weekday, ')
           ..write('startTime: $startTime, ')
@@ -987,7 +1511,18 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
   }
 
   @override
-  int get hashCode => Object.hash(id, institutionId, subjectId, groupId, teacherId, date, weekday, startTime, endTime);
+  int get hashCode => Object.hash(
+    id,
+    institutionId,
+    subjectId,
+    groupId,
+    teacherId,
+    roomId,
+    date,
+    weekday,
+    startTime,
+    endTime,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -997,6 +1532,7 @@ class LocalSchedule extends DataClass implements Insertable<LocalSchedule> {
           other.subjectId == this.subjectId &&
           other.groupId == this.groupId &&
           other.teacherId == this.teacherId &&
+          other.roomId == this.roomId &&
           other.date == this.date &&
           other.weekday == this.weekday &&
           other.startTime == this.startTime &&
@@ -1009,6 +1545,7 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
   final Value<String> subjectId;
   final Value<String> groupId;
   final Value<String> teacherId;
+  final Value<String?> roomId;
   final Value<DateTime?> date;
   final Value<int> weekday;
   final Value<String> startTime;
@@ -1020,6 +1557,7 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
     this.subjectId = const Value.absent(),
     this.groupId = const Value.absent(),
     this.teacherId = const Value.absent(),
+    this.roomId = const Value.absent(),
     this.date = const Value.absent(),
     this.weekday = const Value.absent(),
     this.startTime = const Value.absent(),
@@ -1032,6 +1570,7 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
     required String subjectId,
     required String groupId,
     required String teacherId,
+    this.roomId = const Value.absent(),
     this.date = const Value.absent(),
     required int weekday,
     required String startTime,
@@ -1051,6 +1590,7 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
     Expression<String>? subjectId,
     Expression<String>? groupId,
     Expression<String>? teacherId,
+    Expression<String>? roomId,
     Expression<DateTime>? date,
     Expression<int>? weekday,
     Expression<String>? startTime,
@@ -1063,6 +1603,7 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
       if (subjectId != null) 'subject_id': subjectId,
       if (groupId != null) 'group_id': groupId,
       if (teacherId != null) 'teacher_id': teacherId,
+      if (roomId != null) 'room_id': roomId,
       if (date != null) 'date': date,
       if (weekday != null) 'weekday': weekday,
       if (startTime != null) 'start_time': startTime,
@@ -1077,6 +1618,7 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
     Value<String>? subjectId,
     Value<String>? groupId,
     Value<String>? teacherId,
+    Value<String?>? roomId,
     Value<DateTime?>? date,
     Value<int>? weekday,
     Value<String>? startTime,
@@ -1089,6 +1631,7 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
       subjectId: subjectId ?? this.subjectId,
       groupId: groupId ?? this.groupId,
       teacherId: teacherId ?? this.teacherId,
+      roomId: roomId ?? this.roomId,
       date: date ?? this.date,
       weekday: weekday ?? this.weekday,
       startTime: startTime ?? this.startTime,
@@ -1114,6 +1657,9 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
     }
     if (teacherId.present) {
       map['teacher_id'] = Variable<String>(teacherId.value);
+    }
+    if (roomId.present) {
+      map['room_id'] = Variable<String>(roomId.value);
     }
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
@@ -1141,6 +1687,7 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
           ..write('subjectId: $subjectId, ')
           ..write('groupId: $groupId, ')
           ..write('teacherId: $teacherId, ')
+          ..write('roomId: $roomId, ')
           ..write('date: $date, ')
           ..write('weekday: $weekday, ')
           ..write('startTime: $startTime, ')
@@ -1151,7 +1698,8 @@ class LocalSchedulesCompanion extends UpdateCompanion<LocalSchedule> {
   }
 }
 
-class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, LocalUser> {
+class $LocalUsersTable extends LocalUsers
+    with TableInfo<$LocalUsersTable, LocalUser> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1183,7 +1731,9 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _surnameMeta = const VerificationMeta('surname');
+  static const VerificationMeta _surnameMeta = const VerificationMeta(
+    'surname',
+  );
   @override
   late final GeneratedColumn<String> surname = GeneratedColumn<String>(
     'surname',
@@ -1210,7 +1760,9 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _institutionIdMeta = const VerificationMeta('institutionId');
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
   @override
   late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
     'institution_id',
@@ -1219,7 +1771,9 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _groupIdMeta = const VerificationMeta('groupId');
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
   @override
   late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
     'group_id',
@@ -1228,7 +1782,9 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _avatarUrlMeta = const VerificationMeta('avatarUrl');
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
   @override
   late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
     'avatar_url',
@@ -1237,7 +1793,9 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _institutionNameMeta = const VerificationMeta('institutionName');
+  static const VerificationMeta _institutionNameMeta = const VerificationMeta(
+    'institutionName',
+  );
   @override
   late final GeneratedColumn<String> institutionName = GeneratedColumn<String>(
     'institution_name',
@@ -1246,7 +1804,9 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _groupNameMeta = const VerificationMeta('groupName');
+  static const VerificationMeta _groupNameMeta = const VerificationMeta(
+    'groupName',
+  );
   @override
   late final GeneratedColumn<String> groupName = GeneratedColumn<String>(
     'group_name',
@@ -1275,7 +1835,10 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
   String get actualTableName => $name;
   static const String $name = 'local_users';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalUser> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalUser> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -1284,44 +1847,74 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
       context.missing(_idMeta);
     }
     if (data.containsKey('role')) {
-      context.handle(_roleMeta, role.isAcceptableOrUnknown(data['role']!, _roleMeta));
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
     } else if (isInserting) {
       context.missing(_roleMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     }
     if (data.containsKey('surname')) {
-      context.handle(_surnameMeta, surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta));
+      context.handle(
+        _surnameMeta,
+        surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta),
+      );
     }
     if (data.containsKey('email')) {
-      context.handle(_emailMeta, email.isAcceptableOrUnknown(data['email']!, _emailMeta));
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
     }
     if (data.containsKey('login')) {
-      context.handle(_loginMeta, login.isAcceptableOrUnknown(data['login']!, _loginMeta));
+      context.handle(
+        _loginMeta,
+        login.isAcceptableOrUnknown(data['login']!, _loginMeta),
+      );
     }
     if (data.containsKey('institution_id')) {
       context.handle(
         _institutionIdMeta,
-        institutionId.isAcceptableOrUnknown(data['institution_id']!, _institutionIdMeta),
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
       );
     } else if (isInserting) {
       context.missing(_institutionIdMeta);
     }
     if (data.containsKey('group_id')) {
-      context.handle(_groupIdMeta, groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta));
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
     }
     if (data.containsKey('avatar_url')) {
-      context.handle(_avatarUrlMeta, avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta));
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
     }
     if (data.containsKey('institution_name')) {
       context.handle(
         _institutionNameMeta,
-        institutionName.isAcceptableOrUnknown(data['institution_name']!, _institutionNameMeta),
+        institutionName.isAcceptableOrUnknown(
+          data['institution_name']!,
+          _institutionNameMeta,
+        ),
       );
     }
     if (data.containsKey('group_name')) {
-      context.handle(_groupNameMeta, groupName.isAcceptableOrUnknown(data['group_name']!, _groupNameMeta));
+      context.handle(
+        _groupNameMeta,
+        groupName.isAcceptableOrUnknown(data['group_name']!, _groupNameMeta),
+      );
     }
     return context;
   }
@@ -1332,20 +1925,53 @@ class $LocalUsersTable extends LocalUsers with TableInfo<$LocalUsersTable, Local
   LocalUser map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalUser(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      role: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}role'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name']),
-      surname: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}surname']),
-      email: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}email']),
-      login: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}login']),
-      institutionId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}institution_id'])!,
-      groupId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}group_id']),
-      avatarUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}avatar_url']),
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      role:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}role'],
+          )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      ),
+      surname: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}surname'],
+      ),
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      ),
+      login: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}login'],
+      ),
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_id'],
+      ),
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
       institutionName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}institution_name'],
       ),
-      groupName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}group_name']),
+      groupName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_name'],
+      ),
     );
   }
 
@@ -1418,18 +2044,38 @@ class LocalUser extends DataClass implements Insertable<LocalUser> {
       id: Value(id),
       role: Value(role),
       name: name == null && nullToAbsent ? const Value.absent() : Value(name),
-      surname: surname == null && nullToAbsent ? const Value.absent() : Value(surname),
-      email: email == null && nullToAbsent ? const Value.absent() : Value(email),
-      login: login == null && nullToAbsent ? const Value.absent() : Value(login),
+      surname:
+          surname == null && nullToAbsent
+              ? const Value.absent()
+              : Value(surname),
+      email:
+          email == null && nullToAbsent ? const Value.absent() : Value(email),
+      login:
+          login == null && nullToAbsent ? const Value.absent() : Value(login),
       institutionId: Value(institutionId),
-      groupId: groupId == null && nullToAbsent ? const Value.absent() : Value(groupId),
-      avatarUrl: avatarUrl == null && nullToAbsent ? const Value.absent() : Value(avatarUrl),
-      institutionName: institutionName == null && nullToAbsent ? const Value.absent() : Value(institutionName),
-      groupName: groupName == null && nullToAbsent ? const Value.absent() : Value(groupName),
+      groupId:
+          groupId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(groupId),
+      avatarUrl:
+          avatarUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(avatarUrl),
+      institutionName:
+          institutionName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(institutionName),
+      groupName:
+          groupName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(groupName),
     );
   }
 
-  factory LocalUser.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalUser.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalUser(
       id: serializer.fromJson<String>(json['id']),
@@ -1485,7 +2131,8 @@ class LocalUser extends DataClass implements Insertable<LocalUser> {
     institutionId: institutionId ?? this.institutionId,
     groupId: groupId.present ? groupId.value : this.groupId,
     avatarUrl: avatarUrl.present ? avatarUrl.value : this.avatarUrl,
-    institutionName: institutionName.present ? institutionName.value : this.institutionName,
+    institutionName:
+        institutionName.present ? institutionName.value : this.institutionName,
     groupName: groupName.present ? groupName.value : this.groupName,
   );
   LocalUser copyWithCompanion(LocalUsersCompanion data) {
@@ -1496,10 +2143,16 @@ class LocalUser extends DataClass implements Insertable<LocalUser> {
       surname: data.surname.present ? data.surname.value : this.surname,
       email: data.email.present ? data.email.value : this.email,
       login: data.login.present ? data.login.value : this.login,
-      institutionId: data.institutionId.present ? data.institutionId.value : this.institutionId,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
       groupId: data.groupId.present ? data.groupId.value : this.groupId,
       avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
-      institutionName: data.institutionName.present ? data.institutionName.value : this.institutionName,
+      institutionName:
+          data.institutionName.present
+              ? data.institutionName.value
+              : this.institutionName,
       groupName: data.groupName.present ? data.groupName.value : this.groupName,
     );
   }
@@ -1523,8 +2176,19 @@ class LocalUser extends DataClass implements Insertable<LocalUser> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, role, name, surname, email, login, institutionId, groupId, avatarUrl, institutionName, groupName);
+  int get hashCode => Object.hash(
+    id,
+    role,
+    name,
+    surname,
+    email,
+    login,
+    institutionId,
+    groupId,
+    avatarUrl,
+    institutionName,
+    groupName,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1707,7 +2371,8 @@ class LocalUsersCompanion extends UpdateCompanion<LocalUser> {
   }
 }
 
-class $LocalGradesTable extends LocalGrades with TableInfo<$LocalGradesTable, LocalGrade> {
+class $LocalGradesTable extends LocalGrades
+    with TableInfo<$LocalGradesTable, LocalGrade> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1721,7 +2386,9 @@ class $LocalGradesTable extends LocalGrades with TableInfo<$LocalGradesTable, Lo
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _lessonIdMeta = const VerificationMeta('lessonId');
+  static const VerificationMeta _lessonIdMeta = const VerificationMeta(
+    'lessonId',
+  );
   @override
   late final GeneratedColumn<String> lessonId = GeneratedColumn<String>(
     'lesson_id',
@@ -1730,7 +2397,9 @@ class $LocalGradesTable extends LocalGrades with TableInfo<$LocalGradesTable, Lo
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _studentIdMeta = const VerificationMeta('studentId');
+  static const VerificationMeta _studentIdMeta = const VerificationMeta(
+    'studentId',
+  );
   @override
   late final GeneratedColumn<String> studentId = GeneratedColumn<String>(
     'student_id',
@@ -1756,7 +2425,10 @@ class $LocalGradesTable extends LocalGrades with TableInfo<$LocalGradesTable, Lo
   String get actualTableName => $name;
   static const String $name = 'local_grades';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalGrade> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalGrade> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -1765,17 +2437,26 @@ class $LocalGradesTable extends LocalGrades with TableInfo<$LocalGradesTable, Lo
       context.missing(_idMeta);
     }
     if (data.containsKey('lesson_id')) {
-      context.handle(_lessonIdMeta, lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta));
+      context.handle(
+        _lessonIdMeta,
+        lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_lessonIdMeta);
     }
     if (data.containsKey('student_id')) {
-      context.handle(_studentIdMeta, studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta));
+      context.handle(
+        _studentIdMeta,
+        studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_studentIdMeta);
     }
     if (data.containsKey('value')) {
-      context.handle(_valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
     } else if (isInserting) {
       context.missing(_valueMeta);
     }
@@ -1788,10 +2469,26 @@ class $LocalGradesTable extends LocalGrades with TableInfo<$LocalGradesTable, Lo
   LocalGrade map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalGrade(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      lessonId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}lesson_id'])!,
-      studentId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}student_id'])!,
-      value: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}value'])!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      lessonId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}lesson_id'],
+          )!,
+      studentId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}student_id'],
+          )!,
+      value:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}value'],
+          )!,
     );
   }
 
@@ -1806,7 +2503,12 @@ class LocalGrade extends DataClass implements Insertable<LocalGrade> {
   final String lessonId;
   final String studentId;
   final int value;
-  const LocalGrade({required this.id, required this.lessonId, required this.studentId, required this.value});
+  const LocalGrade({
+    required this.id,
+    required this.lessonId,
+    required this.studentId,
+    required this.value,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1826,7 +2528,10 @@ class LocalGrade extends DataClass implements Insertable<LocalGrade> {
     );
   }
 
-  factory LocalGrade.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalGrade.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalGrade(
       id: serializer.fromJson<String>(json['id']),
@@ -1846,7 +2551,12 @@ class LocalGrade extends DataClass implements Insertable<LocalGrade> {
     };
   }
 
-  LocalGrade copyWith({String? id, String? lessonId, String? studentId, int? value}) => LocalGrade(
+  LocalGrade copyWith({
+    String? id,
+    String? lessonId,
+    String? studentId,
+    int? value,
+  }) => LocalGrade(
     id: id ?? this.id,
     lessonId: lessonId ?? this.lessonId,
     studentId: studentId ?? this.studentId,
@@ -1973,7 +2683,8 @@ class LocalGradesCompanion extends UpdateCompanion<LocalGrade> {
   }
 }
 
-class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworksTable, LocalHomework> {
+class $LocalHomeworksTable extends LocalHomeworks
+    with TableInfo<$LocalHomeworksTable, LocalHomework> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1987,7 +2698,9 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _subjectIdMeta = const VerificationMeta('subjectId');
+  static const VerificationMeta _subjectIdMeta = const VerificationMeta(
+    'subjectId',
+  );
   @override
   late final GeneratedColumn<String> subjectId = GeneratedColumn<String>(
     'subject_id',
@@ -1996,7 +2709,9 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _groupIdMeta = const VerificationMeta('groupId');
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
   @override
   late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
     'group_id',
@@ -2005,7 +2720,9 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _lessonIdMeta = const VerificationMeta('lessonId');
+  static const VerificationMeta _lessonIdMeta = const VerificationMeta(
+    'lessonId',
+  );
   @override
   late final GeneratedColumn<String> lessonId = GeneratedColumn<String>(
     'lesson_id',
@@ -2023,7 +2740,9 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta('description');
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
   @override
   late final GeneratedColumn<String> description = GeneratedColumn<String>(
     'description',
@@ -2032,7 +2751,9 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _dueDateMeta = const VerificationMeta('dueDate');
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
   @override
   late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
     'due_date',
@@ -2041,7 +2762,9 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -2050,7 +2773,9 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _fileUrlMeta = const VerificationMeta('fileUrl');
+  static const VerificationMeta _fileUrlMeta = const VerificationMeta(
+    'fileUrl',
+  );
   @override
   late final GeneratedColumn<String> fileUrl = GeneratedColumn<String>(
     'file_url',
@@ -2059,7 +2784,9 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _fileNameMeta = const VerificationMeta('fileName');
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
   @override
   late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
     'file_name',
@@ -2087,7 +2814,10 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
   String get actualTableName => $name;
   static const String $name = 'local_homeworks';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalHomework> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalHomework> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -2096,37 +2826,67 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
       context.missing(_idMeta);
     }
     if (data.containsKey('subject_id')) {
-      context.handle(_subjectIdMeta, subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta));
+      context.handle(
+        _subjectIdMeta,
+        subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_subjectIdMeta);
     }
     if (data.containsKey('group_id')) {
-      context.handle(_groupIdMeta, groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta));
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_groupIdMeta);
     }
     if (data.containsKey('lesson_id')) {
-      context.handle(_lessonIdMeta, lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta));
+      context.handle(
+        _lessonIdMeta,
+        lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta),
+      );
     }
     if (data.containsKey('title')) {
-      context.handle(_titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
     } else if (isInserting) {
       context.missing(_titleMeta);
     }
     if (data.containsKey('description')) {
-      context.handle(_descriptionMeta, description.isAcceptableOrUnknown(data['description']!, _descriptionMeta));
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
     }
     if (data.containsKey('due_date')) {
-      context.handle(_dueDateMeta, dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta));
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     }
     if (data.containsKey('file_url')) {
-      context.handle(_fileUrlMeta, fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta));
+      context.handle(
+        _fileUrlMeta,
+        fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta),
+      );
     }
     if (data.containsKey('file_name')) {
-      context.handle(_fileNameMeta, fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta));
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
     }
     return context;
   }
@@ -2137,16 +2897,50 @@ class $LocalHomeworksTable extends LocalHomeworks with TableInfo<$LocalHomeworks
   LocalHomework map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalHomework(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      subjectId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}subject_id'])!,
-      groupId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}group_id'])!,
-      lessonId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}lesson_id']),
-      title: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}title'])!,
-      description: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}description']),
-      dueDate: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}due_date']),
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at']),
-      fileUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}file_url']),
-      fileName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}file_name']),
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      subjectId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}subject_id'],
+          )!,
+      groupId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}group_id'],
+          )!,
+      lessonId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lesson_id'],
+      ),
+      title:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}title'],
+          )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_date'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      ),
+      fileUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_url'],
+      ),
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      ),
     );
   }
 
@@ -2212,17 +3006,38 @@ class LocalHomework extends DataClass implements Insertable<LocalHomework> {
       id: Value(id),
       subjectId: Value(subjectId),
       groupId: Value(groupId),
-      lessonId: lessonId == null && nullToAbsent ? const Value.absent() : Value(lessonId),
+      lessonId:
+          lessonId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(lessonId),
       title: Value(title),
-      description: description == null && nullToAbsent ? const Value.absent() : Value(description),
-      dueDate: dueDate == null && nullToAbsent ? const Value.absent() : Value(dueDate),
-      createdAt: createdAt == null && nullToAbsent ? const Value.absent() : Value(createdAt),
-      fileUrl: fileUrl == null && nullToAbsent ? const Value.absent() : Value(fileUrl),
-      fileName: fileName == null && nullToAbsent ? const Value.absent() : Value(fileName),
+      description:
+          description == null && nullToAbsent
+              ? const Value.absent()
+              : Value(description),
+      dueDate:
+          dueDate == null && nullToAbsent
+              ? const Value.absent()
+              : Value(dueDate),
+      createdAt:
+          createdAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(createdAt),
+      fileUrl:
+          fileUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(fileUrl),
+      fileName:
+          fileName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(fileName),
     );
   }
 
-  factory LocalHomework.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalHomework.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalHomework(
       id: serializer.fromJson<String>(json['id']),
@@ -2284,7 +3099,8 @@ class LocalHomework extends DataClass implements Insertable<LocalHomework> {
       groupId: data.groupId.present ? data.groupId.value : this.groupId,
       lessonId: data.lessonId.present ? data.lessonId.value : this.lessonId,
       title: data.title.present ? data.title.value : this.title,
-      description: data.description.present ? data.description.value : this.description,
+      description:
+          data.description.present ? data.description.value : this.description,
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       fileUrl: data.fileUrl.present ? data.fileUrl.value : this.fileUrl,
@@ -2310,8 +3126,18 @@ class LocalHomework extends DataClass implements Insertable<LocalHomework> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, subjectId, groupId, lessonId, title, description, dueDate, createdAt, fileUrl, fileName);
+  int get hashCode => Object.hash(
+    id,
+    subjectId,
+    groupId,
+    lessonId,
+    title,
+    description,
+    dueDate,
+    createdAt,
+    fileUrl,
+    fileName,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2498,7 +3324,9 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _homeworkIdMeta = const VerificationMeta('homeworkId');
+  static const VerificationMeta _homeworkIdMeta = const VerificationMeta(
+    'homeworkId',
+  );
   @override
   late final GeneratedColumn<String> homeworkId = GeneratedColumn<String>(
     'homework_id',
@@ -2507,7 +3335,9 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _studentIdMeta = const VerificationMeta('studentId');
+  static const VerificationMeta _studentIdMeta = const VerificationMeta(
+    'studentId',
+  );
   @override
   late final GeneratedColumn<String> studentId = GeneratedColumn<String>(
     'student_id',
@@ -2516,7 +3346,9 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _isCompletedMeta = const VerificationMeta('isCompleted');
+  static const VerificationMeta _isCompletedMeta = const VerificationMeta(
+    'isCompleted',
+  );
   @override
   late final GeneratedColumn<bool> isCompleted = GeneratedColumn<bool>(
     'is_completed',
@@ -2524,9 +3356,13 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("is_completed" IN (0, 1))'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_completed" IN (0, 1))',
+    ),
   );
-  static const VerificationMeta _studentCommentMeta = const VerificationMeta('studentComment');
+  static const VerificationMeta _studentCommentMeta = const VerificationMeta(
+    'studentComment',
+  );
   @override
   late final GeneratedColumn<String> studentComment = GeneratedColumn<String>(
     'student_comment',
@@ -2535,7 +3371,9 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _teacherCommentMeta = const VerificationMeta('teacherComment');
+  static const VerificationMeta _teacherCommentMeta = const VerificationMeta(
+    'teacherComment',
+  );
   @override
   late final GeneratedColumn<String> teacherComment = GeneratedColumn<String>(
     'teacher_comment',
@@ -2544,7 +3382,9 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _fileUrlMeta = const VerificationMeta('fileUrl');
+  static const VerificationMeta _fileUrlMeta = const VerificationMeta(
+    'fileUrl',
+  );
   @override
   late final GeneratedColumn<String> fileUrl = GeneratedColumn<String>(
     'file_url',
@@ -2553,7 +3393,9 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _fileNameMeta = const VerificationMeta('fileName');
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
   @override
   late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
     'file_name',
@@ -2562,7 +3404,9 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
     'updated_at',
@@ -2589,7 +3433,10 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
   String get actualTableName => $name;
   static const String $name = 'local_homework_statuses';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalHomeworkStatuse> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalHomeworkStatuse> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -2598,40 +3445,67 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
       context.missing(_idMeta);
     }
     if (data.containsKey('homework_id')) {
-      context.handle(_homeworkIdMeta, homeworkId.isAcceptableOrUnknown(data['homework_id']!, _homeworkIdMeta));
+      context.handle(
+        _homeworkIdMeta,
+        homeworkId.isAcceptableOrUnknown(data['homework_id']!, _homeworkIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_homeworkIdMeta);
     }
     if (data.containsKey('student_id')) {
-      context.handle(_studentIdMeta, studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta));
+      context.handle(
+        _studentIdMeta,
+        studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_studentIdMeta);
     }
     if (data.containsKey('is_completed')) {
-      context.handle(_isCompletedMeta, isCompleted.isAcceptableOrUnknown(data['is_completed']!, _isCompletedMeta));
+      context.handle(
+        _isCompletedMeta,
+        isCompleted.isAcceptableOrUnknown(
+          data['is_completed']!,
+          _isCompletedMeta,
+        ),
+      );
     } else if (isInserting) {
       context.missing(_isCompletedMeta);
     }
     if (data.containsKey('student_comment')) {
       context.handle(
         _studentCommentMeta,
-        studentComment.isAcceptableOrUnknown(data['student_comment']!, _studentCommentMeta),
+        studentComment.isAcceptableOrUnknown(
+          data['student_comment']!,
+          _studentCommentMeta,
+        ),
       );
     }
     if (data.containsKey('teacher_comment')) {
       context.handle(
         _teacherCommentMeta,
-        teacherComment.isAcceptableOrUnknown(data['teacher_comment']!, _teacherCommentMeta),
+        teacherComment.isAcceptableOrUnknown(
+          data['teacher_comment']!,
+          _teacherCommentMeta,
+        ),
       );
     }
     if (data.containsKey('file_url')) {
-      context.handle(_fileUrlMeta, fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta));
+      context.handle(
+        _fileUrlMeta,
+        fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta),
+      );
     }
     if (data.containsKey('file_name')) {
-      context.handle(_fileNameMeta, fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta));
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
     }
     if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta, updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
@@ -2644,15 +3518,47 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
   LocalHomeworkStatuse map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalHomeworkStatuse(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      homeworkId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}homework_id'])!,
-      studentId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}student_id'])!,
-      isCompleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}is_completed'])!,
-      studentComment: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}student_comment']),
-      teacherComment: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}teacher_comment']),
-      fileUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}file_url']),
-      fileName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}file_name']),
-      updatedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      homeworkId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}homework_id'],
+          )!,
+      studentId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}student_id'],
+          )!,
+      isCompleted:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_completed'],
+          )!,
+      studentComment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}student_comment'],
+      ),
+      teacherComment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}teacher_comment'],
+      ),
+      fileUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_url'],
+      ),
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      ),
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
     );
   }
 
@@ -2662,7 +3568,8 @@ class $LocalHomeworkStatusesTable extends LocalHomeworkStatuses
   }
 }
 
-class LocalHomeworkStatuse extends DataClass implements Insertable<LocalHomeworkStatuse> {
+class LocalHomeworkStatuse extends DataClass
+    implements Insertable<LocalHomeworkStatuse> {
   final String id;
   final String homeworkId;
   final String studentId;
@@ -2712,15 +3619,30 @@ class LocalHomeworkStatuse extends DataClass implements Insertable<LocalHomework
       homeworkId: Value(homeworkId),
       studentId: Value(studentId),
       isCompleted: Value(isCompleted),
-      studentComment: studentComment == null && nullToAbsent ? const Value.absent() : Value(studentComment),
-      teacherComment: teacherComment == null && nullToAbsent ? const Value.absent() : Value(teacherComment),
-      fileUrl: fileUrl == null && nullToAbsent ? const Value.absent() : Value(fileUrl),
-      fileName: fileName == null && nullToAbsent ? const Value.absent() : Value(fileName),
+      studentComment:
+          studentComment == null && nullToAbsent
+              ? const Value.absent()
+              : Value(studentComment),
+      teacherComment:
+          teacherComment == null && nullToAbsent
+              ? const Value.absent()
+              : Value(teacherComment),
+      fileUrl:
+          fileUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(fileUrl),
+      fileName:
+          fileName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(fileName),
       updatedAt: Value(updatedAt),
     );
   }
 
-  factory LocalHomeworkStatuse.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalHomeworkStatuse.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalHomeworkStatuse(
       id: serializer.fromJson<String>(json['id']),
@@ -2765,8 +3687,10 @@ class LocalHomeworkStatuse extends DataClass implements Insertable<LocalHomework
     homeworkId: homeworkId ?? this.homeworkId,
     studentId: studentId ?? this.studentId,
     isCompleted: isCompleted ?? this.isCompleted,
-    studentComment: studentComment.present ? studentComment.value : this.studentComment,
-    teacherComment: teacherComment.present ? teacherComment.value : this.teacherComment,
+    studentComment:
+        studentComment.present ? studentComment.value : this.studentComment,
+    teacherComment:
+        teacherComment.present ? teacherComment.value : this.teacherComment,
     fileUrl: fileUrl.present ? fileUrl.value : this.fileUrl,
     fileName: fileName.present ? fileName.value : this.fileName,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -2774,11 +3698,19 @@ class LocalHomeworkStatuse extends DataClass implements Insertable<LocalHomework
   LocalHomeworkStatuse copyWithCompanion(LocalHomeworkStatusesCompanion data) {
     return LocalHomeworkStatuse(
       id: data.id.present ? data.id.value : this.id,
-      homeworkId: data.homeworkId.present ? data.homeworkId.value : this.homeworkId,
+      homeworkId:
+          data.homeworkId.present ? data.homeworkId.value : this.homeworkId,
       studentId: data.studentId.present ? data.studentId.value : this.studentId,
-      isCompleted: data.isCompleted.present ? data.isCompleted.value : this.isCompleted,
-      studentComment: data.studentComment.present ? data.studentComment.value : this.studentComment,
-      teacherComment: data.teacherComment.present ? data.teacherComment.value : this.teacherComment,
+      isCompleted:
+          data.isCompleted.present ? data.isCompleted.value : this.isCompleted,
+      studentComment:
+          data.studentComment.present
+              ? data.studentComment.value
+              : this.studentComment,
+      teacherComment:
+          data.teacherComment.present
+              ? data.teacherComment.value
+              : this.teacherComment,
       fileUrl: data.fileUrl.present ? data.fileUrl.value : this.fileUrl,
       fileName: data.fileName.present ? data.fileName.value : this.fileName,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -2802,8 +3734,17 @@ class LocalHomeworkStatuse extends DataClass implements Insertable<LocalHomework
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, homeworkId, studentId, isCompleted, studentComment, teacherComment, fileUrl, fileName, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    homeworkId,
+    studentId,
+    isCompleted,
+    studentComment,
+    teacherComment,
+    fileUrl,
+    fileName,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2819,7 +3760,8 @@ class LocalHomeworkStatuse extends DataClass implements Insertable<LocalHomework
           other.updatedAt == this.updatedAt);
 }
 
-class LocalHomeworkStatusesCompanion extends UpdateCompanion<LocalHomeworkStatuse> {
+class LocalHomeworkStatusesCompanion
+    extends UpdateCompanion<LocalHomeworkStatuse> {
   final Value<String> id;
   final Value<String> homeworkId;
   final Value<String> studentId;
@@ -2964,7 +3906,8 @@ class LocalHomeworkStatusesCompanion extends UpdateCompanion<LocalHomeworkStatus
   }
 }
 
-class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTable, LocalStudent> {
+class $LocalStudentsTable extends LocalStudents
+    with TableInfo<$LocalStudentsTable, LocalStudent> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2987,7 +3930,9 @@ class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTab
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _surnameMeta = const VerificationMeta('surname');
+  static const VerificationMeta _surnameMeta = const VerificationMeta(
+    'surname',
+  );
   @override
   late final GeneratedColumn<String> surname = GeneratedColumn<String>(
     'surname',
@@ -3014,7 +3959,9 @@ class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTab
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _groupIdMeta = const VerificationMeta('groupId');
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
   @override
   late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
     'group_id',
@@ -3023,7 +3970,9 @@ class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTab
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _isHeadmanMeta = const VerificationMeta('isHeadman');
+  static const VerificationMeta _isHeadmanMeta = const VerificationMeta(
+    'isHeadman',
+  );
   @override
   late final GeneratedColumn<bool> isHeadman = GeneratedColumn<bool>(
     'is_headman',
@@ -3031,10 +3980,14 @@ class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTab
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("is_headman" IN (0, 1))'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_headman" IN (0, 1))',
+    ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -3043,7 +3996,9 @@ class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTab
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _avatarUrlMeta = const VerificationMeta('avatarUrl');
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
   @override
   late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
     'avatar_url',
@@ -3053,14 +4008,27 @@ class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTab
     requiredDuringInsert: false,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, surname, email, login, groupId, isHeadman, createdAt, avatarUrl];
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    surname,
+    email,
+    login,
+    groupId,
+    isHeadman,
+    createdAt,
+    avatarUrl,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'local_students';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalStudent> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalStudent> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -3069,38 +4037,62 @@ class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTab
       context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('surname')) {
-      context.handle(_surnameMeta, surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta));
+      context.handle(
+        _surnameMeta,
+        surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta),
+      );
     } else if (isInserting) {
       context.missing(_surnameMeta);
     }
     if (data.containsKey('email')) {
-      context.handle(_emailMeta, email.isAcceptableOrUnknown(data['email']!, _emailMeta));
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
     } else if (isInserting) {
       context.missing(_emailMeta);
     }
     if (data.containsKey('login')) {
-      context.handle(_loginMeta, login.isAcceptableOrUnknown(data['login']!, _loginMeta));
+      context.handle(
+        _loginMeta,
+        login.isAcceptableOrUnknown(data['login']!, _loginMeta),
+      );
     } else if (isInserting) {
       context.missing(_loginMeta);
     }
     if (data.containsKey('group_id')) {
-      context.handle(_groupIdMeta, groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta));
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
     }
     if (data.containsKey('is_headman')) {
-      context.handle(_isHeadmanMeta, isHeadman.isAcceptableOrUnknown(data['is_headman']!, _isHeadmanMeta));
+      context.handle(
+        _isHeadmanMeta,
+        isHeadman.isAcceptableOrUnknown(data['is_headman']!, _isHeadmanMeta),
+      );
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('avatar_url')) {
-      context.handle(_avatarUrlMeta, avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta));
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
     }
     return context;
   }
@@ -3111,15 +4103,49 @@ class $LocalStudentsTable extends LocalStudents with TableInfo<$LocalStudentsTab
   LocalStudent map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalStudent(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      surname: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}surname'])!,
-      email: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}email'])!,
-      login: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}login'])!,
-      groupId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}group_id']),
-      isHeadman: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}is_headman'])!,
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      avatarUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}avatar_url']),
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      surname:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}surname'],
+          )!,
+      email:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}email'],
+          )!,
+      login:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}login'],
+          )!,
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_id'],
+      ),
+      isHeadman:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_headman'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
     );
   }
 
@@ -3176,14 +4202,23 @@ class LocalStudent extends DataClass implements Insertable<LocalStudent> {
       surname: Value(surname),
       email: Value(email),
       login: Value(login),
-      groupId: groupId == null && nullToAbsent ? const Value.absent() : Value(groupId),
+      groupId:
+          groupId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(groupId),
       isHeadman: Value(isHeadman),
       createdAt: Value(createdAt),
-      avatarUrl: avatarUrl == null && nullToAbsent ? const Value.absent() : Value(avatarUrl),
+      avatarUrl:
+          avatarUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(avatarUrl),
     );
   }
 
-  factory LocalStudent.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalStudent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalStudent(
       id: serializer.fromJson<String>(json['id']),
@@ -3265,7 +4300,17 @@ class LocalStudent extends DataClass implements Insertable<LocalStudent> {
   }
 
   @override
-  int get hashCode => Object.hash(id, name, surname, email, login, groupId, isHeadman, createdAt, avatarUrl);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    surname,
+    email,
+    login,
+    groupId,
+    isHeadman,
+    createdAt,
+    avatarUrl,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3427,7 +4472,8 @@ class LocalStudentsCompanion extends UpdateCompanion<LocalStudent> {
   }
 }
 
-class $LocalGroupDetailsTable extends LocalGroupDetails with TableInfo<$LocalGroupDetailsTable, LocalGroupDetail> {
+class $LocalGroupDetailsTable extends LocalGroupDetails
+    with TableInfo<$LocalGroupDetailsTable, LocalGroupDetail> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -3450,7 +4496,9 @@ class $LocalGroupDetailsTable extends LocalGroupDetails with TableInfo<$LocalGro
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _institutionIdMeta = const VerificationMeta('institutionId');
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
   @override
   late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
     'institution_id',
@@ -3459,7 +4507,9 @@ class $LocalGroupDetailsTable extends LocalGroupDetails with TableInfo<$LocalGro
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _curatorIdMeta = const VerificationMeta('curatorId');
+  static const VerificationMeta _curatorIdMeta = const VerificationMeta(
+    'curatorId',
+  );
   @override
   late final GeneratedColumn<String> curatorId = GeneratedColumn<String>(
     'curator_id',
@@ -3468,7 +4518,9 @@ class $LocalGroupDetailsTable extends LocalGroupDetails with TableInfo<$LocalGro
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -3478,14 +4530,23 @@ class $LocalGroupDetailsTable extends LocalGroupDetails with TableInfo<$LocalGro
     requiredDuringInsert: false,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, institutionId, curatorId, createdAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    institutionId,
+    curatorId,
+    createdAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'local_group_details';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalGroupDetail> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalGroupDetail> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -3494,23 +4555,35 @@ class $LocalGroupDetailsTable extends LocalGroupDetails with TableInfo<$LocalGro
       context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('institution_id')) {
       context.handle(
         _institutionIdMeta,
-        institutionId.isAcceptableOrUnknown(data['institution_id']!, _institutionIdMeta),
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
       );
     } else if (isInserting) {
       context.missing(_institutionIdMeta);
     }
     if (data.containsKey('curator_id')) {
-      context.handle(_curatorIdMeta, curatorId.isAcceptableOrUnknown(data['curator_id']!, _curatorIdMeta));
+      context.handle(
+        _curatorIdMeta,
+        curatorId.isAcceptableOrUnknown(data['curator_id']!, _curatorIdMeta),
+      );
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     }
     return context;
   }
@@ -3521,11 +4594,29 @@ class $LocalGroupDetailsTable extends LocalGroupDetails with TableInfo<$LocalGro
   LocalGroupDetail map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalGroupDetail(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      institutionId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}institution_id'])!,
-      curatorId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}curator_id']),
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at']),
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
+      curatorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}curator_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      ),
     );
   }
 
@@ -3535,7 +4626,8 @@ class $LocalGroupDetailsTable extends LocalGroupDetails with TableInfo<$LocalGro
   }
 }
 
-class LocalGroupDetail extends DataClass implements Insertable<LocalGroupDetail> {
+class LocalGroupDetail extends DataClass
+    implements Insertable<LocalGroupDetail> {
   final String id;
   final String name;
   final String institutionId;
@@ -3568,12 +4660,21 @@ class LocalGroupDetail extends DataClass implements Insertable<LocalGroupDetail>
       id: Value(id),
       name: Value(name),
       institutionId: Value(institutionId),
-      curatorId: curatorId == null && nullToAbsent ? const Value.absent() : Value(curatorId),
-      createdAt: createdAt == null && nullToAbsent ? const Value.absent() : Value(createdAt),
+      curatorId:
+          curatorId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(curatorId),
+      createdAt:
+          createdAt == null && nullToAbsent
+              ? const Value.absent()
+              : Value(createdAt),
     );
   }
 
-  factory LocalGroupDetail.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalGroupDetail.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalGroupDetail(
       id: serializer.fromJson<String>(json['id']),
@@ -3612,7 +4713,10 @@ class LocalGroupDetail extends DataClass implements Insertable<LocalGroupDetail>
     return LocalGroupDetail(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
-      institutionId: data.institutionId.present ? data.institutionId.value : this.institutionId,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
       curatorId: data.curatorId.present ? data.curatorId.value : this.curatorId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -3631,7 +4735,8 @@ class LocalGroupDetail extends DataClass implements Insertable<LocalGroupDetail>
   }
 
   @override
-  int get hashCode => Object.hash(id, name, institutionId, curatorId, createdAt);
+  int get hashCode =>
+      Object.hash(id, name, institutionId, curatorId, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3766,7 +4871,9 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _surnameMeta = const VerificationMeta('surname');
+  static const VerificationMeta _surnameMeta = const VerificationMeta(
+    'surname',
+  );
   @override
   late final GeneratedColumn<String> surname = GeneratedColumn<String>(
     'surname',
@@ -3793,7 +4900,9 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _institutionIdMeta = const VerificationMeta('institutionId');
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
   @override
   late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
     'institution_id',
@@ -3802,7 +4911,9 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _departmentMeta = const VerificationMeta('department');
+  static const VerificationMeta _departmentMeta = const VerificationMeta(
+    'department',
+  );
   @override
   late final GeneratedColumn<String> department = GeneratedColumn<String>(
     'department',
@@ -3811,7 +4922,9 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -3820,7 +4933,9 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _avatarUrlMeta = const VerificationMeta('avatarUrl');
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
   @override
   late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
     'avatar_url',
@@ -3847,7 +4962,10 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
   String get actualTableName => $name;
   static const String $name = 'local_teacher_profiles';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalTeacherProfile> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalTeacherProfile> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -3856,43 +4974,67 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
       context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('surname')) {
-      context.handle(_surnameMeta, surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta));
+      context.handle(
+        _surnameMeta,
+        surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta),
+      );
     } else if (isInserting) {
       context.missing(_surnameMeta);
     }
     if (data.containsKey('email')) {
-      context.handle(_emailMeta, email.isAcceptableOrUnknown(data['email']!, _emailMeta));
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
     } else if (isInserting) {
       context.missing(_emailMeta);
     }
     if (data.containsKey('login')) {
-      context.handle(_loginMeta, login.isAcceptableOrUnknown(data['login']!, _loginMeta));
+      context.handle(
+        _loginMeta,
+        login.isAcceptableOrUnknown(data['login']!, _loginMeta),
+      );
     } else if (isInserting) {
       context.missing(_loginMeta);
     }
     if (data.containsKey('institution_id')) {
       context.handle(
         _institutionIdMeta,
-        institutionId.isAcceptableOrUnknown(data['institution_id']!, _institutionIdMeta),
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
       );
     } else if (isInserting) {
       context.missing(_institutionIdMeta);
     }
     if (data.containsKey('department')) {
-      context.handle(_departmentMeta, department.isAcceptableOrUnknown(data['department']!, _departmentMeta));
+      context.handle(
+        _departmentMeta,
+        department.isAcceptableOrUnknown(data['department']!, _departmentMeta),
+      );
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('avatar_url')) {
-      context.handle(_avatarUrlMeta, avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta));
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
     }
     return context;
   }
@@ -3903,15 +5045,49 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
   LocalTeacherProfile map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalTeacherProfile(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      surname: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}surname'])!,
-      email: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}email'])!,
-      login: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}login'])!,
-      institutionId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}institution_id'])!,
-      department: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}department']),
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      avatarUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}avatar_url']),
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      surname:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}surname'],
+          )!,
+      email:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}email'],
+          )!,
+      login:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}login'],
+          )!,
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
+      department: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}department'],
+      ),
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
     );
   }
 
@@ -3921,7 +5097,8 @@ class $LocalTeacherProfilesTable extends LocalTeacherProfiles
   }
 }
 
-class LocalTeacherProfile extends DataClass implements Insertable<LocalTeacherProfile> {
+class LocalTeacherProfile extends DataClass
+    implements Insertable<LocalTeacherProfile> {
   final String id;
   final String name;
   final String surname;
@@ -3969,13 +5146,22 @@ class LocalTeacherProfile extends DataClass implements Insertable<LocalTeacherPr
       email: Value(email),
       login: Value(login),
       institutionId: Value(institutionId),
-      department: department == null && nullToAbsent ? const Value.absent() : Value(department),
+      department:
+          department == null && nullToAbsent
+              ? const Value.absent()
+              : Value(department),
       createdAt: Value(createdAt),
-      avatarUrl: avatarUrl == null && nullToAbsent ? const Value.absent() : Value(avatarUrl),
+      avatarUrl:
+          avatarUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(avatarUrl),
     );
   }
 
-  factory LocalTeacherProfile.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalTeacherProfile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalTeacherProfile(
       id: serializer.fromJson<String>(json['id']),
@@ -4033,8 +5219,12 @@ class LocalTeacherProfile extends DataClass implements Insertable<LocalTeacherPr
       surname: data.surname.present ? data.surname.value : this.surname,
       email: data.email.present ? data.email.value : this.email,
       login: data.login.present ? data.login.value : this.login,
-      institutionId: data.institutionId.present ? data.institutionId.value : this.institutionId,
-      department: data.department.present ? data.department.value : this.department,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
+      department:
+          data.department.present ? data.department.value : this.department,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
     );
@@ -4057,7 +5247,17 @@ class LocalTeacherProfile extends DataClass implements Insertable<LocalTeacherPr
   }
 
   @override
-  int get hashCode => Object.hash(id, name, surname, email, login, institutionId, department, createdAt, avatarUrl);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    surname,
+    email,
+    login,
+    institutionId,
+    department,
+    createdAt,
+    avatarUrl,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4073,7 +5273,8 @@ class LocalTeacherProfile extends DataClass implements Insertable<LocalTeacherPr
           other.avatarUrl == this.avatarUrl);
 }
 
-class LocalTeacherProfilesCompanion extends UpdateCompanion<LocalTeacherProfile> {
+class LocalTeacherProfilesCompanion
+    extends UpdateCompanion<LocalTeacherProfile> {
   final Value<String> id;
   final Value<String> name;
   final Value<String> surname;
@@ -4220,7 +5421,8 @@ class LocalTeacherProfilesCompanion extends UpdateCompanion<LocalTeacherProfile>
   }
 }
 
-class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalAdminProfilesTable, LocalAdminProfile> {
+class $LocalAdminProfilesTable extends LocalAdminProfiles
+    with TableInfo<$LocalAdminProfilesTable, LocalAdminProfile> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -4243,7 +5445,9 @@ class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalA
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _surnameMeta = const VerificationMeta('surname');
+  static const VerificationMeta _surnameMeta = const VerificationMeta(
+    'surname',
+  );
   @override
   late final GeneratedColumn<String> surname = GeneratedColumn<String>(
     'surname',
@@ -4270,7 +5474,9 @@ class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalA
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _institutionIdMeta = const VerificationMeta('institutionId');
+  static const VerificationMeta _institutionIdMeta = const VerificationMeta(
+    'institutionId',
+  );
   @override
   late final GeneratedColumn<String> institutionId = GeneratedColumn<String>(
     'institution_id',
@@ -4288,7 +5494,9 @@ class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalA
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -4297,7 +5505,9 @@ class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalA
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _avatarUrlMeta = const VerificationMeta('avatarUrl');
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
   @override
   late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
     'avatar_url',
@@ -4307,14 +5517,27 @@ class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalA
     requiredDuringInsert: false,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, surname, email, login, institutionId, phone, createdAt, avatarUrl];
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    surname,
+    email,
+    login,
+    institutionId,
+    phone,
+    createdAt,
+    avatarUrl,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'local_admin_profiles';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalAdminProfile> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalAdminProfile> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -4323,45 +5546,69 @@ class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalA
       context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('surname')) {
-      context.handle(_surnameMeta, surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta));
+      context.handle(
+        _surnameMeta,
+        surname.isAcceptableOrUnknown(data['surname']!, _surnameMeta),
+      );
     } else if (isInserting) {
       context.missing(_surnameMeta);
     }
     if (data.containsKey('email')) {
-      context.handle(_emailMeta, email.isAcceptableOrUnknown(data['email']!, _emailMeta));
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
     } else if (isInserting) {
       context.missing(_emailMeta);
     }
     if (data.containsKey('login')) {
-      context.handle(_loginMeta, login.isAcceptableOrUnknown(data['login']!, _loginMeta));
+      context.handle(
+        _loginMeta,
+        login.isAcceptableOrUnknown(data['login']!, _loginMeta),
+      );
     } else if (isInserting) {
       context.missing(_loginMeta);
     }
     if (data.containsKey('institution_id')) {
       context.handle(
         _institutionIdMeta,
-        institutionId.isAcceptableOrUnknown(data['institution_id']!, _institutionIdMeta),
+        institutionId.isAcceptableOrUnknown(
+          data['institution_id']!,
+          _institutionIdMeta,
+        ),
       );
     } else if (isInserting) {
       context.missing(_institutionIdMeta);
     }
     if (data.containsKey('phone')) {
-      context.handle(_phoneMeta, phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta));
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
     } else if (isInserting) {
       context.missing(_phoneMeta);
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('avatar_url')) {
-      context.handle(_avatarUrlMeta, avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta));
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
     }
     return context;
   }
@@ -4372,15 +5619,50 @@ class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalA
   LocalAdminProfile map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalAdminProfile(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      surname: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}surname'])!,
-      email: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}email'])!,
-      login: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}login'])!,
-      institutionId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}institution_id'])!,
-      phone: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}phone'])!,
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
-      avatarUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}avatar_url']),
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      surname:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}surname'],
+          )!,
+      email:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}email'],
+          )!,
+      login:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}login'],
+          )!,
+      institutionId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}institution_id'],
+          )!,
+      phone:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}phone'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
     );
   }
 
@@ -4390,7 +5672,8 @@ class $LocalAdminProfilesTable extends LocalAdminProfiles with TableInfo<$LocalA
   }
 }
 
-class LocalAdminProfile extends DataClass implements Insertable<LocalAdminProfile> {
+class LocalAdminProfile extends DataClass
+    implements Insertable<LocalAdminProfile> {
   final String id;
   final String name;
   final String surname;
@@ -4438,11 +5721,17 @@ class LocalAdminProfile extends DataClass implements Insertable<LocalAdminProfil
       institutionId: Value(institutionId),
       phone: Value(phone),
       createdAt: Value(createdAt),
-      avatarUrl: avatarUrl == null && nullToAbsent ? const Value.absent() : Value(avatarUrl),
+      avatarUrl:
+          avatarUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(avatarUrl),
     );
   }
 
-  factory LocalAdminProfile.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalAdminProfile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalAdminProfile(
       id: serializer.fromJson<String>(json['id']),
@@ -4500,7 +5789,10 @@ class LocalAdminProfile extends DataClass implements Insertable<LocalAdminProfil
       surname: data.surname.present ? data.surname.value : this.surname,
       email: data.email.present ? data.email.value : this.email,
       login: data.login.present ? data.login.value : this.login,
-      institutionId: data.institutionId.present ? data.institutionId.value : this.institutionId,
+      institutionId:
+          data.institutionId.present
+              ? data.institutionId.value
+              : this.institutionId,
       phone: data.phone.present ? data.phone.value : this.phone,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
@@ -4524,7 +5816,17 @@ class LocalAdminProfile extends DataClass implements Insertable<LocalAdminProfil
   }
 
   @override
-  int get hashCode => Object.hash(id, name, surname, email, login, institutionId, phone, createdAt, avatarUrl);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    surname,
+    email,
+    login,
+    institutionId,
+    phone,
+    createdAt,
+    avatarUrl,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4688,7 +5990,8 @@ class LocalAdminProfilesCompanion extends UpdateCompanion<LocalAdminProfile> {
   }
 }
 
-class $LocalInstitutionsTable extends LocalInstitutions with TableInfo<$LocalInstitutionsTable, LocalInstitution> {
+class $LocalInstitutionsTable extends LocalInstitutions
+    with TableInfo<$LocalInstitutionsTable, LocalInstitution> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -4711,7 +6014,9 @@ class $LocalInstitutionsTable extends LocalInstitutions with TableInfo<$LocalIns
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _addressMeta = const VerificationMeta('address');
+  static const VerificationMeta _addressMeta = const VerificationMeta(
+    'address',
+  );
   @override
   late final GeneratedColumn<String> address = GeneratedColumn<String>(
     'address',
@@ -4720,7 +6025,9 @@ class $LocalInstitutionsTable extends LocalInstitutions with TableInfo<$LocalIns
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
     'created_at',
@@ -4737,7 +6044,10 @@ class $LocalInstitutionsTable extends LocalInstitutions with TableInfo<$LocalIns
   String get actualTableName => $name;
   static const String $name = 'local_institutions';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalInstitution> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalInstitution> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -4746,17 +6056,26 @@ class $LocalInstitutionsTable extends LocalInstitutions with TableInfo<$LocalIns
       context.missing(_idMeta);
     }
     if (data.containsKey('name')) {
-      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
     if (data.containsKey('address')) {
-      context.handle(_addressMeta, address.isAcceptableOrUnknown(data['address']!, _addressMeta));
+      context.handle(
+        _addressMeta,
+        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
+      );
     } else if (isInserting) {
       context.missing(_addressMeta);
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
@@ -4769,10 +6088,26 @@ class $LocalInstitutionsTable extends LocalInstitutions with TableInfo<$LocalIns
   LocalInstitution map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalInstitution(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
-      address: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}address'])!,
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      address:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}address'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
     );
   }
 
@@ -4782,12 +6117,18 @@ class $LocalInstitutionsTable extends LocalInstitutions with TableInfo<$LocalIns
   }
 }
 
-class LocalInstitution extends DataClass implements Insertable<LocalInstitution> {
+class LocalInstitution extends DataClass
+    implements Insertable<LocalInstitution> {
   final String id;
   final String name;
   final String address;
   final DateTime createdAt;
-  const LocalInstitution({required this.id, required this.name, required this.address, required this.createdAt});
+  const LocalInstitution({
+    required this.id,
+    required this.name,
+    required this.address,
+    required this.createdAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -4807,7 +6148,10 @@ class LocalInstitution extends DataClass implements Insertable<LocalInstitution>
     );
   }
 
-  factory LocalInstitution.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalInstitution.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalInstitution(
       id: serializer.fromJson<String>(json['id']),
@@ -4827,7 +6171,12 @@ class LocalInstitution extends DataClass implements Insertable<LocalInstitution>
     };
   }
 
-  LocalInstitution copyWith({String? id, String? name, String? address, DateTime? createdAt}) => LocalInstitution(
+  LocalInstitution copyWith({
+    String? id,
+    String? name,
+    String? address,
+    DateTime? createdAt,
+  }) => LocalInstitution(
     id: id ?? this.id,
     name: name ?? this.name,
     address: address ?? this.address,
@@ -4954,7 +6303,8 @@ class LocalInstitutionsCompanion extends UpdateCompanion<LocalInstitution> {
   }
 }
 
-class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable, LocalLesson> {
+class $LocalLessonsTable extends LocalLessons
+    with TableInfo<$LocalLessonsTable, LocalLesson> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -4968,7 +6318,9 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _scheduleIdMeta = const VerificationMeta('scheduleId');
+  static const VerificationMeta _scheduleIdMeta = const VerificationMeta(
+    'scheduleId',
+  );
   @override
   late final GeneratedColumn<String> scheduleId = GeneratedColumn<String>(
     'schedule_id',
@@ -4986,7 +6338,9 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _attendanceStatusMeta = const VerificationMeta('attendanceStatus');
+  static const VerificationMeta _attendanceStatusMeta = const VerificationMeta(
+    'attendanceStatus',
+  );
   @override
   late final GeneratedColumn<String> attendanceStatus = GeneratedColumn<String>(
     'attendance_status',
@@ -4997,14 +6351,22 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
     defaultValue: const Constant('pending'),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, scheduleId, topic, attendanceStatus];
+  List<GeneratedColumn> get $columns => [
+    id,
+    scheduleId,
+    topic,
+    attendanceStatus,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'local_lessons';
   @override
-  VerificationContext validateIntegrity(Insertable<LocalLesson> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<LocalLesson> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -5013,17 +6375,26 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
       context.missing(_idMeta);
     }
     if (data.containsKey('schedule_id')) {
-      context.handle(_scheduleIdMeta, scheduleId.isAcceptableOrUnknown(data['schedule_id']!, _scheduleIdMeta));
+      context.handle(
+        _scheduleIdMeta,
+        scheduleId.isAcceptableOrUnknown(data['schedule_id']!, _scheduleIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_scheduleIdMeta);
     }
     if (data.containsKey('topic')) {
-      context.handle(_topicMeta, topic.isAcceptableOrUnknown(data['topic']!, _topicMeta));
+      context.handle(
+        _topicMeta,
+        topic.isAcceptableOrUnknown(data['topic']!, _topicMeta),
+      );
     }
     if (data.containsKey('attendance_status')) {
       context.handle(
         _attendanceStatusMeta,
-        attendanceStatus.isAcceptableOrUnknown(data['attendance_status']!, _attendanceStatusMeta),
+        attendanceStatus.isAcceptableOrUnknown(
+          data['attendance_status']!,
+          _attendanceStatusMeta,
+        ),
       );
     }
     return context;
@@ -5035,11 +6406,25 @@ class $LocalLessonsTable extends LocalLessons with TableInfo<$LocalLessonsTable,
   LocalLesson map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return LocalLesson(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      scheduleId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}schedule_id'])!,
-      topic: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}topic']),
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      scheduleId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}schedule_id'],
+          )!,
+      topic: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}topic'],
+      ),
       attendanceStatus:
-          attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}attendance_status'])!,
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}attendance_status'],
+          )!,
     );
   }
 
@@ -5054,7 +6439,12 @@ class LocalLesson extends DataClass implements Insertable<LocalLesson> {
   final String scheduleId;
   final String? topic;
   final String attendanceStatus;
-  const LocalLesson({required this.id, required this.scheduleId, this.topic, required this.attendanceStatus});
+  const LocalLesson({
+    required this.id,
+    required this.scheduleId,
+    this.topic,
+    required this.attendanceStatus,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -5071,12 +6461,16 @@ class LocalLesson extends DataClass implements Insertable<LocalLesson> {
     return LocalLessonsCompanion(
       id: Value(id),
       scheduleId: Value(scheduleId),
-      topic: topic == null && nullToAbsent ? const Value.absent() : Value(topic),
+      topic:
+          topic == null && nullToAbsent ? const Value.absent() : Value(topic),
       attendanceStatus: Value(attendanceStatus),
     );
   }
 
-  factory LocalLesson.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory LocalLesson.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return LocalLesson(
       id: serializer.fromJson<String>(json['id']),
@@ -5110,9 +6504,13 @@ class LocalLesson extends DataClass implements Insertable<LocalLesson> {
   LocalLesson copyWithCompanion(LocalLessonsCompanion data) {
     return LocalLesson(
       id: data.id.present ? data.id.value : this.id,
-      scheduleId: data.scheduleId.present ? data.scheduleId.value : this.scheduleId,
+      scheduleId:
+          data.scheduleId.present ? data.scheduleId.value : this.scheduleId,
       topic: data.topic.present ? data.topic.value : this.topic,
-      attendanceStatus: data.attendanceStatus.present ? data.attendanceStatus.value : this.attendanceStatus,
+      attendanceStatus:
+          data.attendanceStatus.present
+              ? data.attendanceStatus.value
+              : this.attendanceStatus,
     );
   }
 
@@ -5229,6 +6627,7 @@ class LocalLessonsCompanion extends UpdateCompanion<LocalLesson> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $LocalRoomsTable localRooms = $LocalRoomsTable(this);
   late final $LocalSubjectsTable localSubjects = $LocalSubjectsTable(this);
   late final $LocalGroupsTable localGroups = $LocalGroupsTable(this);
   late final $LocalTeachersTable localTeachers = $LocalTeachersTable(this);
@@ -5236,17 +6635,24 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalUsersTable localUsers = $LocalUsersTable(this);
   late final $LocalGradesTable localGrades = $LocalGradesTable(this);
   late final $LocalHomeworksTable localHomeworks = $LocalHomeworksTable(this);
-  late final $LocalHomeworkStatusesTable localHomeworkStatuses = $LocalHomeworkStatusesTable(this);
+  late final $LocalHomeworkStatusesTable localHomeworkStatuses =
+      $LocalHomeworkStatusesTable(this);
   late final $LocalStudentsTable localStudents = $LocalStudentsTable(this);
-  late final $LocalGroupDetailsTable localGroupDetails = $LocalGroupDetailsTable(this);
-  late final $LocalTeacherProfilesTable localTeacherProfiles = $LocalTeacherProfilesTable(this);
-  late final $LocalAdminProfilesTable localAdminProfiles = $LocalAdminProfilesTable(this);
-  late final $LocalInstitutionsTable localInstitutions = $LocalInstitutionsTable(this);
+  late final $LocalGroupDetailsTable localGroupDetails =
+      $LocalGroupDetailsTable(this);
+  late final $LocalTeacherProfilesTable localTeacherProfiles =
+      $LocalTeacherProfilesTable(this);
+  late final $LocalAdminProfilesTable localAdminProfiles =
+      $LocalAdminProfilesTable(this);
+  late final $LocalInstitutionsTable localInstitutions =
+      $LocalInstitutionsTable(this);
   late final $LocalLessonsTable localLessons = $LocalLessonsTable(this);
   @override
-  Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    localRooms,
     localSubjects,
     localGroups,
     localTeachers,
@@ -5264,6 +6670,277 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ];
 }
 
+typedef $$LocalRoomsTableCreateCompanionBuilder =
+    LocalRoomsCompanion Function({
+      required String id,
+      required String name,
+      required String institutionId,
+      Value<int> rowid,
+    });
+typedef $$LocalRoomsTableUpdateCompanionBuilder =
+    LocalRoomsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> institutionId,
+      Value<int> rowid,
+    });
+
+final class $$LocalRoomsTableReferences
+    extends BaseReferences<_$AppDatabase, $LocalRoomsTable, LocalRoom> {
+  $$LocalRoomsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$LocalSchedulesTable, List<LocalSchedule>>
+  _localSchedulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.localSchedules,
+    aliasName: $_aliasNameGenerator(db.localRooms.id, db.localSchedules.roomId),
+  );
+
+  $$LocalSchedulesTableProcessedTableManager get localSchedulesRefs {
+    final manager = $$LocalSchedulesTableTableManager(
+      $_db,
+      $_db.localSchedules,
+    ).filter((f) => f.roomId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_localSchedulesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$LocalRoomsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalRoomsTable> {
+  $$LocalRoomsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> localSchedulesRefs(
+    Expression<bool> Function($$LocalSchedulesTableFilterComposer f) f,
+  ) {
+    final $$LocalSchedulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.localSchedules,
+      getReferencedColumn: (t) => t.roomId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSchedulesTableFilterComposer(
+            $db: $db,
+            $table: $db.localSchedules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$LocalRoomsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalRoomsTable> {
+  $$LocalRoomsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalRoomsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalRoomsTable> {
+  $$LocalRoomsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
+
+  Expression<T> localSchedulesRefs<T extends Object>(
+    Expression<T> Function($$LocalSchedulesTableAnnotationComposer a) f,
+  ) {
+    final $$LocalSchedulesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.localSchedules,
+      getReferencedColumn: (t) => t.roomId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSchedulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localSchedules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$LocalRoomsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalRoomsTable,
+          LocalRoom,
+          $$LocalRoomsTableFilterComposer,
+          $$LocalRoomsTableOrderingComposer,
+          $$LocalRoomsTableAnnotationComposer,
+          $$LocalRoomsTableCreateCompanionBuilder,
+          $$LocalRoomsTableUpdateCompanionBuilder,
+          (LocalRoom, $$LocalRoomsTableReferences),
+          LocalRoom,
+          PrefetchHooks Function({bool localSchedulesRefs})
+        > {
+  $$LocalRoomsTableTableManager(_$AppDatabase db, $LocalRoomsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$LocalRoomsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$LocalRoomsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalRoomsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> institutionId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalRoomsCompanion(
+                id: id,
+                name: name,
+                institutionId: institutionId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String institutionId,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalRoomsCompanion.insert(
+                id: id,
+                name: name,
+                institutionId: institutionId,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$LocalRoomsTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: ({localSchedulesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (localSchedulesRefs) db.localSchedules,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (localSchedulesRefs)
+                    await $_getPrefetchedData<
+                      LocalRoom,
+                      $LocalRoomsTable,
+                      LocalSchedule
+                    >(
+                      currentTable: table,
+                      referencedTable: $$LocalRoomsTableReferences
+                          ._localSchedulesRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$LocalRoomsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).localSchedulesRefs,
+                      referencedItemsForCurrentItem:
+                          (item, referencedItems) =>
+                              referencedItems.where((e) => e.roomId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LocalRoomsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalRoomsTable,
+      LocalRoom,
+      $$LocalRoomsTableFilterComposer,
+      $$LocalRoomsTableOrderingComposer,
+      $$LocalRoomsTableAnnotationComposer,
+      $$LocalRoomsTableCreateCompanionBuilder,
+      $$LocalRoomsTableUpdateCompanionBuilder,
+      (LocalRoom, $$LocalRoomsTableReferences),
+      LocalRoom,
+      PrefetchHooks Function({bool localSchedulesRefs})
+    >;
 typedef $$LocalSubjectsTableCreateCompanionBuilder =
     LocalSubjectsCompanion Function({
       required String id,
@@ -5279,14 +6956,22 @@ typedef $$LocalSubjectsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$LocalSubjectsTableReferences extends BaseReferences<_$AppDatabase, $LocalSubjectsTable, LocalSubject> {
-  $$LocalSubjectsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$LocalSubjectsTableReferences
+    extends BaseReferences<_$AppDatabase, $LocalSubjectsTable, LocalSubject> {
+  $$LocalSubjectsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
 
-  static MultiTypedResultKey<$LocalSchedulesTable, List<LocalSchedule>> _localSchedulesRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.localSchedules,
-        aliasName: $_aliasNameGenerator(db.localSubjects.id, db.localSchedules.subjectId),
-      );
+  static MultiTypedResultKey<$LocalSchedulesTable, List<LocalSchedule>>
+  _localSchedulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.localSchedules,
+    aliasName: $_aliasNameGenerator(
+      db.localSubjects.id,
+      db.localSchedules.subjectId,
+    ),
+  );
 
   $$LocalSchedulesTableProcessedTableManager get localSchedulesRefs {
     final manager = $$LocalSchedulesTableTableManager(
@@ -5295,11 +6980,14 @@ final class $$LocalSubjectsTableReferences extends BaseReferences<_$AppDatabase,
     ).filter((f) => f.subjectId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_localSchedulesRefsTable($_db));
-    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
   }
 }
 
-class $$LocalSubjectsTableFilterComposer extends Composer<_$AppDatabase, $LocalSubjectsTable> {
+class $$LocalSubjectsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalSubjectsTable> {
   $$LocalSubjectsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -5307,34 +6995,49 @@ class $$LocalSubjectsTableFilterComposer extends Composer<_$AppDatabase, $LocalS
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  Expression<bool> localSchedulesRefs(Expression<bool> Function($$LocalSchedulesTableFilterComposer f) f) {
+  Expression<bool> localSchedulesRefs(
+    Expression<bool> Function($$LocalSchedulesTableFilterComposer f) f,
+  ) {
     final $$LocalSchedulesTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.localSchedules,
       getReferencedColumn: (t) => t.subjectId,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSchedulesTableFilterComposer(
-                $db: $db,
-                $table: $db.localSchedules,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSchedulesTableFilterComposer(
+            $db: $db,
+            $table: $db.localSchedules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return f(composer);
   }
 }
 
-class $$LocalSubjectsTableOrderingComposer extends Composer<_$AppDatabase, $LocalSubjectsTable> {
+class $$LocalSubjectsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalSubjectsTable> {
   $$LocalSubjectsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -5342,16 +7045,24 @@ class $$LocalSubjectsTableOrderingComposer extends Composer<_$AppDatabase, $Loca
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalSubjectsTableAnnotationComposer extends Composer<_$AppDatabase, $LocalSubjectsTable> {
+class $$LocalSubjectsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalSubjectsTable> {
   $$LocalSubjectsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -5359,12 +7070,16 @@ class $$LocalSubjectsTableAnnotationComposer extends Composer<_$AppDatabase, $Lo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => column);
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
 
   Expression<T> localSchedulesRefs<T extends Object>(
     Expression<T> Function($$LocalSchedulesTableAnnotationComposer a) f,
@@ -5375,14 +7090,18 @@ class $$LocalSubjectsTableAnnotationComposer extends Composer<_$AppDatabase, $Lo
       referencedTable: $db.localSchedules,
       getReferencedColumn: (t) => t.subjectId,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSchedulesTableAnnotationComposer(
-                $db: $db,
-                $table: $db.localSchedules,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSchedulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localSchedules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return f(composer);
   }
@@ -5408,39 +7127,79 @@ class $$LocalSubjectsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalSubjectsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalSubjectsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalSubjectsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalSubjectsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$LocalSubjectsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalSubjectsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> institutionId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => LocalSubjectsCompanion(id: id, name: name, institutionId: institutionId, rowid: rowid),
+              }) => LocalSubjectsCompanion(
+                id: id,
+                name: name,
+                institutionId: institutionId,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String id,
                 required String name,
                 required String institutionId,
                 Value<int> rowid = const Value.absent(),
-              }) => LocalSubjectsCompanion.insert(id: id, name: name, institutionId: institutionId, rowid: rowid),
+              }) => LocalSubjectsCompanion.insert(
+                id: id,
+                name: name,
+                institutionId: institutionId,
+                rowid: rowid,
+              ),
           withReferenceMapper:
-              (p0) => p0.map((e) => (e.readTable(table), $$LocalSubjectsTableReferences(db, table, e))).toList(),
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$LocalSubjectsTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: ({localSchedulesRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (localSchedulesRefs) db.localSchedules],
+              explicitlyWatchedTables: [
+                if (localSchedulesRefs) db.localSchedules,
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (localSchedulesRefs)
-                    await $_getPrefetchedData<LocalSubject, $LocalSubjectsTable, LocalSchedule>(
+                    await $_getPrefetchedData<
+                      LocalSubject,
+                      $LocalSubjectsTable,
+                      LocalSchedule
+                    >(
                       currentTable: table,
-                      referencedTable: $$LocalSubjectsTableReferences._localSchedulesRefsTable(db),
-                      managerFromTypedResult: (p0) => $$LocalSubjectsTableReferences(db, table, p0).localSchedulesRefs,
+                      referencedTable: $$LocalSubjectsTableReferences
+                          ._localSchedulesRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$LocalSubjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).localSchedulesRefs,
                       referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where((e) => e.subjectId == item.id),
+                          (item, referencedItems) => referencedItems.where(
+                            (e) => e.subjectId == item.id,
+                          ),
                       typedResults: items,
                     ),
                 ];
@@ -5480,14 +7239,18 @@ typedef $$LocalGroupsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$LocalGroupsTableReferences extends BaseReferences<_$AppDatabase, $LocalGroupsTable, LocalGroup> {
+final class $$LocalGroupsTableReferences
+    extends BaseReferences<_$AppDatabase, $LocalGroupsTable, LocalGroup> {
   $$LocalGroupsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$LocalSchedulesTable, List<LocalSchedule>> _localSchedulesRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.localSchedules,
-        aliasName: $_aliasNameGenerator(db.localGroups.id, db.localSchedules.groupId),
-      );
+  static MultiTypedResultKey<$LocalSchedulesTable, List<LocalSchedule>>
+  _localSchedulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.localSchedules,
+    aliasName: $_aliasNameGenerator(
+      db.localGroups.id,
+      db.localSchedules.groupId,
+    ),
+  );
 
   $$LocalSchedulesTableProcessedTableManager get localSchedulesRefs {
     final manager = $$LocalSchedulesTableTableManager(
@@ -5496,11 +7259,14 @@ final class $$LocalGroupsTableReferences extends BaseReferences<_$AppDatabase, $
     ).filter((f) => f.groupId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_localSchedulesRefsTable($_db));
-    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
   }
 }
 
-class $$LocalGroupsTableFilterComposer extends Composer<_$AppDatabase, $LocalGroupsTable> {
+class $$LocalGroupsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalGroupsTable> {
   $$LocalGroupsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -5508,34 +7274,49 @@ class $$LocalGroupsTableFilterComposer extends Composer<_$AppDatabase, $LocalGro
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  Expression<bool> localSchedulesRefs(Expression<bool> Function($$LocalSchedulesTableFilterComposer f) f) {
+  Expression<bool> localSchedulesRefs(
+    Expression<bool> Function($$LocalSchedulesTableFilterComposer f) f,
+  ) {
     final $$LocalSchedulesTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.localSchedules,
       getReferencedColumn: (t) => t.groupId,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSchedulesTableFilterComposer(
-                $db: $db,
-                $table: $db.localSchedules,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSchedulesTableFilterComposer(
+            $db: $db,
+            $table: $db.localSchedules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return f(composer);
   }
 }
 
-class $$LocalGroupsTableOrderingComposer extends Composer<_$AppDatabase, $LocalGroupsTable> {
+class $$LocalGroupsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalGroupsTable> {
   $$LocalGroupsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -5543,16 +7324,24 @@ class $$LocalGroupsTableOrderingComposer extends Composer<_$AppDatabase, $LocalG
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalGroupsTableAnnotationComposer extends Composer<_$AppDatabase, $LocalGroupsTable> {
+class $$LocalGroupsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalGroupsTable> {
   $$LocalGroupsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -5560,12 +7349,16 @@ class $$LocalGroupsTableAnnotationComposer extends Composer<_$AppDatabase, $Loca
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => column);
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
 
   Expression<T> localSchedulesRefs<T extends Object>(
     Expression<T> Function($$LocalSchedulesTableAnnotationComposer a) f,
@@ -5576,14 +7369,18 @@ class $$LocalGroupsTableAnnotationComposer extends Composer<_$AppDatabase, $Loca
       referencedTable: $db.localSchedules,
       getReferencedColumn: (t) => t.groupId,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSchedulesTableAnnotationComposer(
-                $db: $db,
-                $table: $db.localSchedules,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSchedulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localSchedules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return f(composer);
   }
@@ -5609,39 +7406,76 @@ class $$LocalGroupsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalGroupsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalGroupsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalGroupsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalGroupsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$LocalGroupsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$LocalGroupsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> institutionId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => LocalGroupsCompanion(id: id, name: name, institutionId: institutionId, rowid: rowid),
+              }) => LocalGroupsCompanion(
+                id: id,
+                name: name,
+                institutionId: institutionId,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String id,
                 required String name,
                 required String institutionId,
                 Value<int> rowid = const Value.absent(),
-              }) => LocalGroupsCompanion.insert(id: id, name: name, institutionId: institutionId, rowid: rowid),
+              }) => LocalGroupsCompanion.insert(
+                id: id,
+                name: name,
+                institutionId: institutionId,
+                rowid: rowid,
+              ),
           withReferenceMapper:
-              (p0) => p0.map((e) => (e.readTable(table), $$LocalGroupsTableReferences(db, table, e))).toList(),
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$LocalGroupsTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: ({localSchedulesRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (localSchedulesRefs) db.localSchedules],
+              explicitlyWatchedTables: [
+                if (localSchedulesRefs) db.localSchedules,
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (localSchedulesRefs)
-                    await $_getPrefetchedData<LocalGroup, $LocalGroupsTable, LocalSchedule>(
+                    await $_getPrefetchedData<
+                      LocalGroup,
+                      $LocalGroupsTable,
+                      LocalSchedule
+                    >(
                       currentTable: table,
-                      referencedTable: $$LocalGroupsTableReferences._localSchedulesRefsTable(db),
-                      managerFromTypedResult: (p0) => $$LocalGroupsTableReferences(db, table, p0).localSchedulesRefs,
+                      referencedTable: $$LocalGroupsTableReferences
+                          ._localSchedulesRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$LocalGroupsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).localSchedulesRefs,
                       referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where((e) => e.groupId == item.id),
+                          (item, referencedItems) => referencedItems.where(
+                            (e) => e.groupId == item.id,
+                          ),
                       typedResults: items,
                     ),
                 ];
@@ -5674,16 +7508,29 @@ typedef $$LocalTeachersTableCreateCompanionBuilder =
       Value<int> rowid,
     });
 typedef $$LocalTeachersTableUpdateCompanionBuilder =
-    LocalTeachersCompanion Function({Value<String> id, Value<String> name, Value<String> surname, Value<int> rowid});
+    LocalTeachersCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> surname,
+      Value<int> rowid,
+    });
 
-final class $$LocalTeachersTableReferences extends BaseReferences<_$AppDatabase, $LocalTeachersTable, LocalTeacher> {
-  $$LocalTeachersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$LocalTeachersTableReferences
+    extends BaseReferences<_$AppDatabase, $LocalTeachersTable, LocalTeacher> {
+  $$LocalTeachersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
 
-  static MultiTypedResultKey<$LocalSchedulesTable, List<LocalSchedule>> _localSchedulesRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.localSchedules,
-        aliasName: $_aliasNameGenerator(db.localTeachers.id, db.localSchedules.teacherId),
-      );
+  static MultiTypedResultKey<$LocalSchedulesTable, List<LocalSchedule>>
+  _localSchedulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.localSchedules,
+    aliasName: $_aliasNameGenerator(
+      db.localTeachers.id,
+      db.localSchedules.teacherId,
+    ),
+  );
 
   $$LocalSchedulesTableProcessedTableManager get localSchedulesRefs {
     final manager = $$LocalSchedulesTableTableManager(
@@ -5692,11 +7539,14 @@ final class $$LocalTeachersTableReferences extends BaseReferences<_$AppDatabase,
     ).filter((f) => f.teacherId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_localSchedulesRefsTable($_db));
-    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: cache));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
   }
 }
 
-class $$LocalTeachersTableFilterComposer extends Composer<_$AppDatabase, $LocalTeachersTable> {
+class $$LocalTeachersTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalTeachersTable> {
   $$LocalTeachersTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -5704,34 +7554,49 @@ class $$LocalTeachersTableFilterComposer extends Composer<_$AppDatabase, $LocalT
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  Expression<bool> localSchedulesRefs(Expression<bool> Function($$LocalSchedulesTableFilterComposer f) f) {
+  Expression<bool> localSchedulesRefs(
+    Expression<bool> Function($$LocalSchedulesTableFilterComposer f) f,
+  ) {
     final $$LocalSchedulesTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.id,
       referencedTable: $db.localSchedules,
       getReferencedColumn: (t) => t.teacherId,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSchedulesTableFilterComposer(
-                $db: $db,
-                $table: $db.localSchedules,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSchedulesTableFilterComposer(
+            $db: $db,
+            $table: $db.localSchedules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return f(composer);
   }
 }
 
-class $$LocalTeachersTableOrderingComposer extends Composer<_$AppDatabase, $LocalTeachersTable> {
+class $$LocalTeachersTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalTeachersTable> {
   $$LocalTeachersTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -5739,16 +7604,24 @@ class $$LocalTeachersTableOrderingComposer extends Composer<_$AppDatabase, $Loca
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalTeachersTableAnnotationComposer extends Composer<_$AppDatabase, $LocalTeachersTable> {
+class $$LocalTeachersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalTeachersTable> {
   $$LocalTeachersTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -5756,11 +7629,14 @@ class $$LocalTeachersTableAnnotationComposer extends Composer<_$AppDatabase, $Lo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get surname => $composableBuilder(column: $table.surname, builder: (column) => column);
+  GeneratedColumn<String> get surname =>
+      $composableBuilder(column: $table.surname, builder: (column) => column);
 
   Expression<T> localSchedulesRefs<T extends Object>(
     Expression<T> Function($$LocalSchedulesTableAnnotationComposer a) f,
@@ -5771,14 +7647,18 @@ class $$LocalTeachersTableAnnotationComposer extends Composer<_$AppDatabase, $Lo
       referencedTable: $db.localSchedules,
       getReferencedColumn: (t) => t.teacherId,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSchedulesTableAnnotationComposer(
-                $db: $db,
-                $table: $db.localSchedules,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSchedulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localSchedules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return f(composer);
   }
@@ -5804,39 +7684,79 @@ class $$LocalTeachersTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalTeachersTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalTeachersTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalTeachersTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalTeachersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$LocalTeachersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalTeachersTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> surname = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => LocalTeachersCompanion(id: id, name: name, surname: surname, rowid: rowid),
+              }) => LocalTeachersCompanion(
+                id: id,
+                name: name,
+                surname: surname,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String id,
                 required String name,
                 required String surname,
                 Value<int> rowid = const Value.absent(),
-              }) => LocalTeachersCompanion.insert(id: id, name: name, surname: surname, rowid: rowid),
+              }) => LocalTeachersCompanion.insert(
+                id: id,
+                name: name,
+                surname: surname,
+                rowid: rowid,
+              ),
           withReferenceMapper:
-              (p0) => p0.map((e) => (e.readTable(table), $$LocalTeachersTableReferences(db, table, e))).toList(),
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$LocalTeachersTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: ({localSchedulesRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (localSchedulesRefs) db.localSchedules],
+              explicitlyWatchedTables: [
+                if (localSchedulesRefs) db.localSchedules,
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (localSchedulesRefs)
-                    await $_getPrefetchedData<LocalTeacher, $LocalTeachersTable, LocalSchedule>(
+                    await $_getPrefetchedData<
+                      LocalTeacher,
+                      $LocalTeachersTable,
+                      LocalSchedule
+                    >(
                       currentTable: table,
-                      referencedTable: $$LocalTeachersTableReferences._localSchedulesRefsTable(db),
-                      managerFromTypedResult: (p0) => $$LocalTeachersTableReferences(db, table, p0).localSchedulesRefs,
+                      referencedTable: $$LocalTeachersTableReferences
+                          ._localSchedulesRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$LocalTeachersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).localSchedulesRefs,
                       referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where((e) => e.teacherId == item.id),
+                          (item, referencedItems) => referencedItems.where(
+                            (e) => e.teacherId == item.id,
+                          ),
                       typedResults: items,
                     ),
                 ];
@@ -5868,6 +7788,7 @@ typedef $$LocalSchedulesTableCreateCompanionBuilder =
       required String subjectId,
       required String groupId,
       required String teacherId,
+      Value<String?> roomId,
       Value<DateTime?> date,
       required int weekday,
       required String startTime,
@@ -5881,6 +7802,7 @@ typedef $$LocalSchedulesTableUpdateCompanionBuilder =
       Value<String> subjectId,
       Value<String> groupId,
       Value<String> teacherId,
+      Value<String?> roomId,
       Value<DateTime?> date,
       Value<int> weekday,
       Value<String> startTime,
@@ -5888,47 +7810,93 @@ typedef $$LocalSchedulesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$LocalSchedulesTableReferences extends BaseReferences<_$AppDatabase, $LocalSchedulesTable, LocalSchedule> {
-  $$LocalSchedulesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$LocalSchedulesTableReferences
+    extends BaseReferences<_$AppDatabase, $LocalSchedulesTable, LocalSchedule> {
+  $$LocalSchedulesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
 
   static $LocalSubjectsTable _subjectIdTable(_$AppDatabase db) =>
-      db.localSubjects.createAlias($_aliasNameGenerator(db.localSchedules.subjectId, db.localSubjects.id));
+      db.localSubjects.createAlias(
+        $_aliasNameGenerator(db.localSchedules.subjectId, db.localSubjects.id),
+      );
 
   $$LocalSubjectsTableProcessedTableManager get subjectId {
     final $_column = $_itemColumn<String>('subject_id')!;
 
-    final manager = $$LocalSubjectsTableTableManager($_db, $_db.localSubjects).filter((f) => f.id.sqlEquals($_column));
+    final manager = $$LocalSubjectsTableTableManager(
+      $_db,
+      $_db.localSubjects,
+    ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_subjectIdTable($_db));
     if (item == null) return manager;
-    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
   }
 
   static $LocalGroupsTable _groupIdTable(_$AppDatabase db) =>
-      db.localGroups.createAlias($_aliasNameGenerator(db.localSchedules.groupId, db.localGroups.id));
+      db.localGroups.createAlias(
+        $_aliasNameGenerator(db.localSchedules.groupId, db.localGroups.id),
+      );
 
   $$LocalGroupsTableProcessedTableManager get groupId {
     final $_column = $_itemColumn<String>('group_id')!;
 
-    final manager = $$LocalGroupsTableTableManager($_db, $_db.localGroups).filter((f) => f.id.sqlEquals($_column));
+    final manager = $$LocalGroupsTableTableManager(
+      $_db,
+      $_db.localGroups,
+    ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_groupIdTable($_db));
     if (item == null) return manager;
-    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
   }
 
   static $LocalTeachersTable _teacherIdTable(_$AppDatabase db) =>
-      db.localTeachers.createAlias($_aliasNameGenerator(db.localSchedules.teacherId, db.localTeachers.id));
+      db.localTeachers.createAlias(
+        $_aliasNameGenerator(db.localSchedules.teacherId, db.localTeachers.id),
+      );
 
   $$LocalTeachersTableProcessedTableManager get teacherId {
     final $_column = $_itemColumn<String>('teacher_id')!;
 
-    final manager = $$LocalTeachersTableTableManager($_db, $_db.localTeachers).filter((f) => f.id.sqlEquals($_column));
+    final manager = $$LocalTeachersTableTableManager(
+      $_db,
+      $_db.localTeachers,
+    ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_teacherIdTable($_db));
     if (item == null) return manager;
-    return ProcessedTableManager(manager.$state.copyWith(prefetchedData: [item]));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LocalRoomsTable _roomIdTable(_$AppDatabase db) =>
+      db.localRooms.createAlias(
+        $_aliasNameGenerator(db.localSchedules.roomId, db.localRooms.id),
+      );
+
+  $$LocalRoomsTableProcessedTableManager? get roomId {
+    final $_column = $_itemColumn<String>('room_id');
+    if ($_column == null) return null;
+    final manager = $$LocalRoomsTableTableManager(
+      $_db,
+      $_db.localRooms,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_roomIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
   }
 }
 
-class $$LocalSchedulesTableFilterComposer extends Composer<_$AppDatabase, $LocalSchedulesTable> {
+class $$LocalSchedulesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalSchedulesTable> {
   $$LocalSchedulesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -5936,22 +7904,35 @@ class $$LocalSchedulesTableFilterComposer extends Composer<_$AppDatabase, $Local
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get date =>
-      $composableBuilder(column: $table.date, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get weekday =>
-      $composableBuilder(column: $table.weekday, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get weekday => $composableBuilder(
+    column: $table.weekday,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get startTime =>
-      $composableBuilder(column: $table.startTime, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get endTime =>
-      $composableBuilder(column: $table.endTime, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnFilters(column),
+  );
 
   $$LocalSubjectsTableFilterComposer get subjectId {
     final $$LocalSubjectsTableFilterComposer composer = $composerBuilder(
@@ -5960,14 +7941,18 @@ class $$LocalSchedulesTableFilterComposer extends Composer<_$AppDatabase, $Local
       referencedTable: $db.localSubjects,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSubjectsTableFilterComposer(
-                $db: $db,
-                $table: $db.localSubjects,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.localSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
@@ -5979,14 +7964,18 @@ class $$LocalSchedulesTableFilterComposer extends Composer<_$AppDatabase, $Local
       referencedTable: $db.localGroups,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalGroupsTableFilterComposer(
-                $db: $db,
-                $table: $db.localGroups,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalGroupsTableFilterComposer(
+            $db: $db,
+            $table: $db.localGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
@@ -5998,20 +7987,48 @@ class $$LocalSchedulesTableFilterComposer extends Composer<_$AppDatabase, $Local
       referencedTable: $db.localTeachers,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalTeachersTableFilterComposer(
-                $db: $db,
-                $table: $db.localTeachers,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalTeachersTableFilterComposer(
+            $db: $db,
+            $table: $db.localTeachers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalRoomsTableFilterComposer get roomId {
+    final $$LocalRoomsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.roomId,
+      referencedTable: $db.localRooms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalRoomsTableFilterComposer(
+            $db: $db,
+            $table: $db.localRooms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
 }
 
-class $$LocalSchedulesTableOrderingComposer extends Composer<_$AppDatabase, $LocalSchedulesTable> {
+class $$LocalSchedulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalSchedulesTable> {
   $$LocalSchedulesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -6019,22 +8036,35 @@ class $$LocalSchedulesTableOrderingComposer extends Composer<_$AppDatabase, $Loc
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get date =>
-      $composableBuilder(column: $table.date, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get weekday =>
-      $composableBuilder(column: $table.weekday, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get weekday => $composableBuilder(
+    column: $table.weekday,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get startTime =>
-      $composableBuilder(column: $table.startTime, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get endTime =>
-      $composableBuilder(column: $table.endTime, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   $$LocalSubjectsTableOrderingComposer get subjectId {
     final $$LocalSubjectsTableOrderingComposer composer = $composerBuilder(
@@ -6043,14 +8073,18 @@ class $$LocalSchedulesTableOrderingComposer extends Composer<_$AppDatabase, $Loc
       referencedTable: $db.localSubjects,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSubjectsTableOrderingComposer(
-                $db: $db,
-                $table: $db.localSubjects,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSubjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.localSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
@@ -6062,14 +8096,18 @@ class $$LocalSchedulesTableOrderingComposer extends Composer<_$AppDatabase, $Loc
       referencedTable: $db.localGroups,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalGroupsTableOrderingComposer(
-                $db: $db,
-                $table: $db.localGroups,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalGroupsTableOrderingComposer(
+            $db: $db,
+            $table: $db.localGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
@@ -6081,20 +8119,48 @@ class $$LocalSchedulesTableOrderingComposer extends Composer<_$AppDatabase, $Loc
       referencedTable: $db.localTeachers,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalTeachersTableOrderingComposer(
-                $db: $db,
-                $table: $db.localTeachers,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalTeachersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localTeachers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalRoomsTableOrderingComposer get roomId {
+    final $$LocalRoomsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.roomId,
+      referencedTable: $db.localRooms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalRoomsTableOrderingComposer(
+            $db: $db,
+            $table: $db.localRooms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
 }
 
-class $$LocalSchedulesTableAnnotationComposer extends Composer<_$AppDatabase, $LocalSchedulesTable> {
+class $$LocalSchedulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalSchedulesTable> {
   $$LocalSchedulesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -6102,18 +8168,25 @@ class $$LocalSchedulesTableAnnotationComposer extends Composer<_$AppDatabase, $L
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => column);
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<DateTime> get date => $composableBuilder(column: $table.date, builder: (column) => column);
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
 
-  GeneratedColumn<int> get weekday => $composableBuilder(column: $table.weekday, builder: (column) => column);
+  GeneratedColumn<int> get weekday =>
+      $composableBuilder(column: $table.weekday, builder: (column) => column);
 
-  GeneratedColumn<String> get startTime => $composableBuilder(column: $table.startTime, builder: (column) => column);
+  GeneratedColumn<String> get startTime =>
+      $composableBuilder(column: $table.startTime, builder: (column) => column);
 
-  GeneratedColumn<String> get endTime => $composableBuilder(column: $table.endTime, builder: (column) => column);
+  GeneratedColumn<String> get endTime =>
+      $composableBuilder(column: $table.endTime, builder: (column) => column);
 
   $$LocalSubjectsTableAnnotationComposer get subjectId {
     final $$LocalSubjectsTableAnnotationComposer composer = $composerBuilder(
@@ -6122,14 +8195,18 @@ class $$LocalSchedulesTableAnnotationComposer extends Composer<_$AppDatabase, $L
       referencedTable: $db.localSubjects,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalSubjectsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.localSubjects,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalSubjectsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
@@ -6141,14 +8218,18 @@ class $$LocalSchedulesTableAnnotationComposer extends Composer<_$AppDatabase, $L
       referencedTable: $db.localGroups,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalGroupsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.localGroups,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalGroupsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localGroups,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
@@ -6160,14 +8241,41 @@ class $$LocalSchedulesTableAnnotationComposer extends Composer<_$AppDatabase, $L
       referencedTable: $db.localTeachers,
       getReferencedColumn: (t) => t.id,
       builder:
-          (joinBuilder, {$addJoinBuilderToRootComposer, $removeJoinBuilderFromRootComposer}) =>
-              $$LocalTeachersTableAnnotationComposer(
-                $db: $db,
-                $table: $db.localTeachers,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
-              ),
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalTeachersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localTeachers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalRoomsTableAnnotationComposer get roomId {
+    final $$LocalRoomsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.roomId,
+      referencedTable: $db.localRooms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalRoomsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localRooms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
     );
     return composer;
   }
@@ -6186,16 +8294,30 @@ class $$LocalSchedulesTableTableManager
           $$LocalSchedulesTableUpdateCompanionBuilder,
           (LocalSchedule, $$LocalSchedulesTableReferences),
           LocalSchedule,
-          PrefetchHooks Function({bool subjectId, bool groupId, bool teacherId})
+          PrefetchHooks Function({
+            bool subjectId,
+            bool groupId,
+            bool teacherId,
+            bool roomId,
+          })
         > {
-  $$LocalSchedulesTableTableManager(_$AppDatabase db, $LocalSchedulesTable table)
-    : super(
+  $$LocalSchedulesTableTableManager(
+    _$AppDatabase db,
+    $LocalSchedulesTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalSchedulesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalSchedulesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalSchedulesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalSchedulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$LocalSchedulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalSchedulesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -6203,6 +8325,7 @@ class $$LocalSchedulesTableTableManager
                 Value<String> subjectId = const Value.absent(),
                 Value<String> groupId = const Value.absent(),
                 Value<String> teacherId = const Value.absent(),
+                Value<String?> roomId = const Value.absent(),
                 Value<DateTime?> date = const Value.absent(),
                 Value<int> weekday = const Value.absent(),
                 Value<String> startTime = const Value.absent(),
@@ -6214,6 +8337,7 @@ class $$LocalSchedulesTableTableManager
                 subjectId: subjectId,
                 groupId: groupId,
                 teacherId: teacherId,
+                roomId: roomId,
                 date: date,
                 weekday: weekday,
                 startTime: startTime,
@@ -6227,6 +8351,7 @@ class $$LocalSchedulesTableTableManager
                 required String subjectId,
                 required String groupId,
                 required String teacherId,
+                Value<String?> roomId = const Value.absent(),
                 Value<DateTime?> date = const Value.absent(),
                 required int weekday,
                 required String startTime,
@@ -6238,6 +8363,7 @@ class $$LocalSchedulesTableTableManager
                 subjectId: subjectId,
                 groupId: groupId,
                 teacherId: teacherId,
+                roomId: roomId,
                 date: date,
                 weekday: weekday,
                 startTime: startTime,
@@ -6245,8 +8371,21 @@ class $$LocalSchedulesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper:
-              (p0) => p0.map((e) => (e.readTable(table), $$LocalSchedulesTableReferences(db, table, e))).toList(),
-          prefetchHooksCallback: ({subjectId = false, groupId = false, teacherId = false}) {
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$LocalSchedulesTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: ({
+            subjectId = false,
+            groupId = false,
+            teacherId = false,
+            roomId = false,
+          }) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -6270,8 +8409,12 @@ class $$LocalSchedulesTableTableManager
                       state.withJoin(
                             currentTable: table,
                             currentColumn: table.subjectId,
-                            referencedTable: $$LocalSchedulesTableReferences._subjectIdTable(db),
-                            referencedColumn: $$LocalSchedulesTableReferences._subjectIdTable(db).id,
+                            referencedTable: $$LocalSchedulesTableReferences
+                                ._subjectIdTable(db),
+                            referencedColumn:
+                                $$LocalSchedulesTableReferences
+                                    ._subjectIdTable(db)
+                                    .id,
                           )
                           as T;
                 }
@@ -6280,8 +8423,12 @@ class $$LocalSchedulesTableTableManager
                       state.withJoin(
                             currentTable: table,
                             currentColumn: table.groupId,
-                            referencedTable: $$LocalSchedulesTableReferences._groupIdTable(db),
-                            referencedColumn: $$LocalSchedulesTableReferences._groupIdTable(db).id,
+                            referencedTable: $$LocalSchedulesTableReferences
+                                ._groupIdTable(db),
+                            referencedColumn:
+                                $$LocalSchedulesTableReferences
+                                    ._groupIdTable(db)
+                                    .id,
                           )
                           as T;
                 }
@@ -6290,8 +8437,26 @@ class $$LocalSchedulesTableTableManager
                       state.withJoin(
                             currentTable: table,
                             currentColumn: table.teacherId,
-                            referencedTable: $$LocalSchedulesTableReferences._teacherIdTable(db),
-                            referencedColumn: $$LocalSchedulesTableReferences._teacherIdTable(db).id,
+                            referencedTable: $$LocalSchedulesTableReferences
+                                ._teacherIdTable(db),
+                            referencedColumn:
+                                $$LocalSchedulesTableReferences
+                                    ._teacherIdTable(db)
+                                    .id,
+                          )
+                          as T;
+                }
+                if (roomId) {
+                  state =
+                      state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.roomId,
+                            referencedTable: $$LocalSchedulesTableReferences
+                                ._roomIdTable(db),
+                            referencedColumn:
+                                $$LocalSchedulesTableReferences
+                                    ._roomIdTable(db)
+                                    .id,
                           )
                           as T;
                 }
@@ -6319,7 +8484,12 @@ typedef $$LocalSchedulesTableProcessedTableManager =
       $$LocalSchedulesTableUpdateCompanionBuilder,
       (LocalSchedule, $$LocalSchedulesTableReferences),
       LocalSchedule,
-      PrefetchHooks Function({bool subjectId, bool groupId, bool teacherId})
+      PrefetchHooks Function({
+        bool subjectId,
+        bool groupId,
+        bool teacherId,
+        bool roomId,
+      })
     >;
 typedef $$LocalUsersTableCreateCompanionBuilder =
     LocalUsersCompanion Function({
@@ -6352,7 +8522,8 @@ typedef $$LocalUsersTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalUsersTableFilterComposer extends Composer<_$AppDatabase, $LocalUsersTable> {
+class $$LocalUsersTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalUsersTable> {
   $$LocalUsersTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -6360,38 +8531,64 @@ class $$LocalUsersTableFilterComposer extends Composer<_$AppDatabase, $LocalUser
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get role => $composableBuilder(column: $table.role, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get login =>
-      $composableBuilder(column: $table.login, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get groupId =>
-      $composableBuilder(column: $table.groupId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get avatarUrl =>
-      $composableBuilder(column: $table.avatarUrl, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get institutionName =>
-      $composableBuilder(column: $table.institutionName, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get institutionName => $composableBuilder(
+    column: $table.institutionName,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get groupName =>
-      $composableBuilder(column: $table.groupName, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get groupName => $composableBuilder(
+    column: $table.groupName,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalUsersTableOrderingComposer extends Composer<_$AppDatabase, $LocalUsersTable> {
+class $$LocalUsersTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalUsersTable> {
   $$LocalUsersTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -6399,40 +8596,64 @@ class $$LocalUsersTableOrderingComposer extends Composer<_$AppDatabase, $LocalUs
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get role =>
-      $composableBuilder(column: $table.role, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get login =>
-      $composableBuilder(column: $table.login, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get groupId =>
-      $composableBuilder(column: $table.groupId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get avatarUrl =>
-      $composableBuilder(column: $table.avatarUrl, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get institutionName =>
-      $composableBuilder(column: $table.institutionName, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get institutionName => $composableBuilder(
+    column: $table.institutionName,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get groupName =>
-      $composableBuilder(column: $table.groupName, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get groupName => $composableBuilder(
+    column: $table.groupName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalUsersTableAnnotationComposer extends Composer<_$AppDatabase, $LocalUsersTable> {
+class $$LocalUsersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalUsersTable> {
   $$LocalUsersTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -6440,29 +8661,42 @@ class $$LocalUsersTableAnnotationComposer extends Composer<_$AppDatabase, $Local
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get role => $composableBuilder(column: $table.role, builder: (column) => column);
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get surname => $composableBuilder(column: $table.surname, builder: (column) => column);
+  GeneratedColumn<String> get surname =>
+      $composableBuilder(column: $table.surname, builder: (column) => column);
 
-  GeneratedColumn<String> get email => $composableBuilder(column: $table.email, builder: (column) => column);
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
 
-  GeneratedColumn<String> get login => $composableBuilder(column: $table.login, builder: (column) => column);
+  GeneratedColumn<String> get login =>
+      $composableBuilder(column: $table.login, builder: (column) => column);
 
-  GeneratedColumn<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => column);
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get groupId => $composableBuilder(column: $table.groupId, builder: (column) => column);
+  GeneratedColumn<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => column);
 
-  GeneratedColumn<String> get avatarUrl => $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
 
-  GeneratedColumn<String> get institutionName =>
-      $composableBuilder(column: $table.institutionName, builder: (column) => column);
+  GeneratedColumn<String> get institutionName => $composableBuilder(
+    column: $table.institutionName,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get groupName => $composableBuilder(column: $table.groupName, builder: (column) => column);
+  GeneratedColumn<String> get groupName =>
+      $composableBuilder(column: $table.groupName, builder: (column) => column);
 }
 
 class $$LocalUsersTableTableManager
@@ -6476,7 +8710,10 @@ class $$LocalUsersTableTableManager
           $$LocalUsersTableAnnotationComposer,
           $$LocalUsersTableCreateCompanionBuilder,
           $$LocalUsersTableUpdateCompanionBuilder,
-          (LocalUser, BaseReferences<_$AppDatabase, $LocalUsersTable, LocalUser>),
+          (
+            LocalUser,
+            BaseReferences<_$AppDatabase, $LocalUsersTable, LocalUser>,
+          ),
           LocalUser,
           PrefetchHooks Function()
         > {
@@ -6485,9 +8722,12 @@ class $$LocalUsersTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalUsersTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalUsersTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalUsersTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalUsersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$LocalUsersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalUsersTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -6544,7 +8784,16 @@ class $$LocalUsersTableTableManager
                 groupName: groupName,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -6581,7 +8830,8 @@ typedef $$LocalGradesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalGradesTableFilterComposer extends Composer<_$AppDatabase, $LocalGradesTable> {
+class $$LocalGradesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalGradesTable> {
   $$LocalGradesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -6589,18 +8839,29 @@ class $$LocalGradesTableFilterComposer extends Composer<_$AppDatabase, $LocalGra
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get lessonId =>
-      $composableBuilder(column: $table.lessonId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get studentId =>
-      $composableBuilder(column: $table.studentId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get studentId => $composableBuilder(
+    column: $table.studentId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get value => $composableBuilder(column: $table.value, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalGradesTableOrderingComposer extends Composer<_$AppDatabase, $LocalGradesTable> {
+class $$LocalGradesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalGradesTable> {
   $$LocalGradesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -6608,19 +8869,29 @@ class $$LocalGradesTableOrderingComposer extends Composer<_$AppDatabase, $LocalG
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get lessonId =>
-      $composableBuilder(column: $table.lessonId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get studentId =>
-      $composableBuilder(column: $table.studentId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get studentId => $composableBuilder(
+    column: $table.studentId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get value =>
-      $composableBuilder(column: $table.value, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalGradesTableAnnotationComposer extends Composer<_$AppDatabase, $LocalGradesTable> {
+class $$LocalGradesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalGradesTable> {
   $$LocalGradesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -6628,13 +8899,17 @@ class $$LocalGradesTableAnnotationComposer extends Composer<_$AppDatabase, $Loca
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get lessonId => $composableBuilder(column: $table.lessonId, builder: (column) => column);
+  GeneratedColumn<String> get lessonId =>
+      $composableBuilder(column: $table.lessonId, builder: (column) => column);
 
-  GeneratedColumn<String> get studentId => $composableBuilder(column: $table.studentId, builder: (column) => column);
+  GeneratedColumn<String> get studentId =>
+      $composableBuilder(column: $table.studentId, builder: (column) => column);
 
-  GeneratedColumn<int> get value => $composableBuilder(column: $table.value, builder: (column) => column);
+  GeneratedColumn<int> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
 }
 
 class $$LocalGradesTableTableManager
@@ -6648,7 +8923,10 @@ class $$LocalGradesTableTableManager
           $$LocalGradesTableAnnotationComposer,
           $$LocalGradesTableCreateCompanionBuilder,
           $$LocalGradesTableUpdateCompanionBuilder,
-          (LocalGrade, BaseReferences<_$AppDatabase, $LocalGradesTable, LocalGrade>),
+          (
+            LocalGrade,
+            BaseReferences<_$AppDatabase, $LocalGradesTable, LocalGrade>,
+          ),
           LocalGrade,
           PrefetchHooks Function()
         > {
@@ -6657,9 +8935,13 @@ class $$LocalGradesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalGradesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalGradesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalGradesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalGradesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$LocalGradesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$LocalGradesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -6667,7 +8949,13 @@ class $$LocalGradesTableTableManager
                 Value<String> studentId = const Value.absent(),
                 Value<int> value = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => LocalGradesCompanion(id: id, lessonId: lessonId, studentId: studentId, value: value, rowid: rowid),
+              }) => LocalGradesCompanion(
+                id: id,
+                lessonId: lessonId,
+                studentId: studentId,
+                value: value,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String id,
@@ -6682,7 +8970,16 @@ class $$LocalGradesTableTableManager
                 value: value,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -6698,7 +8995,10 @@ typedef $$LocalGradesTableProcessedTableManager =
       $$LocalGradesTableAnnotationComposer,
       $$LocalGradesTableCreateCompanionBuilder,
       $$LocalGradesTableUpdateCompanionBuilder,
-      (LocalGrade, BaseReferences<_$AppDatabase, $LocalGradesTable, LocalGrade>),
+      (
+        LocalGrade,
+        BaseReferences<_$AppDatabase, $LocalGradesTable, LocalGrade>,
+      ),
       LocalGrade,
       PrefetchHooks Function()
     >;
@@ -6731,7 +9031,8 @@ typedef $$LocalHomeworksTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalHomeworksTableFilterComposer extends Composer<_$AppDatabase, $LocalHomeworksTable> {
+class $$LocalHomeworksTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalHomeworksTable> {
   $$LocalHomeworksTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -6739,37 +9040,59 @@ class $$LocalHomeworksTableFilterComposer extends Composer<_$AppDatabase, $Local
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get subjectId =>
-      $composableBuilder(column: $table.subjectId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get subjectId => $composableBuilder(
+    column: $table.subjectId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get groupId =>
-      $composableBuilder(column: $table.groupId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get lessonId =>
-      $composableBuilder(column: $table.lessonId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get description =>
-      $composableBuilder(column: $table.description, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get dueDate =>
-      $composableBuilder(column: $table.dueDate, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get fileUrl =>
-      $composableBuilder(column: $table.fileUrl, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get fileUrl => $composableBuilder(
+    column: $table.fileUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get fileName =>
-      $composableBuilder(column: $table.fileName, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalHomeworksTableOrderingComposer extends Composer<_$AppDatabase, $LocalHomeworksTable> {
+class $$LocalHomeworksTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalHomeworksTable> {
   $$LocalHomeworksTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -6777,37 +9100,59 @@ class $$LocalHomeworksTableOrderingComposer extends Composer<_$AppDatabase, $Loc
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get subjectId =>
-      $composableBuilder(column: $table.subjectId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get subjectId => $composableBuilder(
+    column: $table.subjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get groupId =>
-      $composableBuilder(column: $table.groupId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get lessonId =>
-      $composableBuilder(column: $table.lessonId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get description =>
-      $composableBuilder(column: $table.description, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get dueDate =>
-      $composableBuilder(column: $table.dueDate, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get fileUrl =>
-      $composableBuilder(column: $table.fileUrl, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get fileUrl => $composableBuilder(
+    column: $table.fileUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get fileName =>
-      $composableBuilder(column: $table.fileName, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalHomeworksTableAnnotationComposer extends Composer<_$AppDatabase, $LocalHomeworksTable> {
+class $$LocalHomeworksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalHomeworksTable> {
   $$LocalHomeworksTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -6815,26 +9160,37 @@ class $$LocalHomeworksTableAnnotationComposer extends Composer<_$AppDatabase, $L
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get subjectId => $composableBuilder(column: $table.subjectId, builder: (column) => column);
+  GeneratedColumn<String> get subjectId =>
+      $composableBuilder(column: $table.subjectId, builder: (column) => column);
 
-  GeneratedColumn<String> get groupId => $composableBuilder(column: $table.groupId, builder: (column) => column);
+  GeneratedColumn<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => column);
 
-  GeneratedColumn<String> get lessonId => $composableBuilder(column: $table.lessonId, builder: (column) => column);
+  GeneratedColumn<String> get lessonId =>
+      $composableBuilder(column: $table.lessonId, builder: (column) => column);
 
-  GeneratedColumn<String> get title => $composableBuilder(column: $table.title, builder: (column) => column);
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
 
-  GeneratedColumn<String> get description =>
-      $composableBuilder(column: $table.description, builder: (column) => column);
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<DateTime> get dueDate => $composableBuilder(column: $table.dueDate, builder: (column) => column);
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<String> get fileUrl => $composableBuilder(column: $table.fileUrl, builder: (column) => column);
+  GeneratedColumn<String> get fileUrl =>
+      $composableBuilder(column: $table.fileUrl, builder: (column) => column);
 
-  GeneratedColumn<String> get fileName => $composableBuilder(column: $table.fileName, builder: (column) => column);
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
 }
 
 class $$LocalHomeworksTableTableManager
@@ -6848,18 +9204,30 @@ class $$LocalHomeworksTableTableManager
           $$LocalHomeworksTableAnnotationComposer,
           $$LocalHomeworksTableCreateCompanionBuilder,
           $$LocalHomeworksTableUpdateCompanionBuilder,
-          (LocalHomework, BaseReferences<_$AppDatabase, $LocalHomeworksTable, LocalHomework>),
+          (
+            LocalHomework,
+            BaseReferences<_$AppDatabase, $LocalHomeworksTable, LocalHomework>,
+          ),
           LocalHomework,
           PrefetchHooks Function()
         > {
-  $$LocalHomeworksTableTableManager(_$AppDatabase db, $LocalHomeworksTable table)
-    : super(
+  $$LocalHomeworksTableTableManager(
+    _$AppDatabase db,
+    $LocalHomeworksTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalHomeworksTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalHomeworksTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalHomeworksTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalHomeworksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$LocalHomeworksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalHomeworksTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -6912,7 +9280,16 @@ class $$LocalHomeworksTableTableManager
                 fileName: fileName,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -6928,7 +9305,10 @@ typedef $$LocalHomeworksTableProcessedTableManager =
       $$LocalHomeworksTableAnnotationComposer,
       $$LocalHomeworksTableCreateCompanionBuilder,
       $$LocalHomeworksTableUpdateCompanionBuilder,
-      (LocalHomework, BaseReferences<_$AppDatabase, $LocalHomeworksTable, LocalHomework>),
+      (
+        LocalHomework,
+        BaseReferences<_$AppDatabase, $LocalHomeworksTable, LocalHomework>,
+      ),
       LocalHomework,
       PrefetchHooks Function()
     >;
@@ -6959,7 +9339,8 @@ typedef $$LocalHomeworkStatusesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalHomeworkStatusesTableFilterComposer extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
+class $$LocalHomeworkStatusesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
   $$LocalHomeworkStatusesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -6967,34 +9348,54 @@ class $$LocalHomeworkStatusesTableFilterComposer extends Composer<_$AppDatabase,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get homeworkId =>
-      $composableBuilder(column: $table.homeworkId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get homeworkId => $composableBuilder(
+    column: $table.homeworkId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get studentId =>
-      $composableBuilder(column: $table.studentId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get studentId => $composableBuilder(
+    column: $table.studentId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get isCompleted =>
-      $composableBuilder(column: $table.isCompleted, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get studentComment =>
-      $composableBuilder(column: $table.studentComment, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get studentComment => $composableBuilder(
+    column: $table.studentComment,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get teacherComment =>
-      $composableBuilder(column: $table.teacherComment, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get teacherComment => $composableBuilder(
+    column: $table.teacherComment,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get fileUrl =>
-      $composableBuilder(column: $table.fileUrl, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get fileUrl => $composableBuilder(
+    column: $table.fileUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get fileName =>
-      $composableBuilder(column: $table.fileName, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalHomeworkStatusesTableOrderingComposer extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
+class $$LocalHomeworkStatusesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
   $$LocalHomeworkStatusesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7002,34 +9403,54 @@ class $$LocalHomeworkStatusesTableOrderingComposer extends Composer<_$AppDatabas
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get homeworkId =>
-      $composableBuilder(column: $table.homeworkId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get homeworkId => $composableBuilder(
+    column: $table.homeworkId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get studentId =>
-      $composableBuilder(column: $table.studentId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get studentId => $composableBuilder(
+    column: $table.studentId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get isCompleted =>
-      $composableBuilder(column: $table.isCompleted, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get studentComment =>
-      $composableBuilder(column: $table.studentComment, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get studentComment => $composableBuilder(
+    column: $table.studentComment,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get teacherComment =>
-      $composableBuilder(column: $table.teacherComment, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get teacherComment => $composableBuilder(
+    column: $table.teacherComment,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get fileUrl =>
-      $composableBuilder(column: $table.fileUrl, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get fileUrl => $composableBuilder(
+    column: $table.fileUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get fileName =>
-      $composableBuilder(column: $table.fileName, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalHomeworkStatusesTableAnnotationComposer extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
+class $$LocalHomeworkStatusesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalHomeworkStatusesTable> {
   $$LocalHomeworkStatusesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7037,25 +9458,40 @@ class $$LocalHomeworkStatusesTableAnnotationComposer extends Composer<_$AppDatab
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get homeworkId => $composableBuilder(column: $table.homeworkId, builder: (column) => column);
+  GeneratedColumn<String> get homeworkId => $composableBuilder(
+    column: $table.homeworkId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get studentId => $composableBuilder(column: $table.studentId, builder: (column) => column);
+  GeneratedColumn<String> get studentId =>
+      $composableBuilder(column: $table.studentId, builder: (column) => column);
 
-  GeneratedColumn<bool> get isCompleted => $composableBuilder(column: $table.isCompleted, builder: (column) => column);
+  GeneratedColumn<bool> get isCompleted => $composableBuilder(
+    column: $table.isCompleted,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get studentComment =>
-      $composableBuilder(column: $table.studentComment, builder: (column) => column);
+  GeneratedColumn<String> get studentComment => $composableBuilder(
+    column: $table.studentComment,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get teacherComment =>
-      $composableBuilder(column: $table.teacherComment, builder: (column) => column);
+  GeneratedColumn<String> get teacherComment => $composableBuilder(
+    column: $table.teacherComment,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get fileUrl => $composableBuilder(column: $table.fileUrl, builder: (column) => column);
+  GeneratedColumn<String> get fileUrl =>
+      $composableBuilder(column: $table.fileUrl, builder: (column) => column);
 
-  GeneratedColumn<String> get fileName => $composableBuilder(column: $table.fileName, builder: (column) => column);
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get updatedAt => $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 }
 
 class $$LocalHomeworkStatusesTableTableManager
@@ -7069,18 +9505,39 @@ class $$LocalHomeworkStatusesTableTableManager
           $$LocalHomeworkStatusesTableAnnotationComposer,
           $$LocalHomeworkStatusesTableCreateCompanionBuilder,
           $$LocalHomeworkStatusesTableUpdateCompanionBuilder,
-          (LocalHomeworkStatuse, BaseReferences<_$AppDatabase, $LocalHomeworkStatusesTable, LocalHomeworkStatuse>),
+          (
+            LocalHomeworkStatuse,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalHomeworkStatusesTable,
+              LocalHomeworkStatuse
+            >,
+          ),
           LocalHomeworkStatuse,
           PrefetchHooks Function()
         > {
-  $$LocalHomeworkStatusesTableTableManager(_$AppDatabase db, $LocalHomeworkStatusesTable table)
-    : super(
+  $$LocalHomeworkStatusesTableTableManager(
+    _$AppDatabase db,
+    $LocalHomeworkStatusesTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalHomeworkStatusesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalHomeworkStatusesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalHomeworkStatusesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalHomeworkStatusesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$LocalHomeworkStatusesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$LocalHomeworkStatusesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -7129,7 +9586,16 @@ class $$LocalHomeworkStatusesTableTableManager
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -7145,7 +9611,14 @@ typedef $$LocalHomeworkStatusesTableProcessedTableManager =
       $$LocalHomeworkStatusesTableAnnotationComposer,
       $$LocalHomeworkStatusesTableCreateCompanionBuilder,
       $$LocalHomeworkStatusesTableUpdateCompanionBuilder,
-      (LocalHomeworkStatuse, BaseReferences<_$AppDatabase, $LocalHomeworkStatusesTable, LocalHomeworkStatuse>),
+      (
+        LocalHomeworkStatuse,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalHomeworkStatusesTable,
+          LocalHomeworkStatuse
+        >,
+      ),
       LocalHomeworkStatuse,
       PrefetchHooks Function()
     >;
@@ -7176,7 +9649,8 @@ typedef $$LocalStudentsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalStudentsTableFilterComposer extends Composer<_$AppDatabase, $LocalStudentsTable> {
+class $$LocalStudentsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalStudentsTable> {
   $$LocalStudentsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7184,33 +9658,54 @@ class $$LocalStudentsTableFilterComposer extends Composer<_$AppDatabase, $LocalS
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get login =>
-      $composableBuilder(column: $table.login, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get groupId =>
-      $composableBuilder(column: $table.groupId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get isHeadman =>
-      $composableBuilder(column: $table.isHeadman, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get isHeadman => $composableBuilder(
+    column: $table.isHeadman,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get avatarUrl =>
-      $composableBuilder(column: $table.avatarUrl, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalStudentsTableOrderingComposer extends Composer<_$AppDatabase, $LocalStudentsTable> {
+class $$LocalStudentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalStudentsTable> {
   $$LocalStudentsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7218,34 +9713,54 @@ class $$LocalStudentsTableOrderingComposer extends Composer<_$AppDatabase, $Loca
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get login =>
-      $composableBuilder(column: $table.login, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get groupId =>
-      $composableBuilder(column: $table.groupId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get isHeadman =>
-      $composableBuilder(column: $table.isHeadman, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get isHeadman => $composableBuilder(
+    column: $table.isHeadman,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get avatarUrl =>
-      $composableBuilder(column: $table.avatarUrl, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalStudentsTableAnnotationComposer extends Composer<_$AppDatabase, $LocalStudentsTable> {
+class $$LocalStudentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalStudentsTable> {
   $$LocalStudentsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7253,23 +9768,32 @@ class $$LocalStudentsTableAnnotationComposer extends Composer<_$AppDatabase, $Lo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get surname => $composableBuilder(column: $table.surname, builder: (column) => column);
+  GeneratedColumn<String> get surname =>
+      $composableBuilder(column: $table.surname, builder: (column) => column);
 
-  GeneratedColumn<String> get email => $composableBuilder(column: $table.email, builder: (column) => column);
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
 
-  GeneratedColumn<String> get login => $composableBuilder(column: $table.login, builder: (column) => column);
+  GeneratedColumn<String> get login =>
+      $composableBuilder(column: $table.login, builder: (column) => column);
 
-  GeneratedColumn<String> get groupId => $composableBuilder(column: $table.groupId, builder: (column) => column);
+  GeneratedColumn<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => column);
 
-  GeneratedColumn<bool> get isHeadman => $composableBuilder(column: $table.isHeadman, builder: (column) => column);
+  GeneratedColumn<bool> get isHeadman =>
+      $composableBuilder(column: $table.isHeadman, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<String> get avatarUrl => $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
 }
 
 class $$LocalStudentsTableTableManager
@@ -7283,7 +9807,10 @@ class $$LocalStudentsTableTableManager
           $$LocalStudentsTableAnnotationComposer,
           $$LocalStudentsTableCreateCompanionBuilder,
           $$LocalStudentsTableUpdateCompanionBuilder,
-          (LocalStudent, BaseReferences<_$AppDatabase, $LocalStudentsTable, LocalStudent>),
+          (
+            LocalStudent,
+            BaseReferences<_$AppDatabase, $LocalStudentsTable, LocalStudent>,
+          ),
           LocalStudent,
           PrefetchHooks Function()
         > {
@@ -7292,9 +9819,16 @@ class $$LocalStudentsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalStudentsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalStudentsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalStudentsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalStudentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$LocalStudentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalStudentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -7343,7 +9877,16 @@ class $$LocalStudentsTableTableManager
                 avatarUrl: avatarUrl,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -7359,7 +9902,10 @@ typedef $$LocalStudentsTableProcessedTableManager =
       $$LocalStudentsTableAnnotationComposer,
       $$LocalStudentsTableCreateCompanionBuilder,
       $$LocalStudentsTableUpdateCompanionBuilder,
-      (LocalStudent, BaseReferences<_$AppDatabase, $LocalStudentsTable, LocalStudent>),
+      (
+        LocalStudent,
+        BaseReferences<_$AppDatabase, $LocalStudentsTable, LocalStudent>,
+      ),
       LocalStudent,
       PrefetchHooks Function()
     >;
@@ -7382,7 +9928,8 @@ typedef $$LocalGroupDetailsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalGroupDetailsTableFilterComposer extends Composer<_$AppDatabase, $LocalGroupDetailsTable> {
+class $$LocalGroupDetailsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalGroupDetailsTable> {
   $$LocalGroupDetailsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7390,21 +9937,34 @@ class $$LocalGroupDetailsTableFilterComposer extends Composer<_$AppDatabase, $Lo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get curatorId =>
-      $composableBuilder(column: $table.curatorId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get curatorId => $composableBuilder(
+    column: $table.curatorId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalGroupDetailsTableOrderingComposer extends Composer<_$AppDatabase, $LocalGroupDetailsTable> {
+class $$LocalGroupDetailsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalGroupDetailsTable> {
   $$LocalGroupDetailsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7412,22 +9972,34 @@ class $$LocalGroupDetailsTableOrderingComposer extends Composer<_$AppDatabase, $
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get curatorId =>
-      $composableBuilder(column: $table.curatorId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get curatorId => $composableBuilder(
+    column: $table.curatorId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalGroupDetailsTableAnnotationComposer extends Composer<_$AppDatabase, $LocalGroupDetailsTable> {
+class $$LocalGroupDetailsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalGroupDetailsTable> {
   $$LocalGroupDetailsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7435,16 +10007,22 @@ class $$LocalGroupDetailsTableAnnotationComposer extends Composer<_$AppDatabase,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => column);
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get curatorId => $composableBuilder(column: $table.curatorId, builder: (column) => column);
+  GeneratedColumn<String> get curatorId =>
+      $composableBuilder(column: $table.curatorId, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
 
 class $$LocalGroupDetailsTableTableManager
@@ -7458,18 +10036,39 @@ class $$LocalGroupDetailsTableTableManager
           $$LocalGroupDetailsTableAnnotationComposer,
           $$LocalGroupDetailsTableCreateCompanionBuilder,
           $$LocalGroupDetailsTableUpdateCompanionBuilder,
-          (LocalGroupDetail, BaseReferences<_$AppDatabase, $LocalGroupDetailsTable, LocalGroupDetail>),
+          (
+            LocalGroupDetail,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalGroupDetailsTable,
+              LocalGroupDetail
+            >,
+          ),
           LocalGroupDetail,
           PrefetchHooks Function()
         > {
-  $$LocalGroupDetailsTableTableManager(_$AppDatabase db, $LocalGroupDetailsTable table)
-    : super(
+  $$LocalGroupDetailsTableTableManager(
+    _$AppDatabase db,
+    $LocalGroupDetailsTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalGroupDetailsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalGroupDetailsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalGroupDetailsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalGroupDetailsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$LocalGroupDetailsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$LocalGroupDetailsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -7502,7 +10101,16 @@ class $$LocalGroupDetailsTableTableManager
                 createdAt: createdAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -7518,7 +10126,14 @@ typedef $$LocalGroupDetailsTableProcessedTableManager =
       $$LocalGroupDetailsTableAnnotationComposer,
       $$LocalGroupDetailsTableCreateCompanionBuilder,
       $$LocalGroupDetailsTableUpdateCompanionBuilder,
-      (LocalGroupDetail, BaseReferences<_$AppDatabase, $LocalGroupDetailsTable, LocalGroupDetail>),
+      (
+        LocalGroupDetail,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalGroupDetailsTable,
+          LocalGroupDetail
+        >,
+      ),
       LocalGroupDetail,
       PrefetchHooks Function()
     >;
@@ -7549,7 +10164,8 @@ typedef $$LocalTeacherProfilesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalTeacherProfilesTableFilterComposer extends Composer<_$AppDatabase, $LocalTeacherProfilesTable> {
+class $$LocalTeacherProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalTeacherProfilesTable> {
   $$LocalTeacherProfilesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7557,33 +10173,54 @@ class $$LocalTeacherProfilesTableFilterComposer extends Composer<_$AppDatabase, 
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get login =>
-      $composableBuilder(column: $table.login, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get department =>
-      $composableBuilder(column: $table.department, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get department => $composableBuilder(
+    column: $table.department,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get avatarUrl =>
-      $composableBuilder(column: $table.avatarUrl, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalTeacherProfilesTableOrderingComposer extends Composer<_$AppDatabase, $LocalTeacherProfilesTable> {
+class $$LocalTeacherProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalTeacherProfilesTable> {
   $$LocalTeacherProfilesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7591,34 +10228,54 @@ class $$LocalTeacherProfilesTableOrderingComposer extends Composer<_$AppDatabase
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get login =>
-      $composableBuilder(column: $table.login, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get department =>
-      $composableBuilder(column: $table.department, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get department => $composableBuilder(
+    column: $table.department,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get avatarUrl =>
-      $composableBuilder(column: $table.avatarUrl, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalTeacherProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $LocalTeacherProfilesTable> {
+class $$LocalTeacherProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalTeacherProfilesTable> {
   $$LocalTeacherProfilesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7626,24 +10283,36 @@ class $$LocalTeacherProfilesTableAnnotationComposer extends Composer<_$AppDataba
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get surname => $composableBuilder(column: $table.surname, builder: (column) => column);
+  GeneratedColumn<String> get surname =>
+      $composableBuilder(column: $table.surname, builder: (column) => column);
 
-  GeneratedColumn<String> get email => $composableBuilder(column: $table.email, builder: (column) => column);
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
 
-  GeneratedColumn<String> get login => $composableBuilder(column: $table.login, builder: (column) => column);
+  GeneratedColumn<String> get login =>
+      $composableBuilder(column: $table.login, builder: (column) => column);
 
-  GeneratedColumn<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => column);
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get department => $composableBuilder(column: $table.department, builder: (column) => column);
+  GeneratedColumn<String> get department => $composableBuilder(
+    column: $table.department,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<String> get avatarUrl => $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
 }
 
 class $$LocalTeacherProfilesTableTableManager
@@ -7657,18 +10326,39 @@ class $$LocalTeacherProfilesTableTableManager
           $$LocalTeacherProfilesTableAnnotationComposer,
           $$LocalTeacherProfilesTableCreateCompanionBuilder,
           $$LocalTeacherProfilesTableUpdateCompanionBuilder,
-          (LocalTeacherProfile, BaseReferences<_$AppDatabase, $LocalTeacherProfilesTable, LocalTeacherProfile>),
+          (
+            LocalTeacherProfile,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalTeacherProfilesTable,
+              LocalTeacherProfile
+            >,
+          ),
           LocalTeacherProfile,
           PrefetchHooks Function()
         > {
-  $$LocalTeacherProfilesTableTableManager(_$AppDatabase db, $LocalTeacherProfilesTable table)
-    : super(
+  $$LocalTeacherProfilesTableTableManager(
+    _$AppDatabase db,
+    $LocalTeacherProfilesTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalTeacherProfilesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalTeacherProfilesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalTeacherProfilesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalTeacherProfilesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$LocalTeacherProfilesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$LocalTeacherProfilesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -7717,7 +10407,16 @@ class $$LocalTeacherProfilesTableTableManager
                 avatarUrl: avatarUrl,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -7733,7 +10432,14 @@ typedef $$LocalTeacherProfilesTableProcessedTableManager =
       $$LocalTeacherProfilesTableAnnotationComposer,
       $$LocalTeacherProfilesTableCreateCompanionBuilder,
       $$LocalTeacherProfilesTableUpdateCompanionBuilder,
-      (LocalTeacherProfile, BaseReferences<_$AppDatabase, $LocalTeacherProfilesTable, LocalTeacherProfile>),
+      (
+        LocalTeacherProfile,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalTeacherProfilesTable,
+          LocalTeacherProfile
+        >,
+      ),
       LocalTeacherProfile,
       PrefetchHooks Function()
     >;
@@ -7764,7 +10470,8 @@ typedef $$LocalAdminProfilesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalAdminProfilesTableFilterComposer extends Composer<_$AppDatabase, $LocalAdminProfilesTable> {
+class $$LocalAdminProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalAdminProfilesTable> {
   $$LocalAdminProfilesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7772,33 +10479,54 @@ class $$LocalAdminProfilesTableFilterComposer extends Composer<_$AppDatabase, $L
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get login =>
-      $composableBuilder(column: $table.login, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get phone =>
-      $composableBuilder(column: $table.phone, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get avatarUrl =>
-      $composableBuilder(column: $table.avatarUrl, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalAdminProfilesTableOrderingComposer extends Composer<_$AppDatabase, $LocalAdminProfilesTable> {
+class $$LocalAdminProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalAdminProfilesTable> {
   $$LocalAdminProfilesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7806,34 +10534,54 @@ class $$LocalAdminProfilesTableOrderingComposer extends Composer<_$AppDatabase, 
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get surname =>
-      $composableBuilder(column: $table.surname, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get surname => $composableBuilder(
+    column: $table.surname,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get email =>
-      $composableBuilder(column: $table.email, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get login =>
-      $composableBuilder(column: $table.login, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get login => $composableBuilder(
+    column: $table.login,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get phone =>
-      $composableBuilder(column: $table.phone, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get avatarUrl =>
-      $composableBuilder(column: $table.avatarUrl, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalAdminProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $LocalAdminProfilesTable> {
+class $$LocalAdminProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalAdminProfilesTable> {
   $$LocalAdminProfilesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7841,24 +10589,34 @@ class $$LocalAdminProfilesTableAnnotationComposer extends Composer<_$AppDatabase
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get surname => $composableBuilder(column: $table.surname, builder: (column) => column);
+  GeneratedColumn<String> get surname =>
+      $composableBuilder(column: $table.surname, builder: (column) => column);
 
-  GeneratedColumn<String> get email => $composableBuilder(column: $table.email, builder: (column) => column);
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
 
-  GeneratedColumn<String> get login => $composableBuilder(column: $table.login, builder: (column) => column);
+  GeneratedColumn<String> get login =>
+      $composableBuilder(column: $table.login, builder: (column) => column);
 
-  GeneratedColumn<String> get institutionId =>
-      $composableBuilder(column: $table.institutionId, builder: (column) => column);
+  GeneratedColumn<String> get institutionId => $composableBuilder(
+    column: $table.institutionId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get phone => $composableBuilder(column: $table.phone, builder: (column) => column);
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<String> get avatarUrl => $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
 }
 
 class $$LocalAdminProfilesTableTableManager
@@ -7872,18 +10630,39 @@ class $$LocalAdminProfilesTableTableManager
           $$LocalAdminProfilesTableAnnotationComposer,
           $$LocalAdminProfilesTableCreateCompanionBuilder,
           $$LocalAdminProfilesTableUpdateCompanionBuilder,
-          (LocalAdminProfile, BaseReferences<_$AppDatabase, $LocalAdminProfilesTable, LocalAdminProfile>),
+          (
+            LocalAdminProfile,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalAdminProfilesTable,
+              LocalAdminProfile
+            >,
+          ),
           LocalAdminProfile,
           PrefetchHooks Function()
         > {
-  $$LocalAdminProfilesTableTableManager(_$AppDatabase db, $LocalAdminProfilesTable table)
-    : super(
+  $$LocalAdminProfilesTableTableManager(
+    _$AppDatabase db,
+    $LocalAdminProfilesTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalAdminProfilesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalAdminProfilesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalAdminProfilesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalAdminProfilesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$LocalAdminProfilesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$LocalAdminProfilesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -7932,7 +10711,16 @@ class $$LocalAdminProfilesTableTableManager
                 avatarUrl: avatarUrl,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -7948,7 +10736,14 @@ typedef $$LocalAdminProfilesTableProcessedTableManager =
       $$LocalAdminProfilesTableAnnotationComposer,
       $$LocalAdminProfilesTableCreateCompanionBuilder,
       $$LocalAdminProfilesTableUpdateCompanionBuilder,
-      (LocalAdminProfile, BaseReferences<_$AppDatabase, $LocalAdminProfilesTable, LocalAdminProfile>),
+      (
+        LocalAdminProfile,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalAdminProfilesTable,
+          LocalAdminProfile
+        >,
+      ),
       LocalAdminProfile,
       PrefetchHooks Function()
     >;
@@ -7969,7 +10764,8 @@ typedef $$LocalInstitutionsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalInstitutionsTableFilterComposer extends Composer<_$AppDatabase, $LocalInstitutionsTable> {
+class $$LocalInstitutionsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalInstitutionsTable> {
   $$LocalInstitutionsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7977,18 +10773,29 @@ class $$LocalInstitutionsTableFilterComposer extends Composer<_$AppDatabase, $Lo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get address =>
-      $composableBuilder(column: $table.address, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalInstitutionsTableOrderingComposer extends Composer<_$AppDatabase, $LocalInstitutionsTable> {
+class $$LocalInstitutionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalInstitutionsTable> {
   $$LocalInstitutionsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7996,19 +10803,29 @@ class $$LocalInstitutionsTableOrderingComposer extends Composer<_$AppDatabase, $
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get address =>
-      $composableBuilder(column: $table.address, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalInstitutionsTableAnnotationComposer extends Composer<_$AppDatabase, $LocalInstitutionsTable> {
+class $$LocalInstitutionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalInstitutionsTable> {
   $$LocalInstitutionsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -8016,13 +10833,17 @@ class $$LocalInstitutionsTableAnnotationComposer extends Composer<_$AppDatabase,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get address => $composableBuilder(column: $table.address, builder: (column) => column);
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
 
 class $$LocalInstitutionsTableTableManager
@@ -8036,18 +10857,39 @@ class $$LocalInstitutionsTableTableManager
           $$LocalInstitutionsTableAnnotationComposer,
           $$LocalInstitutionsTableCreateCompanionBuilder,
           $$LocalInstitutionsTableUpdateCompanionBuilder,
-          (LocalInstitution, BaseReferences<_$AppDatabase, $LocalInstitutionsTable, LocalInstitution>),
+          (
+            LocalInstitution,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalInstitutionsTable,
+              LocalInstitution
+            >,
+          ),
           LocalInstitution,
           PrefetchHooks Function()
         > {
-  $$LocalInstitutionsTableTableManager(_$AppDatabase db, $LocalInstitutionsTable table)
-    : super(
+  $$LocalInstitutionsTableTableManager(
+    _$AppDatabase db,
+    $LocalInstitutionsTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalInstitutionsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalInstitutionsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalInstitutionsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalInstitutionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$LocalInstitutionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$LocalInstitutionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -8055,8 +10897,13 @@ class $$LocalInstitutionsTableTableManager
                 Value<String> address = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) =>
-                  LocalInstitutionsCompanion(id: id, name: name, address: address, createdAt: createdAt, rowid: rowid),
+              }) => LocalInstitutionsCompanion(
+                id: id,
+                name: name,
+                address: address,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String id,
@@ -8071,7 +10918,16 @@ class $$LocalInstitutionsTableTableManager
                 createdAt: createdAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -8087,7 +10943,14 @@ typedef $$LocalInstitutionsTableProcessedTableManager =
       $$LocalInstitutionsTableAnnotationComposer,
       $$LocalInstitutionsTableCreateCompanionBuilder,
       $$LocalInstitutionsTableUpdateCompanionBuilder,
-      (LocalInstitution, BaseReferences<_$AppDatabase, $LocalInstitutionsTable, LocalInstitution>),
+      (
+        LocalInstitution,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalInstitutionsTable,
+          LocalInstitution
+        >,
+      ),
       LocalInstitution,
       PrefetchHooks Function()
     >;
@@ -8108,7 +10971,8 @@ typedef $$LocalLessonsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$LocalLessonsTableFilterComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
+class $$LocalLessonsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalLessonsTable> {
   $$LocalLessonsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -8116,19 +10980,29 @@ class $$LocalLessonsTableFilterComposer extends Composer<_$AppDatabase, $LocalLe
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get scheduleId =>
-      $composableBuilder(column: $table.scheduleId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get topic =>
-      $composableBuilder(column: $table.topic, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get topic => $composableBuilder(
+    column: $table.topic,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get attendanceStatus =>
-      $composableBuilder(column: $table.attendanceStatus, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get attendanceStatus => $composableBuilder(
+    column: $table.attendanceStatus,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$LocalLessonsTableOrderingComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
+class $$LocalLessonsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalLessonsTable> {
   $$LocalLessonsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -8136,19 +11010,29 @@ class $$LocalLessonsTableOrderingComposer extends Composer<_$AppDatabase, $Local
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get scheduleId =>
-      $composableBuilder(column: $table.scheduleId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get topic =>
-      $composableBuilder(column: $table.topic, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get topic => $composableBuilder(
+    column: $table.topic,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get attendanceStatus =>
-      $composableBuilder(column: $table.attendanceStatus, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get attendanceStatus => $composableBuilder(
+    column: $table.attendanceStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$LocalLessonsTableAnnotationComposer extends Composer<_$AppDatabase, $LocalLessonsTable> {
+class $$LocalLessonsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalLessonsTable> {
   $$LocalLessonsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -8156,14 +11040,21 @@ class $$LocalLessonsTableAnnotationComposer extends Composer<_$AppDatabase, $Loc
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get scheduleId => $composableBuilder(column: $table.scheduleId, builder: (column) => column);
+  GeneratedColumn<String> get scheduleId => $composableBuilder(
+    column: $table.scheduleId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get topic => $composableBuilder(column: $table.topic, builder: (column) => column);
+  GeneratedColumn<String> get topic =>
+      $composableBuilder(column: $table.topic, builder: (column) => column);
 
-  GeneratedColumn<String> get attendanceStatus =>
-      $composableBuilder(column: $table.attendanceStatus, builder: (column) => column);
+  GeneratedColumn<String> get attendanceStatus => $composableBuilder(
+    column: $table.attendanceStatus,
+    builder: (column) => column,
+  );
 }
 
 class $$LocalLessonsTableTableManager
@@ -8177,7 +11068,10 @@ class $$LocalLessonsTableTableManager
           $$LocalLessonsTableAnnotationComposer,
           $$LocalLessonsTableCreateCompanionBuilder,
           $$LocalLessonsTableUpdateCompanionBuilder,
-          (LocalLesson, BaseReferences<_$AppDatabase, $LocalLessonsTable, LocalLesson>),
+          (
+            LocalLesson,
+            BaseReferences<_$AppDatabase, $LocalLessonsTable, LocalLesson>,
+          ),
           LocalLesson,
           PrefetchHooks Function()
         > {
@@ -8186,9 +11080,13 @@ class $$LocalLessonsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$LocalLessonsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$LocalLessonsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$LocalLessonsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer:
+              () => $$LocalLessonsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$LocalLessonsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$LocalLessonsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -8217,7 +11115,16 @@ class $$LocalLessonsTableTableManager
                 attendanceStatus: attendanceStatus,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -8233,7 +11140,10 @@ typedef $$LocalLessonsTableProcessedTableManager =
       $$LocalLessonsTableAnnotationComposer,
       $$LocalLessonsTableCreateCompanionBuilder,
       $$LocalLessonsTableUpdateCompanionBuilder,
-      (LocalLesson, BaseReferences<_$AppDatabase, $LocalLessonsTable, LocalLesson>),
+      (
+        LocalLesson,
+        BaseReferences<_$AppDatabase, $LocalLessonsTable, LocalLesson>,
+      ),
       LocalLesson,
       PrefetchHooks Function()
     >;
@@ -8241,16 +11151,26 @@ typedef $$LocalLessonsTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$LocalSubjectsTableTableManager get localSubjects => $$LocalSubjectsTableTableManager(_db, _db.localSubjects);
-  $$LocalGroupsTableTableManager get localGroups => $$LocalGroupsTableTableManager(_db, _db.localGroups);
-  $$LocalTeachersTableTableManager get localTeachers => $$LocalTeachersTableTableManager(_db, _db.localTeachers);
-  $$LocalSchedulesTableTableManager get localSchedules => $$LocalSchedulesTableTableManager(_db, _db.localSchedules);
-  $$LocalUsersTableTableManager get localUsers => $$LocalUsersTableTableManager(_db, _db.localUsers);
-  $$LocalGradesTableTableManager get localGrades => $$LocalGradesTableTableManager(_db, _db.localGrades);
-  $$LocalHomeworksTableTableManager get localHomeworks => $$LocalHomeworksTableTableManager(_db, _db.localHomeworks);
+  $$LocalRoomsTableTableManager get localRooms =>
+      $$LocalRoomsTableTableManager(_db, _db.localRooms);
+  $$LocalSubjectsTableTableManager get localSubjects =>
+      $$LocalSubjectsTableTableManager(_db, _db.localSubjects);
+  $$LocalGroupsTableTableManager get localGroups =>
+      $$LocalGroupsTableTableManager(_db, _db.localGroups);
+  $$LocalTeachersTableTableManager get localTeachers =>
+      $$LocalTeachersTableTableManager(_db, _db.localTeachers);
+  $$LocalSchedulesTableTableManager get localSchedules =>
+      $$LocalSchedulesTableTableManager(_db, _db.localSchedules);
+  $$LocalUsersTableTableManager get localUsers =>
+      $$LocalUsersTableTableManager(_db, _db.localUsers);
+  $$LocalGradesTableTableManager get localGrades =>
+      $$LocalGradesTableTableManager(_db, _db.localGrades);
+  $$LocalHomeworksTableTableManager get localHomeworks =>
+      $$LocalHomeworksTableTableManager(_db, _db.localHomeworks);
   $$LocalHomeworkStatusesTableTableManager get localHomeworkStatuses =>
       $$LocalHomeworkStatusesTableTableManager(_db, _db.localHomeworkStatuses);
-  $$LocalStudentsTableTableManager get localStudents => $$LocalStudentsTableTableManager(_db, _db.localStudents);
+  $$LocalStudentsTableTableManager get localStudents =>
+      $$LocalStudentsTableTableManager(_db, _db.localStudents);
   $$LocalGroupDetailsTableTableManager get localGroupDetails =>
       $$LocalGroupDetailsTableTableManager(_db, _db.localGroupDetails);
   $$LocalTeacherProfilesTableTableManager get localTeacherProfiles =>
@@ -8259,5 +11179,6 @@ class $AppDatabaseManager {
       $$LocalAdminProfilesTableTableManager(_db, _db.localAdminProfiles);
   $$LocalInstitutionsTableTableManager get localInstitutions =>
       $$LocalInstitutionsTableTableManager(_db, _db.localInstitutions);
-  $$LocalLessonsTableTableManager get localLessons => $$LocalLessonsTableTableManager(_db, _db.localLessons);
+  $$LocalLessonsTableTableManager get localLessons =>
+      $$LocalLessonsTableTableManager(_db, _db.localLessons);
 }

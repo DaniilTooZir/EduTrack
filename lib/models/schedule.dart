@@ -1,14 +1,15 @@
 import 'package:edu_track/models/group.dart';
+import 'package:edu_track/models/room.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
 
-// Модель для расписания уроков
 class Schedule {
   final String id;
   final String institutionId;
   final String subjectId;
   final String groupId;
   final String teacherId;
+  final String? roomId;
   final DateTime? date;
   final int weekday;
   final String startTime;
@@ -16,6 +17,7 @@ class Schedule {
   final Subject? subject;
   final Group? group;
   final Teacher? teacher;
+  final Room? room;
 
   Schedule({
     required this.id,
@@ -23,6 +25,7 @@ class Schedule {
     required this.subjectId,
     required this.groupId,
     required this.teacherId,
+    this.roomId,
     this.date,
     required this.weekday,
     required this.startTime,
@@ -30,6 +33,7 @@ class Schedule {
     this.subject,
     this.group,
     this.teacher,
+    this.room,
   });
 
   String? get subjectName => subject?.name;
@@ -42,6 +46,8 @@ class Schedule {
     return 'Неизвестно';
   }
 
+  String? get roomName => room?.name;
+
   factory Schedule.fromMap(Map<String, dynamic> map) {
     return Schedule(
       id: map['id']?.toString() ?? '',
@@ -49,6 +55,7 @@ class Schedule {
       subjectId: map['subject_id']?.toString() ?? '',
       groupId: map['group_id']?.toString() ?? '',
       teacherId: map['teacher_id']?.toString() ?? '',
+      roomId: map['room_id']?.toString(),
       date: map['date'] != null ? DateTime.tryParse(map['date'].toString()) : null,
       weekday: int.tryParse(map['weekday'].toString()) ?? 1,
       startTime: map['start_time']?.toString() ?? '',
@@ -56,6 +63,7 @@ class Schedule {
       subject: map['subject'] != null ? Subject.fromMap(map['subject'] as Map<String, dynamic>) : null,
       group: map['group'] != null ? Group.fromMap(map['group'] as Map<String, dynamic>) : null,
       teacher: map['teacher'] != null ? Teacher.fromMap(map['teacher'] as Map<String, dynamic>) : null,
+      room: map['room'] != null ? Room.fromMap(map['room'] as Map<String, dynamic>) : null,
     );
   }
 
@@ -66,6 +74,7 @@ class Schedule {
       'subject_id': subjectId,
       'group_id': groupId,
       'teacher_id': teacherId,
+      'room_id': roomId,
       'date': date?.toIso8601String(),
       'weekday': weekday,
       'start_time': startTime,
@@ -79,6 +88,7 @@ class Schedule {
     String? subjectId,
     String? groupId,
     String? teacherId,
+    Object? roomId = _sentinel,
     DateTime? date,
     int? weekday,
     String? startTime,
@@ -86,6 +96,7 @@ class Schedule {
     Subject? subject,
     Group? group,
     Teacher? teacher,
+    Object? room = _sentinel,
   }) {
     return Schedule(
       id: id ?? this.id,
@@ -93,6 +104,7 @@ class Schedule {
       subjectId: subjectId ?? this.subjectId,
       groupId: groupId ?? this.groupId,
       teacherId: teacherId ?? this.teacherId,
+      roomId: roomId == _sentinel ? this.roomId : roomId as String?,
       date: date ?? this.date,
       weekday: weekday ?? this.weekday,
       startTime: startTime ?? this.startTime,
@@ -100,6 +112,9 @@ class Schedule {
       subject: subject ?? this.subject,
       group: group ?? this.group,
       teacher: teacher ?? this.teacher,
+      room: room == _sentinel ? this.room : room as Room?,
     );
   }
 }
+
+const _sentinel = Object();

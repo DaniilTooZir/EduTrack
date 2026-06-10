@@ -15,7 +15,7 @@ class ScheduleService {
     try {
       var query = _client
           .from('schedule')
-          .select('*, subject:subjects(*), group:groups(*), teacher:teachers(*)')
+          .select('*, subject:subjects(*), group:groups(*), teacher:teachers(*), room:rooms(*)')
           .eq('institution_id', institutionId);
       if (startDate != null) query = query.gte('date', startDate.toIso8601String());
       if (endDate != null) query = query.lte('date', endDate.toIso8601String());
@@ -31,7 +31,11 @@ class ScheduleService {
   Future<AppResult<Schedule?>> getScheduleById(String id) async {
     try {
       final response =
-          await _client.from('schedule').select('*, subject:subjects(*), group:groups(*)').eq('id', id).maybeSingle();
+          await _client
+              .from('schedule')
+              .select('*, subject:subjects(*), group:groups(*), room:rooms(*)')
+              .eq('id', id)
+              .maybeSingle();
       if (response == null) return AppResult.success(null);
       return AppResult.success(Schedule.fromMap(response));
     } on PostgrestException catch (e) {
@@ -49,6 +53,7 @@ class ScheduleService {
     required DateTime date,
     required String startTime,
     required String endTime,
+    String? roomId,
   }) async {
     try {
       await _client.from('schedule').insert({
@@ -60,6 +65,7 @@ class ScheduleService {
         'weekday': date.weekday,
         'start_time': startTime,
         'end_time': endTime,
+        'room_id': roomId,
       });
       return AppResult.success(null);
     } on PostgrestException catch (e) {
@@ -95,7 +101,7 @@ class ScheduleService {
     try {
       var query = _client
           .from('schedule')
-          .select('*, subject:subjects(*), teacher:teachers(*), group:groups(*)')
+          .select('*, subject:subjects(*), teacher:teachers(*), group:groups(*), room:rooms(*)')
           .eq('group_id', groupId);
       if (startDate != null) query = query.gte('date', startDate.toIso8601String());
       if (endDate != null) query = query.lte('date', endDate.toIso8601String());
@@ -116,7 +122,7 @@ class ScheduleService {
     try {
       var query = _client
           .from('schedule')
-          .select('*, subject:subjects(*), group:groups(*)')
+          .select('*, subject:subjects(*), group:groups(*), room:rooms(*)')
           .eq('teacher_id', teacherId);
       if (startDate != null) query = query.gte('date', startDate.toIso8601String());
       if (endDate != null) query = query.lte('date', endDate.toIso8601String());
@@ -253,6 +259,7 @@ class ScheduleService {
     required DateTime date,
     required String startTime,
     required String endTime,
+    String? roomId,
   }) async {
     try {
       await _client
@@ -265,6 +272,7 @@ class ScheduleService {
             'weekday': date.weekday,
             'start_time': startTime,
             'end_time': endTime,
+            'room_id': roomId,
           })
           .eq('id', id);
       return AppResult.success(null);

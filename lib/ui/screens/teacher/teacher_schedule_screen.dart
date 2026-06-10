@@ -168,6 +168,16 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with Data
                 ),
               ],
             ),
+            if (s.roomName != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.meeting_room, size: 20, color: colors.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Text(s.roomName!, style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
+                ],
+              ),
+            ],
           ],
         ),
       ),

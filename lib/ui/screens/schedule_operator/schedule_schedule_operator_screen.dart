@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/group_service.dart';
+import 'package:edu_track/data/services/room_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/data/services/teacher_service.dart';
 import 'package:edu_track/data/services/time_grid_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/group.dart';
+import 'package:edu_track/models/room.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/subject.dart';
 import 'package:edu_track/models/teacher.dart';
@@ -35,6 +37,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   late final GroupService _groupService;
   late final TeacherService _teacherService;
   late final TimeGridService _timeGridService;
+  late final RoomService _roomService;
 
   List<Schedule> _schedules = [];
 
@@ -52,6 +55,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   String? _selectedSubjectId;
   String? _selectedGroupId;
   String? _selectedTeacherId;
+  String? _selectedRoomId;
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
 
@@ -60,6 +64,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   List<Subject> _subjects = [];
   List<Group> _groups = [];
   List<Teacher> _teachers = [];
+  List<Room> _rooms = [];
   List<TimeGrid> _timeGrids = [];
   String? _selectedGridId;
 
@@ -89,6 +94,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     _groupService = GroupService();
     _teacherService = TeacherService();
     _timeGridService = TimeGridService();
+    _roomService = RoomService();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _institutionId = userProvider.institutionId;
     _selectedDate = DateTime.now();
@@ -97,6 +103,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       _loadSubjects();
       _loadGroups();
       _loadTeachers();
+      _loadRooms();
       _loadSchedule();
       _loadTimeGrids();
     }
@@ -173,6 +180,12 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       return;
     }
     setState(() => _teachers = result.data);
+  }
+
+  void _loadRooms() async {
+    final result = await _roomService.getRoomsForInstitution(_institutionId!);
+    if (!mounted) return;
+    if (result.isSuccess) setState(() => _rooms = result.data);
   }
 
   void _loadTimeGrids() async {
@@ -330,6 +343,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
       date: _selectedDate!,
       startTime: sTime,
       endTime: eTime,
+      roomId: _selectedRoomId,
     );
     if (addResult.isFailure) {
       MessengerHelper.showError(addResult.errorMessage);
@@ -343,6 +357,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
         _selectedSubjectId = null;
         _selectedGroupId = null;
         _selectedTeacherId = null;
+        _selectedRoomId = null;
         _currentConflictError = null;
         _conflictChecked = false;
         _isAdding = false;
@@ -417,6 +432,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
             subjects: _subjects,
             groups: _groups,
             teachers: _teachers,
+            rooms: _rooms,
             institutionId: _institutionId!,
             scheduleService: _scheduleService,
             timeGrids: _timeGrids,
@@ -678,6 +694,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     final subjectName = s.subject?.name ?? '—';
     final groupName = s.group?.name ?? '—';
     final teacherName = s.teacherName;
+    final roomName = s.roomName;
     return Column(
       children: [
         Padding(
@@ -704,7 +721,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$groupName · $teacherName',
+                      '$groupName · $teacherName${roomName != null ? ' · $roomName' : ''}',
                       style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -898,6 +915,26 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                                                 _scheduleConflictValidation();
                                               },
                                               validator: (val) => val == null ? 'Выберите преподавателя' : null,
+                                            ),
+                                            const SizedBox(height: AppSpacing.m),
+                                            DropdownButtonFormField<String?>(
+                                              decoration: const InputDecoration(
+                                                labelText: 'Аудитория (необязательно)',
+                                                border: OutlineInputBorder(),
+                                                isDense: true,
+                                              ),
+                                              initialValue: _selectedRoomId,
+                                              isExpanded: true,
+                                              items: [
+                                                const DropdownMenuItem(child: Text('Не указана')),
+                                                ..._rooms.map(
+                                                  (r) => DropdownMenuItem(
+                                                    value: r.id,
+                                                    child: Text(r.name, overflow: TextOverflow.ellipsis),
+                                                  ),
+                                                ),
+                                              ],
+                                              onChanged: (val) => setState(() => _selectedRoomId = val),
                                             ),
                                             if (_isCheckingConflict || _currentConflictError != null)
                                               Padding(
@@ -1211,6 +1248,7 @@ class _EditLessonDialog extends StatefulWidget {
   final List<Subject> subjects;
   final List<Group> groups;
   final List<Teacher> teachers;
+  final List<Room> rooms;
   final String institutionId;
   final ScheduleRepository scheduleService;
   final List<TimeGrid> timeGrids;
@@ -1220,6 +1258,7 @@ class _EditLessonDialog extends StatefulWidget {
     required this.subjects,
     required this.groups,
     required this.teachers,
+    required this.rooms,
     required this.institutionId,
     required this.scheduleService,
     required this.timeGrids,
@@ -1236,6 +1275,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
   late String _subjectId;
   late String _groupId;
   late String _teacherId;
+  String? _roomId;
   String? _selectedGridId;
 
   String? _conflictError;
@@ -1254,6 +1294,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
     _subjectId = l.subjectId;
     _groupId = l.groupId;
     _teacherId = l.teacherId;
+    _roomId = l.roomId;
   }
 
   @override
@@ -1349,6 +1390,7 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
       date: _date,
       startTime: startTime,
       endTime: endTime,
+      roomId: _roomId,
     );
     if (!mounted) return;
     if (result.isFailure) {
@@ -1521,6 +1563,23 @@ class _EditLessonDialogState extends State<_EditLessonDialog> {
                     _scheduleConflictValidation();
                   }
                 },
+              ),
+              const SizedBox(height: AppSpacing.m),
+              DropdownButtonFormField<String?>(
+                decoration: const InputDecoration(
+                  labelText: 'Аудитория (необязательно)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                initialValue: _roomId,
+                isExpanded: true,
+                items: [
+                  const DropdownMenuItem(child: Text('Не указана')),
+                  ...widget.rooms.map(
+                    (r) => DropdownMenuItem(value: r.id, child: Text(r.name, overflow: TextOverflow.ellipsis)),
+                  ),
+                ],
+                onChanged: (val) => setState(() => _roomId = val),
               ),
               if (_isCheckingConflict || _conflictError != null)
                 Padding(

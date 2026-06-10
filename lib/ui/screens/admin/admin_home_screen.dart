@@ -5,6 +5,7 @@ import 'package:edu_track/ui/screens/admin/academic_periods_screen.dart';
 import 'package:edu_track/ui/screens/admin/add_user_screen.dart';
 import 'package:edu_track/ui/screens/admin/admin_profile_screen.dart';
 import 'package:edu_track/ui/screens/admin/group_admin_screen.dart';
+import 'package:edu_track/ui/screens/admin/room_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/subject_admin_screen.dart';
 import 'package:edu_track/ui/screens/admin/user_list_screen.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -35,6 +36,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     'Группы',
     'Учебные периоды',
     'Профиль',
+    'Аудитории',
   ];
   final DashboardService _dashboardService = DashboardService();
   bool _isLoading = true;
@@ -133,6 +135,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       case 6:
         bodyContent = const AdminProfileScreen();
         break;
+      case 7:
+        bodyContent = const RoomAdminScreen();
+        break;
       default:
         bodyContent = const SizedBox.shrink();
     }
@@ -170,6 +175,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           AppDrawerItem(icon: Icons.menu_book_rounded, title: 'Предметы', tabIndex: 3),
           AppDrawerItem(icon: Icons.groups_rounded, title: 'Группы', tabIndex: 4),
           AppDrawerItem(icon: Icons.calendar_month_rounded, title: 'Учебные периоды', tabIndex: 5),
+          AppDrawerItem(icon: Icons.meeting_room_rounded, title: 'Аудитории', tabIndex: 7),
           AppDrawerItem(icon: Icons.person_rounded, title: 'Профиль', tabIndex: 6),
         ],
       ),
