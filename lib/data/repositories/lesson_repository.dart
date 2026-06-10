@@ -35,5 +35,13 @@ class LessonRepository {
     return result;
   }
 
+  Future<AppResult<void>> updateLessonTopic(String lessonId, String scheduleId, String? topic) async {
+    final result = await _remote.updateLessonTopic(lessonId, topic);
+    if (result.isSuccess) {
+      await _local.deleteLessonsForSchedules([scheduleId]);
+    }
+    return result;
+  }
+
   Future<AppResult<Lesson?>> getLessonById(String id) => _remote.getLessonById(id);
 }

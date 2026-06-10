@@ -15,6 +15,7 @@ import 'package:edu_track/data/services/notification_service.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
+import 'package:edu_track/providers/connectivity_provider.dart';
 import 'package:edu_track/providers/user_provider.dart';
 import 'package:edu_track/routes/route.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
@@ -128,6 +129,7 @@ class _AppInitializerState extends State<AppInitializer> {
         final data = snapshot.data!;
         return MultiProvider(
           providers: [
+            ChangeNotifierProvider<ConnectivityProvider>(create: (_) => ConnectivityProvider()),
             ChangeNotifierProvider<UserProvider>.value(value: data.userProvider),
             ChangeNotifierProvider<ThemeProvider>.value(value: data.themeProvider),
             Provider<AppDatabase>.value(value: data.db),
@@ -218,6 +220,53 @@ class MyApp extends StatelessWidget {
       themeMode: isSystem ? ThemeMode.system : ThemeMode.light,
       routerConfig: router,
       scaffoldMessengerKey: MessengerHelper.scaffoldMessengerKey,
+      builder: (_, child) => _ConnectivityBanner(child: child!),
+    );
+  }
+}
+
+class _ConnectivityBanner extends StatelessWidget {
+  final Widget child;
+  const _ConnectivityBanner({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final isOffline = Provider.of<ConnectivityProvider>(context).isOffline;
+    final padding = MediaQuery.of(context).padding;
+    return Column(
+      children: [
+        if (isOffline)
+          Material(
+            color: Colors.deepOrange.shade800,
+            child: SafeArea(
+              bottom: false,
+              child: SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.wifi_off_rounded, color: Colors.white, size: 14),
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Нет подключения — используются кэшированные данные',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        Expanded(
+          child:
+              isOffline
+                  ? MediaQuery(data: MediaQuery.of(context).copyWith(padding: padding.copyWith(top: 0)), child: child)
+                  : child,
+        ),
+      ],
     );
   }
 }

@@ -96,7 +96,6 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
   void _openHomeworkDetails(Homework hw) {
     showAppBottomSheet(
       context,
-      transparentBackground: true,
       builder:
           (context) =>
               _HomeworkDetailSheet(homework: hw, studentService: _studentService, homeworkService: _homeworkService),

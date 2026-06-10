@@ -21,10 +21,12 @@ class StudentLessonScreen extends StatefulWidget {
   State<StudentLessonScreen> createState() => _StudentLessonScreenState();
 }
 
-class _StudentLessonScreenState extends State<StudentLessonScreen> {
+class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTickerProviderStateMixin {
   LessonRepository get _lessonRepository => Provider.of<LessonRepository>(context, listen: false);
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   final _commentService = LessonCommentService();
+
+  late final TabController _tabController;
 
   bool _loading = true;
   List<Lesson> _lessons = [];
@@ -78,10 +80,50 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
     return list;
   }
 
+  static const _futureDays = 14;
+
+  DateTime get _todayDate {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  List<Lesson> get _currentLessons {
+    final today = _todayDate;
+    final futureCutoff = today.add(const Duration(days: _futureDays));
+    return _displayedLessons.where((l) {
+      final d = _scheduleCache[l.scheduleId]?.date;
+      if (d == null) return true;
+      return !d.isBefore(today) && !d.isAfter(futureCutoff);
+    }).toList();
+  }
+
+  List<Lesson> get _pastLessons {
+    final today = _todayDate;
+    return _displayedLessons.where((l) {
+      final d = _scheduleCache[l.scheduleId]?.date;
+      return d != null && d.isBefore(today);
+    }).toList();
+  }
+
+  int get _hiddenFutureCount {
+    final futureCutoff = _todayDate.add(const Duration(days: _futureDays));
+    return _displayedLessons.where((l) {
+      final d = _scheduleCache[l.scheduleId]?.date;
+      return d != null && d.isAfter(futureCutoff);
+    }).length;
+  }
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadLessons());
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadLessons() async {
@@ -240,10 +282,73 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
     _LessonSort.subjectAsc: 'По предмету А–Я',
   };
 
+  Widget _buildLessonListView(List<Lesson> lessons, ColorScheme colors, {bool showHiddenFuture = false}) {
+    final hiddenCount = showHiddenFuture ? _hiddenFutureCount : 0;
+    if (_lessons.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.class_outlined, size: 64, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
+                  const SizedBox(height: AppSpacing.l),
+                  Text('Пока нет проведенных уроков', style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    if (lessons.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: 200,
+            child: Center(child: Text('Нет уроков', style: TextStyle(color: colors.onSurfaceVariant))),
+          ),
+        ],
+      );
+    }
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.only(top: 6, bottom: hiddenCount > 0 ? 4 : 20),
+      itemCount: lessons.length + (hiddenCount > 0 ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (hiddenCount > 0 && index == lessons.length) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.visibility_off_outlined, size: 14, color: colors.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text(
+                  'Скрыто $hiddenCount занятий (дальше $_futureDays дней)',
+                  style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                ),
+              ],
+            ),
+          );
+        }
+        final lesson = lessons[index];
+        final schedule = _scheduleCache[lesson.scheduleId];
+        if (schedule == null) return const SizedBox.shrink();
+        return _buildLessonCard(lesson, schedule, colors);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
+    final pastCount = _pastLessons.length;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
@@ -253,8 +358,40 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                   ? _buildLessonsSkeleton()
                   : Column(
                     children: [
+                      Material(
+                        color: colors.surface,
+                        elevation: 1,
+                        child: TabBar(
+                          controller: _tabController,
+                          tabs: [
+                            const Tab(text: 'Актуальные'),
+                            Tab(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('Прошедшие'),
+                                  if (pastCount > 0) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: colors.primaryContainer,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '$pastCount',
+                                        style: TextStyle(fontSize: 11, color: colors.onPrimaryContainer),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 8, 0),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
                         child: Row(
                           children: [
                             Icon(Icons.sort, size: 18, color: colors.onSurfaceVariant),
@@ -322,44 +459,13 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> {
                       Expanded(
                         child: RefreshIndicator(
                           onRefresh: _loadLessons,
-                          child:
-                              _lessons.isEmpty
-                                  ? ListView(
-                                    physics: const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height: MediaQuery.of(context).size.height * 0.55,
-                                        child: Center(
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.class_outlined,
-                                                size: 64,
-                                                color: colors.onSurfaceVariant.withValues(alpha: 0.5),
-                                              ),
-                                              const SizedBox(height: AppSpacing.l),
-                                              Text(
-                                                'Пока нет проведенных уроков',
-                                                style: TextStyle(fontSize: 16, color: colors.onSurfaceVariant),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                  : ListView.builder(
-                                    physics: const AlwaysScrollableScrollPhysics(),
-                                    padding: const EdgeInsets.only(top: 6, bottom: 20),
-                                    itemCount: _displayedLessons.length,
-                                    itemBuilder: (context, index) {
-                                      final lesson = _displayedLessons[index];
-                                      final schedule = _scheduleCache[lesson.scheduleId];
-                                      if (schedule == null) return const SizedBox.shrink();
-                                      return _buildLessonCard(lesson, schedule, colors);
-                                    },
-                                  ),
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _buildLessonListView(_currentLessons, colors, showHiddenFuture: true),
+                              _buildLessonListView(_pastLessons, colors),
+                            ],
+                          ),
                         ),
                       ),
                     ],

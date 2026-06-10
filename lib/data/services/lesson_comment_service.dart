@@ -6,12 +6,12 @@ class LessonCommentService {
   final _client = Supabase.instance.client;
 
   Stream<List<LessonComment>> getCommentsStream(String lessonId) {
-    return _client
-        .from('lesson_comment')
-        .stream(primaryKey: ['id'])
-        .eq('lesson_id', lessonId)
-        .order('timestamp')
-        .map((rows) => rows.map(LessonComment.fromMap).toList());
+    return _client.from('lesson_comment').stream(primaryKey: ['id']).eq('lesson_id', lessonId).order('timestamp').map((
+      rows,
+    ) {
+      final seen = <String>{};
+      return rows.where((row) => seen.add(row['id']?.toString() ?? '')).map(LessonComment.fromMap).toList();
+    });
   }
 
   Future<AppResult<List<LessonComment>>> getCommentsByLessonId(String lessonId) async {

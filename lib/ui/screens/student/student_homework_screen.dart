@@ -69,7 +69,6 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
     if (studentId == null) return;
     await showAppBottomSheet(
       context,
-      transparentBackground: true,
       builder:
           (context) => _HomeworkSubmissionSheet(
             homework: hw,

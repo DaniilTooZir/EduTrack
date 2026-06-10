@@ -1,7 +1,6 @@
 import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/services/group_service.dart';
-import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/lesson.dart';
@@ -28,12 +27,13 @@ class TeacherLessonScreen extends StatefulWidget {
   State<TeacherLessonScreen> createState() => _TeacherLessonScreenState();
 }
 
-class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
+class _TeacherLessonScreenState extends State<TeacherLessonScreen> with SingleTickerProviderStateMixin {
   LessonRepository get _lessonRepository => Provider.of<LessonRepository>(context, listen: false);
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
   final SubjectService _subjectService = SubjectService();
   final GroupService _groupService = GroupService();
-  final LessonService _lessonService = LessonService();
+
+  late final TabController _tabController;
 
   List<Lesson> _lessons = [];
   List<Subject> _subjects = [];
@@ -44,6 +44,39 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   String? _filterSubjectId;
   String? _filterGroupId;
   _LessonSort _sortOrder = _LessonSort.dateDesc;
+
+  static const _futureDays = 14;
+
+  DateTime get _todayDate {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  List<Lesson> get _currentLessons {
+    final today = _todayDate;
+    final futureCutoff = today.add(const Duration(days: _futureDays));
+    return _displayedLessons.where((l) {
+      final d = _scheduleCache[l.scheduleId]?.date;
+      if (d == null) return true;
+      return !d.isBefore(today) && !d.isAfter(futureCutoff);
+    }).toList();
+  }
+
+  List<Lesson> get _pastLessons {
+    final today = _todayDate;
+    return _displayedLessons.where((l) {
+      final d = _scheduleCache[l.scheduleId]?.date;
+      return d != null && d.isBefore(today);
+    }).toList();
+  }
+
+  int get _hiddenFutureCount {
+    final futureCutoff = _todayDate.add(const Duration(days: _futureDays));
+    return _displayedLessons.where((l) {
+      final d = _scheduleCache[l.scheduleId]?.date;
+      return d != null && d.isAfter(futureCutoff);
+    }).length;
+  }
 
   String? get teacherId => Provider.of<UserProvider>(context, listen: false).userId;
   String? get institutionId => Provider.of<UserProvider>(context, listen: false).institutionId;
@@ -95,7 +128,14 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -197,7 +237,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     controller.dispose();
     if (result == null || !mounted) return;
     final newTopic = result.trim().isEmpty ? null : result.trim();
-    final res = await _lessonService.updateLessonTopic(lesson.id!, newTopic);
+    final res = await _lessonRepository.updateLessonTopic(lesson.id!, lesson.scheduleId, newTopic);
     if (!mounted) return;
     if (res.isFailure) {
       MessengerHelper.showError(res.errorMessage);
@@ -235,9 +275,15 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
               lesson.topic ?? 'Без темы',
               style: TextStyle(fontWeight: FontWeight.bold, color: colors.onSurface),
             ),
-            subtitle: Text(
-              '$dateStr • $groupName • ${schedule.startTime.substring(0, 5)}',
-              style: TextStyle(color: colors.onSurfaceVariant),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(subjectName, style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w500)),
+                Text(
+                  '$dateStr • $groupName • ${schedule.startTime.substring(0, 5)}',
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+              ],
             ),
             trailing: IconButton(
               icon: Icon(Icons.edit_outlined, size: 20, color: colors.onSurfaceVariant),
@@ -398,11 +444,67 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
     _LessonSort.subjectAsc: 'По предмету А–Я',
   };
 
+  Widget _buildTabLessonList(List<Lesson> lessons, ColorScheme colors, {bool showHiddenFuture = false}) {
+    final hiddenCount = showHiddenFuture ? _hiddenFutureCount : 0;
+    if (_lessons.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.4,
+            child: Center(
+              child: Text('Проведенных занятий пока нет', style: TextStyle(color: colors.onSurfaceVariant)),
+            ),
+          ),
+        ],
+      );
+    }
+    if (lessons.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: 200,
+            child: Center(child: Text('Нет занятий', style: TextStyle(color: colors.onSurfaceVariant))),
+          ),
+        ],
+      );
+    }
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(12, 4, 12, hiddenCount > 0 ? 4 : 16),
+      itemCount: lessons.length + (hiddenCount > 0 ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (hiddenCount > 0 && index == lessons.length) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.visibility_off_outlined, size: 14, color: colors.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text(
+                  'Скрыто $hiddenCount занятий (дальше $_futureDays дней)',
+                  style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                ),
+              ],
+            ),
+          );
+        }
+        final lesson = lessons[index];
+        final schedule = _scheduleCache[lesson.scheduleId];
+        if (schedule == null) return const SizedBox.shrink();
+        return _buildLessonTile(lesson, schedule, colors);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
     final hasFilter = _filterSubjectId != null || _filterGroupId != null;
+    final pastCount = _pastLessons.length;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Занятия'),
@@ -417,6 +519,34 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
           ),
           IconButton(icon: const Icon(Icons.add), tooltip: 'Провести занятие', onPressed: _showAddLessonDialog),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: colors.onPrimary,
+          unselectedLabelColor: colors.onPrimary.withValues(alpha: 0.6),
+          indicatorColor: colors.onPrimary,
+          tabs: [
+            const Tab(text: 'Актуальные'),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Прошедшие'),
+                  if (pastCount > 0) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: colors.onPrimary.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text('$pastCount', style: TextStyle(fontSize: 11, color: colors.onPrimary)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
@@ -489,48 +619,13 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> {
                       Expanded(
                         child: RefreshIndicator(
                           onRefresh: _loadData,
-                          child:
-                              _lessons.isEmpty
-                                  ? ListView(
-                                    physics: const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height: MediaQuery.of(context).size.height * 0.55,
-                                        child: Center(
-                                          child: Text(
-                                            'Проведенных занятий пока нет',
-                                            style: TextStyle(color: colors.onSurfaceVariant),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                  : _displayedLessons.isEmpty
-                                  ? ListView(
-                                    physics: const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height: 200,
-                                        child: Center(
-                                          child: Text(
-                                            'Ничего не найдено',
-                                            style: TextStyle(color: colors.onSurfaceVariant),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                  : ListView.builder(
-                                    physics: const AlwaysScrollableScrollPhysics(),
-                                    padding: const EdgeInsets.all(12),
-                                    itemCount: _displayedLessons.length,
-                                    itemBuilder: (context, index) {
-                                      final lesson = _displayedLessons[index];
-                                      final schedule = _scheduleCache[lesson.scheduleId];
-                                      if (schedule == null) return const SizedBox.shrink();
-                                      return _buildLessonTile(lesson, schedule, colors);
-                                    },
-                                  ),
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _buildTabLessonList(_currentLessons, colors, showHiddenFuture: true),
+                              _buildTabLessonList(_pastLessons, colors),
+                            ],
+                          ),
                         ),
                       ),
                     ],

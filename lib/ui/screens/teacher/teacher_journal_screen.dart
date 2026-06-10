@@ -1,8 +1,8 @@
 import 'package:edu_track/data/repositories/grade_repository.dart';
+import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/services/final_grade_service.dart';
 import 'package:edu_track/data/services/grade_comment_service.dart';
 import 'package:edu_track/data/services/lesson_attendance_service.dart';
-import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/models/academic_period.dart';
 import 'package:edu_track/models/final_grade.dart';
 import 'package:edu_track/models/grade.dart';
@@ -84,10 +84,10 @@ class TeacherJournalScreen extends StatefulWidget {
 
 class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
   late GradeRepository _gradeService;
+  late LessonRepository _lessonRepository;
   final _attendanceService = AttendanceService();
   final _commentService = GradeCommentService();
   final _finalGradeService = FinalGradeService();
-  final _lessonService = LessonService();
 
   bool _isLoading = true;
   bool _isExporting = false;
@@ -140,6 +140,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
     super.didChangeDependencies();
     if (!_gradeServiceReady) {
       _gradeService = Provider.of<GradeRepository>(context, listen: false);
+      _lessonRepository = Provider.of<LessonRepository>(context, listen: false);
       _gradeServiceReady = true;
       widget.onReady?.call(_loadJournal);
       widget.onExportReady?.call(_triggerExport);
@@ -284,7 +285,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
 
   Future<Lesson?> _ensureLessonCreated(Lesson lesson) async {
     if (lesson.id != null) return lesson;
-    final result = await _lessonService.addLesson(lesson);
+    final result = await _lessonRepository.addLesson(lesson);
     if (!mounted) return null;
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
@@ -308,7 +309,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
     );
     if (result == null || !mounted) return;
     final newTopic = result.trim().isEmpty ? null : result.trim();
-    final res = await _lessonService.updateLessonTopic(lesson.id!, newTopic);
+    final res = await _lessonRepository.updateLessonTopic(lesson.id!, lesson.scheduleId, newTopic);
     if (!mounted) return;
     if (res.isFailure) {
       MessengerHelper.showError(res.errorMessage);

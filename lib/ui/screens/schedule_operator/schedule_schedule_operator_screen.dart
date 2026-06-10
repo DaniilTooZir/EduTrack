@@ -67,6 +67,8 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   String? _filterTeacherId;
 
   Map<String, List<Schedule>> _groupedSchedule = {};
+  Map<String, List<Schedule>> _groupedPastSchedule = {};
+  bool _showPastSchedule = false;
   AcademicPeriod? _lastPeriod;
 
   static const List<String> _weekdays = [
@@ -124,13 +126,23 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
     if (_filterTeacherId != null) {
       filtered = filtered.where((s) => s.teacherId == _filterTeacherId).toList();
     }
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
     final grouped = <String, List<Schedule>>{};
+    final groupedPast = <String, List<Schedule>>{};
     for (final s in filtered) {
       final header =
           s.date != null ? '${_getWeekdayName(s.weekday)}, ${formatDate(s.date!)}' : _getWeekdayName(s.weekday);
-      grouped.putIfAbsent(header, () => []).add(s);
+      final isPast = s.date != null && s.date!.isBefore(todayDate);
+      if (isPast) {
+        groupedPast.putIfAbsent(header, () => []).add(s);
+      } else {
+        grouped.putIfAbsent(header, () => []).add(s);
+      }
     }
     _groupedSchedule = grouped;
+    _groupedPastSchedule = groupedPast;
   }
 
   void _loadSubjects() async {
@@ -556,6 +568,107 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPastScheduleSection(ColorScheme colors, ThemeData theme) {
+    final entries = _groupedPastSchedule.entries.toList();
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
+      sliver: SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () => setState(() => _showPastSchedule = !_showPastSchedule),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      _showPastSchedule ? Icons.expand_less : Icons.expand_more,
+                      size: 20,
+                      color: colors.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Прошедшие занятия',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${_groupedPastSchedule.values.fold(0, (sum, l) => sum + l.length)}',
+                        style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child:
+                  _showPastSchedule
+                      ? Opacity(
+                        opacity: 0.6,
+                        child: Column(
+                          children:
+                              entries.map((entry) {
+                                final header = entry.key;
+                                final items = entry.value;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Card(
+                                    margin: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    color: colors.surface,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.history, size: 18, color: colors.onSurfaceVariant),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                header,
+                                                style: theme.textTheme.titleMedium?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: colors.onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Divider(height: 1),
+                                        ...items.asMap().entries.map(
+                                          (e) => _buildLessonTile(e.value, colors, isLast: e.key == items.length - 1),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                      )
+                      : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1004,7 +1117,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
                     sliver: SliverToBoxAdapter(child: _buildScheduleListSkeleton()),
                   )
-                else if (_groupedSchedule.isEmpty)
+                else if (_groupedSchedule.isEmpty && _groupedPastSchedule.isEmpty)
                   SliverToBoxAdapter(
                     child: SizedBox(
                       height: 300,
@@ -1020,8 +1133,23 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
                       ),
                     ),
                   )
-                else
-                  _buildScheduleSliver(colors, theme),
+                else ...[
+                  if (_groupedSchedule.isNotEmpty)
+                    _buildScheduleSliver(colors, theme)
+                  else if (!isLoading)
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.l),
+                      sliver: SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text('Нет предстоящих занятий', style: TextStyle(color: colors.onSurfaceVariant)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (_groupedPastSchedule.isNotEmpty && !isLoading) _buildPastScheduleSection(colors, theme),
+                ],
                 const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.l)),
               ],
             ),
