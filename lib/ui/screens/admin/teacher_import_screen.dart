@@ -8,6 +8,7 @@ import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/bulk_import_result.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
+import 'package:edu_track/utils/validators.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -114,6 +115,7 @@ class _TeacherImportScreenState extends State<TeacherImportScreen> {
     final seenLogins = <String>{};
     final seenEmails = <String>{};
     final rows = <_TeacherRow>[];
+    final nameReg = RegExp(r'^[a-zA-Zа-яА-ЯёЁ\s-]+$');
 
     for (int i = 1; i < csvRows.length; i++) {
       final row = csvRows[i];
@@ -130,12 +132,18 @@ class _TeacherImportScreenState extends State<TeacherImportScreen> {
       String? error;
       if (name.isEmpty) {
         error = 'Не указано имя';
+      } else if (!nameReg.hasMatch(name)) {
+        error = 'Имя должно содержать только буквы';
       } else if (surname.isEmpty) {
         error = 'Не указана фамилия';
-      } else if (email.isEmpty || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      } else if (!nameReg.hasMatch(surname)) {
+        error = 'Фамилия должна содержать только буквы';
+      } else if (Validators.validateEmail(email) != null) {
         error = 'Некорректный email';
       } else if (login.isEmpty) {
         error = 'Не указан логин';
+      } else if (login.length < 3) {
+        error = 'Логин < 3 символов';
       } else if (password.length < 6) {
         error = 'Пароль < 6 символов';
       } else if (seenLogins.contains(login.toLowerCase())) {

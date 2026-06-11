@@ -6,6 +6,7 @@ import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/messenger_helper.dart';
+import 'package:edu_track/utils/validators.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -378,8 +379,17 @@ class _EditUserDialogState extends State<_EditUserDialog> {
     final name = _nameController.text.trim();
     final surname = _surnameController.text.trim();
     final email = _emailController.text.trim();
-    if (name.isEmpty || surname.isEmpty || email.isEmpty) {
-      MessengerHelper.showError('Заполните все поля');
+    if (name.isEmpty || surname.isEmpty) {
+      MessengerHelper.showError('Заполните имя и фамилию');
+      return;
+    }
+    final emailError = Validators.validateEmail(email);
+    if (emailError != null) {
+      MessengerHelper.showError(emailError);
+      return;
+    }
+    if (widget.user['role'] == 'student' && _selectedGroup == null) {
+      MessengerHelper.showError('Выберите группу для студента');
       return;
     }
     setState(() => _isSaving = true);

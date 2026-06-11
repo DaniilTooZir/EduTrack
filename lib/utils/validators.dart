@@ -7,11 +7,17 @@ class Validators {
   }
 
   static String? validateEmail(String? value) {
-    if (value == null || value.isEmpty) return 'Введите Email';
-    final emailReg = RegExp(r"^[a-zA-Z0-9.!#$%&'*+\-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
-    if (!emailReg.hasMatch(value)) {
+    if (value == null || value.trim().isEmpty) return 'Введите Email';
+    final emailReg = RegExp(r"^[a-zA-Z0-9.!#$%&'*+\-/=?^_`{|}~]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+    if (!emailReg.hasMatch(value.trim())) {
       return 'Введите корректный Email';
     }
+    return null;
+  }
+
+  static String? validateLogin(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Логин обязателен';
+    if (value.trim().length < 3) return 'Логин должен быть не менее 3 символов';
     return null;
   }
 

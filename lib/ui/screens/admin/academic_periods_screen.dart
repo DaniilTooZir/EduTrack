@@ -136,8 +136,8 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
                         MessengerHelper.showError('Заполните все поля');
                         return;
                       }
-                      if (endDate!.isBefore(startDate!)) {
-                        MessengerHelper.showError('Дата окончания не может быть раньше даты начала');
+                      if (!endDate!.isAfter(startDate!)) {
+                        MessengerHelper.showError('Дата окончания должна быть позже даты начала');
                         return;
                       }
                       Navigator.pop(ctx, true);
@@ -152,10 +152,6 @@ class _AcademicPeriodsScreenState extends State<AcademicPeriodsScreen> {
     final name = nameCtrl.text.trim();
     nameCtrl.dispose();
     if (confirmed != true || !mounted) return;
-    if (name.isEmpty || startDate == null || endDate == null) {
-      MessengerHelper.showError('Заполните все поля');
-      return;
-    }
     final AppResult<void> result;
     if (existing == null) {
       final period = AcademicPeriod(

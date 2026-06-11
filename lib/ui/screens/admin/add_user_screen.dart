@@ -251,7 +251,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._-]'))],
                           textInputAction: TextInputAction.next,
                           onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                          validator: (val) => Validators.requiredField(val, fieldName: 'Логин'),
+                          validator: Validators.validateLogin,
                         ),
                         const SizedBox(height: AppSpacing.l),
                         TextFormField(
