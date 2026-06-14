@@ -1,12 +1,18 @@
+import 'dart:async';
+
+import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/providers/user_provider.dart';
+import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
 import 'package:edu_track/utils/data_loading_mixin.dart';
 import 'package:edu_track/utils/date_utils.dart';
+import 'package:edu_track/utils/messenger_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class TeacherScheduleScreen extends StatefulWidget {
@@ -18,6 +24,7 @@ class TeacherScheduleScreen extends StatefulWidget {
 
 class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with DataLoadingMixin {
   ScheduleRepository get _scheduleService => Provider.of<ScheduleRepository>(context, listen: false);
+  LessonRepository get _lessonRepository => Provider.of<LessonRepository>(context, listen: false);
   List<Schedule> _scheduleList = [];
   Map<String, List<Schedule>> _groupedSchedule = {};
 
@@ -32,16 +39,21 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with Data
   Future<void> _loadSchedule() async {
     final teacherId = Provider.of<UserProvider>(context, listen: false).userId;
     if (teacherId == null) return;
+    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
+    final isPeriodActive = period == null || period.isCurrent();
     await loadAsync(
       _scheduleService.getScheduleForTeacher(teacherId),
       onSuccess: (list) {
-        final now = DateTime.now();
-        final mondayThisWeek = DateTime(now.year, now.month, now.day - (now.weekday - 1));
-        final endDate = DateTime(mondayThisWeek.year, mondayThisWeek.month, mondayThisWeek.day + 13, 23, 59, 59);
-        list.removeWhere((s) => s.date != null && (s.date!.isBefore(mondayThisWeek) || s.date!.isAfter(endDate)));
-        final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
-        final isPeriodActive = period == null || period.isCurrent();
-        if (!isPeriodActive) list.removeWhere((s) => s.date == null);
+        if (isPeriodActive) {
+          final now = DateTime.now();
+          final mondayThisWeek = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+          final twoWeeksEnd = DateTime(mondayThisWeek.year, mondayThisWeek.month, mondayThisWeek.day + 13, 23, 59, 59);
+          list.removeWhere((s) => s.date != null && (s.date!.isBefore(mondayThisWeek) || s.date!.isAfter(twoWeeksEnd)));
+        } else {
+          list.removeWhere(
+            (s) => s.date == null || s.date!.isBefore(period.startDate) || s.date!.isAfter(period.endDate),
+          );
+        }
         list.sort((a, b) {
           if (a.date == null && b.date != null) return -1;
           if (a.date != null && b.date == null) return 1;
@@ -63,6 +75,16 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with Data
         _groupedSchedule = grouped;
       },
     );
+  }
+
+  Future<void> _navigateToLesson(Schedule schedule) async {
+    final result = await _lessonRepository.getLessonsByScheduleIds([schedule.id]);
+    if (!mounted) return;
+    if (result.isFailure || result.data.isEmpty) {
+      MessengerHelper.showWarning('Урок по этому занятию ещё не проведён');
+      return;
+    }
+    unawaited(context.push(AppRoutes.teacherLessonCommentsPath(result.data.first.id!)));
   }
 
   String _getWeekdayName(int weekday) {
@@ -130,55 +152,69 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with Data
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       color: colors.surface.withValues(alpha: 0.9),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.access_time, size: 20, color: colors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _navigateToLesson(s),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, size: 20, color: colors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.book, size: 20, color: colors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            s.subjectName ?? 'Предмет',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.group, size: 20, color: colors.onSurfaceVariant),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Группа: ${s.groupName}',
+                            style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (s.roomName != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.meeting_room, size: 20, color: colors.onSurfaceVariant),
+                          const SizedBox(width: 8),
+                          Text(s.roomName!, style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.book, size: 20, color: colors.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    s.subjectName ?? 'Предмет',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.group, size: 20, color: colors.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text('Группа: ${s.groupName}', style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
-                ),
-              ],
-            ),
-            if (s.roomName != null) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.meeting_room, size: 20, color: colors.onSurfaceVariant),
-                  const SizedBox(width: 8),
-                  Text(s.roomName!, style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant)),
-                ],
               ),
+              Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
             ],
-          ],
+          ),
         ),
       ),
     );

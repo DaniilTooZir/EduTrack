@@ -126,10 +126,17 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
     super.dispose();
   }
 
+  Future<void> _openLesson(String lessonId) async {
+    await context.push(AppRoutes.studentLessonCommentsPath(lessonId));
+    if (mounted) setState(() => _teacherCommentCounts.remove(lessonId));
+  }
+
   Future<void> _loadLessons() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final sid = userProvider.userId;
     final groupId = userProvider.groupId;
+    final period = userProvider.selectedPeriod;
+    final isPeriodActive = period == null || period.isCurrent();
     if (sid == null) return;
     setState(() => _loading = true);
     final schedulesResult = await _scheduleService.getScheduleForStudent(sid, groupId);
@@ -140,7 +147,16 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
     final cache = {for (final s in schedulesResult.data) s.id: s};
     final lessonsResult = await _lessonRepository.getLessonsByScheduleIds(cache.keys.toList());
     if (!mounted) return;
-    final lessonsList = lessonsResult.isSuccess ? lessonsResult.data : <Lesson>[];
+    var lessonsList = lessonsResult.isSuccess ? lessonsResult.data : <Lesson>[];
+    if (!isPeriodActive) {
+      final p = period;
+      lessonsList =
+          lessonsList.where((l) {
+            final date = cache[l.scheduleId]?.date;
+            if (date == null) return false;
+            return !date.isBefore(p.startDate) && !date.isAfter(p.endDate);
+          }).toList();
+    }
     final lessonIds = lessonsList.map((l) => l.id).whereType<String>().toList();
     final countsResult = await _commentService.getTeacherCommentCountsForLessons(lessonIds);
     if (mounted) {
@@ -210,7 +226,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
         color: Colors.transparent,
         child: InkWell(
           borderRadius: AppRadius.card,
-          onTap: () => context.push(AppRoutes.studentLessonCommentsPath(lesson.id!)),
+          onTap: () => _openLesson(lesson.id!),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.l),
             child: Row(
@@ -253,7 +269,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
                         icon: const Icon(Icons.chat_bubble_outline, size: 20),
                         color: colors.onSecondaryContainer,
                         tooltip: 'Открыть чат урока',
-                        onPressed: () => context.push(AppRoutes.studentLessonCommentsPath(lesson.id!)),
+                        onPressed: () => _openLesson(lesson.id!),
                       ),
                     ),
                     if (hasTeacherComments)
@@ -348,7 +364,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
-    final pastCount = _pastLessons.length;
+    final currentCount = _currentLessons.length;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getBackgroundGradient(themeProvider.mode)),
@@ -364,13 +380,12 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
                         child: TabBar(
                           controller: _tabController,
                           tabs: [
-                            const Tab(text: 'Актуальные'),
                             Tab(
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Text('Прошедшие'),
-                                  if (pastCount > 0) ...[
+                                  const Text('Актуальные'),
+                                  if (currentCount > 0) ...[
                                     const SizedBox(width: 6),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -379,7 +394,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        '$pastCount',
+                                        '$currentCount',
                                         style: TextStyle(fontSize: 11, color: colors.onPrimaryContainer),
                                       ),
                                     ),
@@ -387,6 +402,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
                                 ],
                               ),
                             ),
+                            const Tab(text: 'Прошедшие'),
                           ],
                         ),
                       ),

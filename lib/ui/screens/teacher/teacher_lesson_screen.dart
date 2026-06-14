@@ -140,6 +140,8 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> with SingleTi
 
   Future<void> _loadData() async {
     if (teacherId == null || institutionId == null) return;
+    final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
+    final isPeriodActive = period == null || period.isCurrent();
     setState(() => _isLoading = true);
     final groupsFuture = _groupService.getGroups(institutionId!);
     final subjectsFuture = _subjectService.getSubjectsByTeacherId(teacherId!);
@@ -154,11 +156,21 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> with SingleTi
     }
     final cache = {for (final s in schedulesResult.data) s.id: s};
     final lessonsResult = await _lessonRepository.getLessonsByScheduleIds(cache.keys.toList());
+    var lessonsList = lessonsResult.isSuccess ? lessonsResult.data : <Lesson>[];
+    if (!isPeriodActive) {
+      final p = period;
+      lessonsList =
+          lessonsList.where((l) {
+            final date = cache[l.scheduleId]?.date;
+            if (date == null) return false;
+            return !date.isBefore(p.startDate) && !date.isAfter(p.endDate);
+          }).toList();
+    }
     if (mounted) {
       setState(() {
         if (groupsResult.isSuccess) _groups = groupsResult.data;
         if (subjectsResult.isSuccess) _subjects = subjectsResult.data;
-        _lessons = lessonsResult.isSuccess ? lessonsResult.data : [];
+        _lessons = lessonsList;
         _scheduleCache = cache;
         _isLoading = false;
       });
@@ -426,7 +438,17 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> with SingleTi
                     }
                     navigator.pop();
                     MessengerHelper.showSuccess('Занятие добавлено');
-                    await _loadData();
+                    setState(() {
+                      _lessons = [
+                        ..._lessons,
+                        Lesson(
+                          id: result.data,
+                          scheduleId: selectedSchedule!.id,
+                          topic: topicController.text.trim(),
+                          attendanceStatus: 'pending',
+                        ),
+                      ];
+                    });
                   },
                   child: const Text('Сохранить'),
                 ),
@@ -504,10 +526,10 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> with SingleTi
     final themeProvider = Provider.of<ThemeProvider>(context);
     final colors = Theme.of(context).colorScheme;
     final hasFilter = _filterSubjectId != null || _filterGroupId != null;
-    final pastCount = _pastLessons.length;
+    final currentCount = _currentLessons.length;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Занятия'),
+        automaticallyImplyLeading: false,
         actions: [
           PopupMenuButton<_LessonSort>(
             icon: const Icon(Icons.sort),
@@ -525,13 +547,12 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> with SingleTi
           unselectedLabelColor: colors.onPrimary.withValues(alpha: 0.6),
           indicatorColor: colors.onPrimary,
           tabs: [
-            const Tab(text: 'Актуальные'),
             Tab(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Прошедшие'),
-                  if (pastCount > 0) ...[
+                  const Text('Актуальные'),
+                  if (currentCount > 0) ...[
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -539,12 +560,13 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> with SingleTi
                         color: colors.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text('$pastCount', style: TextStyle(fontSize: 11, color: colors.onPrimary)),
+                      child: Text('$currentCount', style: TextStyle(fontSize: 11, color: colors.onPrimary)),
                     ),
                   ],
                 ],
               ),
             ),
+            const Tab(text: 'Прошедшие'),
           ],
         ),
       ),

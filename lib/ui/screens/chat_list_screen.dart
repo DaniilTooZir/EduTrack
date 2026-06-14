@@ -126,6 +126,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final userId = userProvider.userId;
     final userRole = userProvider.role;
     final institutionId = userProvider.institutionId;
+    final groupId = userProvider.groupId;
     if (userId == null || userRole == null || institutionId == null) return;
     showModalBottomSheet(
       context: context,
@@ -137,6 +138,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             userId: userId,
             userRole: userRole,
             institutionId: institutionId,
+            groupId: groupId,
             onChatCreated: (chatId, title) async {
               await Navigator.of(
                 context,
@@ -376,12 +378,14 @@ class _NewChatSheet extends StatefulWidget {
   final String userId;
   final String userRole;
   final String institutionId;
+  final String? groupId;
   final Future<void> Function(String chatId, String title) onChatCreated;
 
   const _NewChatSheet({
     required this.userId,
     required this.userRole,
     required this.institutionId,
+    this.groupId,
     required this.onChatCreated,
   });
 
@@ -419,54 +423,109 @@ class _NewChatSheetState extends State<_NewChatSheet> {
   }
 
   Future<void> _loadContacts() async {
-    final results = await Future.wait([
-      _usersFetchService.fetchTeachers(widget.institutionId),
-      _usersFetchService.fetchStudents(widget.institutionId),
-      _usersFetchService.fetchScheduleOperators(widget.institutionId),
-    ]);
     final contacts = <_ContactEntry>[];
-    if (results[0].isSuccess) {
-      for (final t in results[0].data) {
-        final id = t['id'] as String;
-        if (id == widget.userId) continue;
-        contacts.add(
-          _ContactEntry(
-            id: id,
-            role: 'teacher',
-            displayName: '${t['surname']} ${t['name']}',
-            subtitle: 'Преподаватель',
-          ),
-        );
+
+    if (widget.userRole == 'student') {
+      final groupId = widget.groupId;
+      if (groupId != null) {
+        final results = await Future.wait([
+          _usersFetchService.fetchTeachersForGroup(groupId),
+          _usersFetchService.fetchGroupmates(groupId),
+        ]);
+        if (results[0].isSuccess) {
+          for (final t in results[0].data) {
+            contacts.add(
+              _ContactEntry(
+                id: t['id'] as String,
+                role: 'teacher',
+                displayName: '${t['surname']} ${t['name']}',
+                subtitle: 'Преподаватель',
+              ),
+            );
+          }
+        }
+        if (results[1].isSuccess) {
+          for (final s in results[1].data) {
+            final id = s['id'] as String;
+            if (id == widget.userId) continue;
+            contacts.add(
+              _ContactEntry(
+                id: id,
+                role: 'student',
+                displayName: '${s['surname']} ${s['name']}',
+                subtitle: s['group_name'] as String? ?? 'Студент',
+              ),
+            );
+          }
+        }
+      }
+    } else if (widget.userRole == 'teacher') {
+      final results = await Future.wait([
+        _usersFetchService.fetchTeachers(widget.institutionId),
+        _usersFetchService.fetchStudentsForTeacher(widget.userId),
+      ]);
+      if (results[0].isSuccess) {
+        for (final t in results[0].data) {
+          final id = t['id'] as String;
+          if (id == widget.userId) continue;
+          contacts.add(
+            _ContactEntry(
+              id: id,
+              role: 'teacher',
+              displayName: '${t['surname']} ${t['name']}',
+              subtitle: 'Преподаватель',
+            ),
+          );
+        }
+      }
+      if (results[1].isSuccess) {
+        for (final s in results[1].data) {
+          contacts.add(
+            _ContactEntry(
+              id: s['id'] as String,
+              role: 'student',
+              displayName: '${s['surname']} ${s['name']}',
+              subtitle: s['group_name'] as String? ?? 'Студент',
+            ),
+          );
+        }
+      }
+    } else {
+      // Оператор расписания: все преподаватели и студенты учреждения
+      final results = await Future.wait([
+        _usersFetchService.fetchTeachers(widget.institutionId),
+        _usersFetchService.fetchStudents(widget.institutionId),
+      ]);
+      if (results[0].isSuccess) {
+        for (final t in results[0].data) {
+          final id = t['id'] as String;
+          if (id == widget.userId) continue;
+          contacts.add(
+            _ContactEntry(
+              id: id,
+              role: 'teacher',
+              displayName: '${t['surname']} ${t['name']}',
+              subtitle: 'Преподаватель',
+            ),
+          );
+        }
+      }
+      if (results[1].isSuccess) {
+        for (final s in results[1].data) {
+          final id = s['id'] as String;
+          if (id == widget.userId) continue;
+          contacts.add(
+            _ContactEntry(
+              id: id,
+              role: 'student',
+              displayName: '${s['surname']} ${s['name']}',
+              subtitle: s['group_name'] as String? ?? 'Студент',
+            ),
+          );
+        }
       }
     }
-    if (results[1].isSuccess) {
-      for (final s in results[1].data) {
-        final id = s['id'] as String;
-        if (id == widget.userId) continue;
-        contacts.add(
-          _ContactEntry(
-            id: id,
-            role: 'student',
-            displayName: '${s['surname']} ${s['name']}',
-            subtitle: s['group_name'] as String? ?? 'Студент',
-          ),
-        );
-      }
-    }
-    if (results[2].isSuccess) {
-      for (final o in results[2].data) {
-        final id = o['id'] as String;
-        if (id == widget.userId) continue;
-        contacts.add(
-          _ContactEntry(
-            id: id,
-            role: 'schedule_operator',
-            displayName: '${o['surname']} ${o['name']}',
-            subtitle: 'Оператор расписания',
-          ),
-        );
-      }
-    }
+
     contacts.sort((a, b) => a.displayName.compareTo(b.displayName));
     if (mounted) {
       setState(() {

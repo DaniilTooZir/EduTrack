@@ -49,6 +49,8 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final studentId = userProvider.userId;
     final groupId = userProvider.groupId;
+    final period = userProvider.selectedPeriod;
+    final isPeriodActive = period == null || period.isCurrent();
     if (studentId == null) return;
     final result = await _scheduleService.getScheduleForStudent(studentId, groupId);
     if (result.isFailure) {
@@ -61,14 +63,26 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
       return;
     }
     _error = null;
-    final now = DateTime.now();
-    final mondayThisWeek = DateTime(now.year, now.month, now.day - (now.weekday - 1));
-    final endDate = DateTime(mondayThisWeek.year, mondayThisWeek.month, mondayThisWeek.day + 13, 23, 59, 59);
 
     final list =
         result.data.where((s) {
-          if (s.date == null) return true;
-          return !s.date!.isBefore(mondayThisWeek) && !s.date!.isAfter(endDate);
+          if (isPeriodActive) {
+            final now = DateTime.now();
+            final mondayThisWeek = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+            final twoWeeksEnd = DateTime(
+              mondayThisWeek.year,
+              mondayThisWeek.month,
+              mondayThisWeek.day + 13,
+              23,
+              59,
+              59,
+            );
+            if (s.date == null) return true;
+            return !s.date!.isBefore(mondayThisWeek) && !s.date!.isAfter(twoWeeksEnd);
+          } else {
+            if (s.date == null) return false;
+            return !s.date!.isBefore(period.startDate) && !s.date!.isAfter(period.endDate);
+          }
         }).toList();
     list.sort((a, b) {
       if (a.date == null && b.date != null) return -1;

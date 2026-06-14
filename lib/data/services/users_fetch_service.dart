@@ -53,6 +53,66 @@ class UsersFetchService {
     }
   }
 
+  Future<AppResult<List<Map<String, dynamic>>>> fetchTeachersForGroup(String groupId) async {
+    try {
+      final schedules = await _client.from('schedule').select('teacher_id').eq('group_id', groupId);
+      final teacherIds = (schedules as List<dynamic>).map((s) => s['teacher_id'] as String).toSet().toList();
+      if (teacherIds.isEmpty) return AppResult.success([]);
+      final response = await _client
+          .from('teachers')
+          .select('id, name, surname, email, login')
+          .inFilter('id', teacherIds);
+      return AppResult.success(List<Map<String, dynamic>>.from(response));
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке преподавателей группы: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось загрузить преподавателей группы.');
+    }
+  }
+
+  Future<AppResult<List<Map<String, dynamic>>>> fetchGroupmates(String groupId) async {
+    try {
+      final response = await _client
+          .from('students')
+          .select('id, name, surname, email, login, group_id, groups!inner(name)')
+          .eq('group_id', groupId);
+      final students = List<Map<String, dynamic>>.from(response);
+      return AppResult.success(
+        students.map((s) {
+          final group = s['groups'] as Map<String, dynamic>?;
+          return {...s, 'group_name': group?['name'] ?? 'Без группы'};
+        }).toList(),
+      );
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке студентов группы: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось загрузить студентов группы.');
+    }
+  }
+
+  Future<AppResult<List<Map<String, dynamic>>>> fetchStudentsForTeacher(String teacherId) async {
+    try {
+      final schedules = await _client.from('schedule').select('group_id').eq('teacher_id', teacherId);
+      final groupIds = (schedules as List<dynamic>).map((s) => s['group_id'] as String).toSet().toList();
+      if (groupIds.isEmpty) return AppResult.success([]);
+      final response = await _client
+          .from('students')
+          .select('id, name, surname, email, login, group_id, groups!inner(name)')
+          .inFilter('group_id', groupIds);
+      final students = List<Map<String, dynamic>>.from(response);
+      return AppResult.success(
+        students.map((s) {
+          final group = s['groups'] as Map<String, dynamic>?;
+          return {...s, 'group_name': group?['name'] ?? 'Без группы'};
+        }).toList(),
+      );
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке студентов преподавателя: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось загрузить студентов преподавателя.');
+    }
+  }
+
   Future<AppResult<void>> updateUser({
     required String id,
     required String role,
