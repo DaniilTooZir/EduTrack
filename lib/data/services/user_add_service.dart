@@ -21,69 +21,29 @@ class UserAddService {
     return _insertUser('schedule_operators', userData, 'оператора расписания');
   }
 
-  Future<AppResult<BulkImportResult>> bulkAddTeachers({required List<Map<String, dynamic>> teachers}) async {
-    if (teachers.isEmpty) return AppResult.success(const BulkImportResult(imported: 0, skippedReasons: []));
+  Future<AppResult<BulkImportResult>> bulkAddTeachers({required List<Map<String, dynamic>> teachers}) =>
+      _bulkInsert(targetTable: 'teachers', rows: teachers);
 
-    final logins = teachers.map((t) => t['login'] as String).toList();
-    final emails = teachers.map((t) => t['email'] as String).toList();
-    const tables = ['education_heads', 'teachers', 'students', 'schedule_operators'];
+  Future<AppResult<BulkImportResult>> bulkAddStudents({required List<Map<String, dynamic>> students}) =>
+      _bulkInsert(targetTable: 'students', rows: students, extraFields: {'isheadman': false});
 
-    try {
-      final loginResults = await Future.wait(
-        tables.map((t) => _client.from(t).select('login').inFilter('login', logins)),
-      );
-      final emailResults = await Future.wait(
-        tables.map((t) => _client.from(t).select('email').inFilter('email', emails)),
-      );
+  Future<AppResult<BulkImportResult>> _bulkInsert({
+    required String targetTable,
+    required List<Map<String, dynamic>> rows,
+    Map<String, dynamic> extraFields = const {},
+  }) async {
+    if (rows.isEmpty) return AppResult.success(const BulkImportResult(imported: 0, skippedReasons: []));
 
-      final takenLogins = <String>{};
-      for (final res in loginResults) {
-        takenLogins.addAll((res as List).map((r) => (r['login'] as String).toLowerCase()));
-      }
-      final takenEmails = <String>{};
-      for (final res in emailResults) {
-        takenEmails.addAll((res as List).map((r) => (r['email'] as String).toLowerCase()));
-      }
-      final toInsert = <Map<String, dynamic>>[];
-      final skippedReasons = <String>[];
-
-      for (final t in teachers) {
-        final loginKey = (t['login'] as String).toLowerCase();
-        final emailKey = (t['email'] as String).toLowerCase();
-        if (takenLogins.contains(loginKey)) {
-          skippedReasons.add('${t['name']} ${t['surname']}: логин "${t['login']}" уже занят');
-        } else if (takenEmails.contains(emailKey)) {
-          skippedReasons.add('${t['name']} ${t['surname']}: email "${t['email']}" уже используется');
-        } else {
-          toInsert.add(t);
-          takenLogins.add(loginKey);
-          takenEmails.add(emailKey);
-        }
-      }
-      if (toInsert.isNotEmpty) {
-        await _client.from('teachers').insert(toInsert);
-      }
-      return AppResult.success(BulkImportResult(imported: toInsert.length, skippedReasons: skippedReasons));
-    } on PostgrestException catch (e) {
-      return AppResult.failure('Ошибка базы данных: ${e.message}');
-    } catch (e) {
-      return AppResult.failure('Не удалось выполнить импорт преподавателей.');
-    }
-  }
-
-  Future<AppResult<BulkImportResult>> bulkAddStudents({required List<Map<String, dynamic>> students}) async {
-    if (students.isEmpty) return AppResult.success(const BulkImportResult(imported: 0, skippedReasons: []));
-
-    final logins = students.map((s) => s['login'] as String).toList();
-    final emails = students.map((s) => s['email'] as String).toList();
-    const tables = ['education_heads', 'teachers', 'students', 'schedule_operators'];
+    final logins = rows.map((r) => (r['login'] as String).toLowerCase()).toList();
+    final emails = rows.map((r) => (r['email'] as String).toLowerCase()).toList();
+    const checkTables = ['education_heads', 'teachers', 'students', 'schedule_operators'];
 
     try {
       final loginResults = await Future.wait(
-        tables.map((t) => _client.from(t).select('login').inFilter('login', logins)),
+        checkTables.map((t) => _client.from(t).select('login').inFilter('login', logins)),
       );
       final emailResults = await Future.wait(
-        tables.map((t) => _client.from(t).select('email').inFilter('email', emails)),
+        checkTables.map((t) => _client.from(t).select('email').inFilter('email', emails)),
       );
 
       final takenLogins = <String>{};
@@ -98,21 +58,21 @@ class UserAddService {
       final toInsert = <Map<String, dynamic>>[];
       final skippedReasons = <String>[];
 
-      for (final s in students) {
-        final loginKey = (s['login'] as String).toLowerCase();
-        final emailKey = (s['email'] as String).toLowerCase();
+      for (final row in rows) {
+        final loginKey = (row['login'] as String).toLowerCase();
+        final emailKey = (row['email'] as String).toLowerCase();
         if (takenLogins.contains(loginKey)) {
-          skippedReasons.add('${s['name']} ${s['surname']}: логин "${s['login']}" уже занят');
+          skippedReasons.add('${row['name']} ${row['surname']}: логин "$loginKey" уже занят');
         } else if (takenEmails.contains(emailKey)) {
-          skippedReasons.add('${s['name']} ${s['surname']}: email "${s['email']}" уже используется');
+          skippedReasons.add('${row['name']} ${row['surname']}: email "$emailKey" уже используется');
         } else {
-          toInsert.add({...s, 'isheadman': false});
+          toInsert.add({...row, 'login': loginKey, 'email': emailKey, ...extraFields});
           takenLogins.add(loginKey);
           takenEmails.add(emailKey);
         }
       }
       if (toInsert.isNotEmpty) {
-        await _client.from('students').insert(toInsert);
+        await _client.from(targetTable).insert(toInsert);
       }
       return AppResult.success(BulkImportResult(imported: toInsert.length, skippedReasons: skippedReasons));
     } on PostgrestException catch (e) {

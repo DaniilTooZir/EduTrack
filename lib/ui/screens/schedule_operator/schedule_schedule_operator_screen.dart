@@ -690,7 +690,7 @@ class _ScheduleScheduleOperatorScreen extends State<ScheduleScheduleOperatorScre
   }
 
   Widget _buildLessonTile(Schedule s, ColorScheme colors, {required bool isLast}) {
-    final timeRange = '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}';
+    final timeRange = '${formatTimeStr(s.startTime)} – ${formatTimeStr(s.endTime)}';
     final subjectName = s.subject?.name ?? '—';
     final groupName = s.group?.name ?? '—';
     final teacherName = s.teacherName;

@@ -292,7 +292,7 @@ class _TeacherLessonScreenState extends State<TeacherLessonScreen> with SingleTi
               children: [
                 Text(subjectName, style: TextStyle(color: colors.primary, fontSize: 12, fontWeight: FontWeight.w500)),
                 Text(
-                  '$dateStr • $groupName • ${schedule.startTime.substring(0, 5)}',
+                  '$dateStr • $groupName • ${formatTimeStr(schedule.startTime)}',
                   style: TextStyle(color: colors.onSurfaceVariant),
                 ),
               ],

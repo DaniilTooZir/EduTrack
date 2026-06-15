@@ -1,5 +1,6 @@
 ﻿import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/utils/app_constants.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 
 class NextLessonCard extends StatelessWidget {
@@ -54,7 +55,7 @@ class NextLessonCard extends StatelessWidget {
                         Icon(Icons.access_time_rounded, size: 15, color: colors.onSurfaceVariant),
                         const SizedBox(width: 4),
                         Text(
-                          '${lesson.startTime.substring(0, 5)} – ${lesson.endTime.substring(0, 5)}',
+                          '${formatTimeStr(lesson.startTime)} – ${formatTimeStr(lesson.endTime)}',
                           style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant, fontWeight: FontWeight.w500),
                         ),
                       ],

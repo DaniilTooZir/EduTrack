@@ -15,3 +15,6 @@ String formatTimeOfDay(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t
 /// 'HH:mm:00' — поля времени в бэкэнде, требующие ввода секунд
 String formatTimeOfDaySec(TimeOfDay t) =>
     '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00';
+
+/// Безопасно обрезает строку времени до 'HH:mm'. Не падает при строке < 5 символов.
+String formatTimeStr(String t) => t.length >= 5 ? t.substring(0, 5) : t;

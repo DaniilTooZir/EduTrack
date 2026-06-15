@@ -132,10 +132,8 @@ class CsvStudentParser {
         error = 'Дубль email в файле';
       }
 
-      if (error == null) {
-        seenLogins.add(login.toLowerCase());
-        seenEmails.add(email.toLowerCase());
-      }
+      if (login.isNotEmpty) seenLogins.add(login.toLowerCase());
+      if (email.isNotEmpty) seenEmails.add(email.toLowerCase());
 
       parsed.add(
         StudentImportRow(

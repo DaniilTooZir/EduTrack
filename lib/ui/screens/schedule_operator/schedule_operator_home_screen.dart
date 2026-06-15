@@ -220,7 +220,7 @@ class _ScheduleOperatorHomeScreenState extends State<ScheduleOperatorHomeScreen>
   }
 
   Widget _buildUpcomingCard(Schedule s, ColorScheme colors) {
-    final timeStr = '${s.startTime.substring(0, 5)}–${s.endTime.substring(0, 5)}';
+    final timeStr = '${formatTimeStr(s.startTime)}–${formatTimeStr(s.endTime)}';
     final dateLabel = s.date != null ? formatDate(s.date!) : _weekdayName(s.weekday);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

@@ -15,7 +15,8 @@ class TimeSlot {
     required this.sortOrder,
   });
 
-  String get timeRange => '${startTime.substring(0, 5)}–${endTime.substring(0, 5)}';
+  String get timeRange =>
+      '${startTime.length >= 5 ? startTime.substring(0, 5) : startTime}–${endTime.length >= 5 ? endTime.substring(0, 5) : endTime}';
 
   factory TimeSlot.fromMap(Map<String, dynamic> map) {
     return TimeSlot(

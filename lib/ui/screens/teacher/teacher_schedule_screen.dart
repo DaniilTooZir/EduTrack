@@ -27,6 +27,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with Data
   LessonRepository get _lessonRepository => Provider.of<LessonRepository>(context, listen: false);
   List<Schedule> _scheduleList = [];
   Map<String, List<Schedule>> _groupedSchedule = {};
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -78,13 +79,28 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with Data
   }
 
   Future<void> _navigateToLesson(Schedule schedule) async {
-    final result = await _lessonRepository.getLessonsByScheduleIds([schedule.id]);
-    if (!mounted) return;
-    if (result.isFailure || result.data.isEmpty) {
-      MessengerHelper.showWarning('Урок по этому занятию ещё не проведён');
-      return;
+    if (_isNavigating) return;
+    _isNavigating = true;
+    try {
+      final result = await _lessonRepository.getLessonsByScheduleIds([schedule.id]);
+      if (!mounted) return;
+      if (result.isFailure) {
+        MessengerHelper.showError('Не удалось загрузить данные урока');
+        return;
+      }
+      if (result.data.isEmpty) {
+        final isFuture = schedule.date != null && schedule.date!.isAfter(DateTime.now());
+        if (isFuture) {
+          MessengerHelper.showInfo('Занятие ещё не прошло');
+        } else {
+          MessengerHelper.showWarning('Урок по этому занятию ещё не проведён');
+        }
+        return;
+      }
+      unawaited(context.push(AppRoutes.teacherLessonCommentsPath(result.data.first.id!)));
+    } finally {
+      if (mounted) _isNavigating = false;
     }
-    unawaited(context.push(AppRoutes.teacherLessonCommentsPath(result.data.first.id!)));
   }
 
   String _getWeekdayName(int weekday) {
@@ -168,7 +184,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> with Data
                         Icon(Icons.access_time, size: 20, color: colors.primary),
                         const SizedBox(width: 8),
                         Text(
-                          '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}',
+                          '${formatTimeStr(s.startTime)} – ${formatTimeStr(s.endTime)}',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface),
                         ),
                       ],

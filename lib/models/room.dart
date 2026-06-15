@@ -6,8 +6,10 @@ class Room {
   Room({required this.id, required this.name, required this.institutionId});
 
   factory Room.fromMap(Map<String, dynamic> map) {
+    final id = map['id']?.toString();
+    if (id == null || id.isEmpty) throw FormatException('Room.fromMap: missing id');
     return Room(
-      id: map['id']?.toString() ?? '',
+      id: id,
       name: map['name']?.toString() ?? '',
       institutionId: map['institution_id']?.toString() ?? '',
     );

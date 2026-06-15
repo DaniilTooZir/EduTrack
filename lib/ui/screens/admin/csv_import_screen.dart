@@ -76,12 +76,21 @@ class _CsvImportScreenState extends State<CsvImportScreen> {
 
     String content;
     try {
-      if (file.bytes != null) {
-        content = utf8.decode(file.bytes!, allowMalformed: true);
-      } else if (file.path != null) {
-        content = await File(file.path!).readAsString();
-      } else {
+      final bytes = file.bytes ?? (file.path != null ? await File(file.path!).readAsBytes() : null);
+      if (bytes == null) {
         MessengerHelper.showError('Не удалось прочитать файл.');
+        setState(() => _isParsing = false);
+        return;
+      }
+      try {
+        content = utf8.decode(bytes);
+      } on FormatException {
+        if (!mounted) return;
+        MessengerHelper.showError(
+          'Файл сохранён в неподдерживаемой кодировке. '
+          'Сохраните CSV в UTF-8: в Excel — «Сохранить как» → «CSV UTF-8», '
+          'в Google Таблицах — Файл → Скачать → CSV.',
+        );
         setState(() => _isParsing = false);
         return;
       }
@@ -279,7 +288,8 @@ class _CsvImportScreenState extends State<CsvImportScreen> {
             const SizedBox(height: AppSpacing.m),
             Text(
               'Группа указывается по точному названию (например, ИС-21). '
-              'Разделитель — запятая. Первая строка — заголовок.',
+              'Разделитель — запятая. Первая строка — заголовок. '
+              'Файл должен быть в кодировке UTF-8.',
               style: TextStyle(fontSize: 12, color: colors.onSurface.withValues(alpha: 0.7)),
             ),
           ],

@@ -8,6 +8,7 @@ import 'package:edu_track/routes/app_routes.dart';
 import 'package:edu_track/ui/theme/app_theme.dart';
 import 'package:edu_track/ui/widgets/skeleton.dart';
 import 'package:edu_track/utils/app_constants.dart';
+import 'package:edu_track/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -177,7 +178,7 @@ class _StudentLessonScreenState extends State<StudentLessonScreen> with SingleTi
   Widget _buildLessonCard(Lesson lesson, Schedule schedule, ColorScheme colors) {
     final subjectName = schedule.subject?.name ?? 'Предмет';
     final date = schedule.date;
-    final timeStr = '${schedule.startTime.substring(0, 5)} - ${schedule.endTime.substring(0, 5)}';
+    final timeStr = '${formatTimeStr(schedule.startTime)} - ${formatTimeStr(schedule.endTime)}';
     final hasTeacherComments = (lesson.id != null) && (_teacherCommentCounts[lesson.id] ?? 0) > 0;
 
     final dateBadge =

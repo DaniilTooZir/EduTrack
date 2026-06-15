@@ -203,7 +203,7 @@ class _StudentScheduleScreenState extends State<StudentScheduleScreen> {
                         Icon(Icons.access_time, size: 20, color: colors.primary),
                         const SizedBox(width: 8),
                         Text(
-                          '${s.startTime.substring(0, 5)} – ${s.endTime.substring(0, 5)}',
+                          '${formatTimeStr(s.startTime)} – ${formatTimeStr(s.endTime)}',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: colors.onSurface),
                         ),
                       ],

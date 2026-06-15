@@ -11,6 +11,10 @@ class MessengerHelper {
     scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.green));
   }
 
+  static void showInfo(String message) {
+    scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(content: Text(message)));
+  }
+
   static void showWarning(String message) {
     scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
