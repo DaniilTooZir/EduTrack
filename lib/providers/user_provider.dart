@@ -5,6 +5,7 @@ import 'package:edu_track/data/repositories/user_repository.dart';
 import 'package:edu_track/data/services/academic_period_service.dart';
 import 'package:edu_track/data/services/auth_service.dart';
 import 'package:edu_track/data/services/notification_service.dart';
+import 'package:edu_track/data/services/prefetch_service.dart';
 import 'package:edu_track/data/services/realtime_listener.dart';
 import 'package:edu_track/data/services/session_service.dart';
 import 'package:edu_track/models/academic_period.dart';
@@ -13,10 +14,15 @@ import 'package:flutter/foundation.dart';
 class UserProvider with ChangeNotifier {
   final UserRepository _userRepository;
   final HomeworkRepository _homeworkRepository;
+  final PrefetchService? _prefetchService;
 
-  UserProvider({required UserRepository userRepository, required HomeworkRepository homeworkRepository})
-    : _userRepository = userRepository,
-      _homeworkRepository = homeworkRepository;
+  UserProvider({
+    required UserRepository userRepository,
+    required HomeworkRepository homeworkRepository,
+    PrefetchService? prefetchService,
+  }) : _userRepository = userRepository,
+       _homeworkRepository = homeworkRepository,
+       _prefetchService = prefetchService;
 
   String? _userId;
   String? _role;
@@ -67,6 +73,7 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
     unawaited(loadPeriods());
     unawaited(_scheduleHomeworkReminders());
+    _prefetchService?.prefetchForUser(auth.userId, auth.role, auth.groupId);
   }
 
   Future<void> loadSession() async {
@@ -81,6 +88,7 @@ class UserProvider with ChangeNotifier {
           await _loadCachedProfile();
         }
         _setupRealtime();
+        _prefetchService?.prefetchForUser(_userId!, _role!, _groupId);
       }
     } catch (e) {
       debugPrint('Ошибка инициализации: $e');

@@ -1,5 +1,5 @@
+import 'package:edu_track/data/repositories/debt_repository.dart';
 import 'package:edu_track/data/repositories/grade_repository.dart';
-import 'package:edu_track/data/services/debt_service.dart';
 import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/student_debt_info.dart';
 import 'package:edu_track/models/subject_analytics.dart';
@@ -27,7 +27,7 @@ class TeacherDebtsScreen extends StatefulWidget {
 }
 
 class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
-  final DebtService _debtService = DebtService();
+  late final DebtRepository _debtRepo;
 
   bool _isLoadingGroups = true;
   bool _isLoadingDebts = false;
@@ -40,6 +40,7 @@ class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
   @override
   void initState() {
     super.initState();
+    _debtRepo = Provider.of<DebtRepository>(context, listen: false);
     _loadGroups();
   }
 
@@ -50,7 +51,7 @@ class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
       _isLoadingGroups = true;
       _error = null;
     });
-    final result = await _debtService.getTeacherGroups(teacherId);
+    final result = await _debtRepo.getTeacherGroups(teacherId);
     if (!mounted) return;
     if (result.isFailure) {
       setState(() {
@@ -74,7 +75,7 @@ class _TeacherDebtsScreenState extends State<TeacherDebtsScreen> {
       _isLoadingDebts = true;
       _error = null;
     });
-    final result = await _debtService.getGroupDebts(
+    final result = await _debtRepo.getGroupDebts(
       groupId: _selectedGroupId!,
       startDate: period?.startDate,
       endDate: period?.endDate,

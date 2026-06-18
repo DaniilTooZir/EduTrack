@@ -10,6 +10,8 @@ import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
 import 'package:edu_track/models/institution.dart';
 import 'package:edu_track/models/lesson.dart';
+import 'package:edu_track/models/lesson_attendance.dart';
+import 'package:edu_track/models/message.dart';
 import 'package:edu_track/models/room.dart';
 import 'package:edu_track/models/schedule.dart';
 import 'package:edu_track/models/student.dart';
@@ -211,6 +213,60 @@ class LocalLessons extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class LocalLessonAttendances extends Table {
+  TextColumn get id => text().nullable()();
+  TextColumn get lessonId => text()();
+  TextColumn get studentId => text()();
+  TextColumn get status => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {lessonId, studentId};
+}
+
+class LocalChats extends Table {
+  TextColumn get id => text()();
+  TextColumn get type => text()();
+  TextColumn get name => text().nullable()();
+  TextColumn get groupId => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class LocalMessages extends Table {
+  TextColumn get id => text()();
+  TextColumn get chatId => text()();
+  TextColumn get senderId => text()();
+  TextColumn get senderRole => text()();
+  TextColumn get content => text().nullable()();
+  TextColumn get fileUrl => text().nullable()();
+  TextColumn get fileName => text().nullable()();
+  BoolColumn get isRead => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// Предвычисленный превью чата (заголовок, аватар, последнее сообщение)
+class LocalChatPreviews extends Table {
+  TextColumn get chatId => text()();
+  TextColumn get userId => text()();
+  TextColumn get title => text()();
+  TextColumn get avatarUrl => text().nullable()();
+  TextColumn get lastMessage => text().nullable()();
+  DateTimeColumn get lastMessageTime => dateTime().nullable()();
+  IntColumn get unreadCount => integer().withDefault(const Constant(0))();
+  TextColumn get chatType => text()();
+  TextColumn get chatName => text().nullable()();
+  TextColumn get chatGroupId => text().nullable()();
+  DateTimeColumn get chatUpdatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {chatId, userId};
+}
+
 @DriftDatabase(
   tables: [
     LocalRooms,
@@ -228,13 +284,17 @@ class LocalLessons extends Table {
     LocalAdminProfiles,
     LocalInstitutions,
     LocalLessons,
+    LocalLessonAttendances,
+    LocalChats,
+    LocalMessages,
+    LocalChatPreviews,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -262,6 +322,10 @@ class AppDatabase extends _$AppDatabase {
     await delete(localAdminProfiles).go();
     await delete(localInstitutions).go();
     await delete(localLessons).go();
+    await delete(localLessonAttendances).go();
+    await delete(localChats).go();
+    await delete(localMessages).go();
+    await delete(localChatPreviews).go();
   }
 
   Future<void> saveSchedules(List<Schedule> schedules) async {
@@ -517,6 +581,29 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteLessonsForSchedules(List<String> scheduleIds) async {
     if (scheduleIds.isEmpty) return;
     await (delete(localLessons)..where((t) => t.scheduleId.isIn(scheduleIds))).go();
+  }
+
+  Future<void> saveAttendances(List<LessonAttendance> attendances) async {
+    await transaction(() async {
+      for (final a in attendances) {
+        await into(localLessonAttendances).insertOnConflictUpdate(
+          LocalLessonAttendancesCompanion.insert(
+            id: Value(a.id),
+            lessonId: a.lessonId,
+            studentId: a.studentId,
+            status: Value(a.status),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<List<LessonAttendance>> getAttendancesByLessonIds(List<String> lessonIds) async {
+    if (lessonIds.isEmpty) return [];
+    final rows = await (select(localLessonAttendances)..where((t) => t.lessonId.isIn(lessonIds))).get();
+    return rows
+        .map((r) => LessonAttendance(id: r.id, lessonId: r.lessonId, studentId: r.studentId, status: r.status))
+        .toList();
   }
 
   Future<void> saveLessons(Map<String, String> lessonIdToScheduleId) async {
@@ -840,6 +927,278 @@ class AppDatabase extends _$AppDatabase {
     }
     result.sort((a, b) => a.name.compareTo(b.name));
     return result;
+  }
+
+  // Группы преподавателя (из расписания)
+  Future<List<Group>> getGroupsByTeacherId(String teacherId) async {
+    final query = select(
+      localGroups,
+    ).join([innerJoin(localSchedules, localSchedules.groupId.equalsExp(localGroups.id))]);
+    query.where(localSchedules.teacherId.equals(teacherId));
+    final rows = await query.get();
+    final seen = <String>{};
+    final result = <Group>[];
+    for (final row in rows) {
+      final g = row.readTable(localGroups);
+      if (seen.add(g.id)) {
+        result.add(Group(id: g.id, name: g.name, institutionId: g.institutionId));
+      }
+    }
+    result.sort((a, b) => a.name.compareTo(b.name));
+    return result;
+  }
+
+  // Домашние задания преподавателя через группы его расписания (с JOIN группы и предмета)
+  Future<List<Homework>> getHomeworksByTeacherGroups(String teacherId) async {
+    final scheduleRows = await (select(localSchedules)..where((s) => s.teacherId.equals(teacherId))).get();
+    final groupIds = scheduleRows.map((s) => s.groupId).toSet().toList();
+    if (groupIds.isEmpty) return [];
+    final query = select(localHomeworks).join([
+      leftOuterJoin(localGroups, localGroups.id.equalsExp(localHomeworks.groupId)),
+      leftOuterJoin(localSubjects, localSubjects.id.equalsExp(localHomeworks.subjectId)),
+    ]);
+    query.where(localHomeworks.groupId.isIn(groupIds));
+    query.orderBy([OrderingTerm(expression: localHomeworks.dueDate)]);
+    final rows = await query.get();
+    return rows.map((row) {
+      final hw = row.readTable(localHomeworks);
+      final groupRow = row.readTableOrNull(localGroups);
+      final subjectRow = row.readTableOrNull(localSubjects);
+      return Homework(
+        id: hw.id,
+        subjectId: hw.subjectId,
+        groupId: hw.groupId,
+        lessonId: hw.lessonId,
+        title: hw.title,
+        description: hw.description,
+        dueDate: hw.dueDate,
+        createdAt: hw.createdAt,
+        fileUrl: hw.fileUrl,
+        fileName: hw.fileName,
+        group:
+            groupRow != null
+                ? Group(id: groupRow.id, name: groupRow.name, institutionId: groupRow.institutionId)
+                : null,
+        subject:
+            subjectRow != null
+                ? Subject(
+                  id: subjectRow.id,
+                  name: subjectRow.name,
+                  institutionId: subjectRow.institutionId,
+                  createdAt: DateTime.now(),
+                )
+                : null,
+      );
+    }).toList();
+  }
+
+  // Расписание по группе и предмету (для кэша журнала)
+  Future<List<Schedule>> getSchedulesByGroupAndSubject(String groupId, String subjectId) async {
+    final rows =
+        await (select(localSchedules)
+              ..where((s) => s.groupId.equals(groupId) & s.subjectId.equals(subjectId))
+              ..orderBy([(s) => OrderingTerm(expression: s.date)]))
+            .get();
+    return rows
+        .map(
+          (r) => Schedule(
+            id: r.id,
+            institutionId: r.institutionId,
+            subjectId: r.subjectId,
+            groupId: r.groupId,
+            teacherId: r.teacherId,
+            roomId: r.roomId,
+            weekday: r.weekday,
+            startTime: r.startTime,
+            endTime: r.endTime,
+            date: r.date,
+          ),
+        )
+        .toList();
+  }
+
+  // Оценки для конкретных уроков (для кэша журнала)
+  Future<List<Grade>> getGradesByLessonIds(List<String> lessonIds) async {
+    if (lessonIds.isEmpty) return [];
+    final rows = await (select(localGrades)..where((t) => t.lessonId.isIn(lessonIds))).get();
+    return rows.map((r) => Grade(id: r.id, lessonId: r.lessonId, studentId: r.studentId, value: r.value)).toList();
+  }
+
+  // Статусы ДЗ по homeworkId
+  Future<List<HomeworkStatus>> getHomeworkStatusesByHomeworkId(String homeworkId) async {
+    final rows = await (select(localHomeworkStatuses)..where((t) => t.homeworkId.equals(homeworkId))).get();
+    return rows
+        .map(
+          (r) => HomeworkStatus(
+            id: r.id,
+            homeworkId: r.homeworkId,
+            studentId: r.studentId,
+            isCompleted: r.isCompleted,
+            studentComment: r.studentComment,
+            teacherComment: r.teacherComment,
+            fileUrl: r.fileUrl,
+            fileName: r.fileName,
+            updatedAt: r.updatedAt,
+          ),
+        )
+        .toList();
+  }
+
+  // Оценки для нескольких студентов (для вычисления задолженностей)
+  Future<List<Grade>> getGradesByStudentIds(List<String> studentIds) async {
+    if (studentIds.isEmpty) return [];
+    final rows = await (select(localGrades)..where((t) => t.studentId.isIn(studentIds))).get();
+    return rows.map((r) => Grade(id: r.id, lessonId: r.lessonId, studentId: r.studentId, value: r.value)).toList();
+  }
+
+  // Статусы ДЗ для нескольких заданий (для вычисления задолженностей)
+  Future<List<HomeworkStatus>> getHomeworkStatusesByHomeworkIds(List<String> homeworkIds) async {
+    if (homeworkIds.isEmpty) return [];
+    final rows = await (select(localHomeworkStatuses)..where((t) => t.homeworkId.isIn(homeworkIds))).get();
+    return rows
+        .map(
+          (r) => HomeworkStatus(
+            id: r.id,
+            homeworkId: r.homeworkId,
+            studentId: r.studentId,
+            isCompleted: r.isCompleted,
+            studentComment: r.studentComment,
+            teacherComment: r.teacherComment,
+            fileUrl: r.fileUrl,
+            fileName: r.fileName,
+            updatedAt: r.updatedAt,
+          ),
+        )
+        .toList();
+  }
+
+  // Карта lesson > дата через расписание (для фильтрации по периоду в задолженностях)
+  Future<Map<String, DateTime>> getLessonDateMap(List<String> lessonIds) async {
+    if (lessonIds.isEmpty) return {};
+    final lessonScheduleMap = await getLessonScheduleMap(lessonIds);
+    final scheduleIds = lessonScheduleMap.values.toSet().toList();
+    final scheduleSubjectDateMap = await getScheduleSubjectDateMap(scheduleIds);
+    final result = <String, DateTime>{};
+    for (final entry in lessonScheduleMap.entries) {
+      final date = scheduleSubjectDateMap[entry.value]?.date;
+      if (date != null) result[entry.key] = date;
+    }
+    return result;
+  }
+
+  // Сохранение сообщений
+  Future<void> saveMessages(List<Message> messages) async {
+    await transaction(() async {
+      for (final m in messages) {
+        if (m.id.isEmpty) continue;
+        await into(localMessages).insertOnConflictUpdate(
+          LocalMessagesCompanion.insert(
+            id: m.id,
+            chatId: m.chatId,
+            senderId: m.senderId,
+            senderRole: m.senderRole,
+            content: Value(m.content),
+            fileUrl: Value(m.fileUrl),
+            fileName: Value(m.fileName),
+            isRead: Value(m.isRead),
+            createdAt: m.createdAt,
+          ),
+        );
+      }
+    });
+  }
+
+  Future<List<Message>> getMessagesByChatId(String chatId) async {
+    final rows =
+        await (select(localMessages)
+              ..where((t) => t.chatId.equals(chatId))
+              ..orderBy([(t) => OrderingTerm(expression: t.createdAt)]))
+            .get();
+    return rows
+        .map(
+          (r) => Message(
+            id: r.id,
+            chatId: r.chatId,
+            senderId: r.senderId,
+            senderRole: r.senderRole,
+            content: r.content,
+            fileUrl: r.fileUrl,
+            fileName: r.fileName,
+            isRead: r.isRead,
+            createdAt: r.createdAt,
+          ),
+        )
+        .toList();
+  }
+
+  // Сохранение превью чатов (предвычисленный список)
+  Future<void> saveChatPreview({
+    required String chatId,
+    required String userId,
+    required String title,
+    String? avatarUrl,
+    String? lastMessage,
+    DateTime? lastMessageTime,
+    int unreadCount = 0,
+    required String chatType,
+    String? chatName,
+    String? chatGroupId,
+    required DateTime chatUpdatedAt,
+  }) async {
+    await into(localChatPreviews).insertOnConflictUpdate(
+      LocalChatPreviewsCompanion.insert(
+        chatId: chatId,
+        userId: userId,
+        title: title,
+        avatarUrl: Value(avatarUrl),
+        lastMessage: Value(lastMessage),
+        lastMessageTime: Value(lastMessageTime),
+        unreadCount: Value(unreadCount),
+        chatType: chatType,
+        chatName: Value(chatName),
+        chatGroupId: Value(chatGroupId),
+        chatUpdatedAt: chatUpdatedAt,
+      ),
+    );
+  }
+
+  Future<List<LocalChatPreview>> getChatPreviews(String userId) async {
+    return (select(localChatPreviews)
+          ..where((t) => t.userId.equals(userId))
+          ..orderBy([(t) => OrderingTerm(expression: t.chatUpdatedAt, mode: OrderingMode.desc)]))
+        .get();
+  }
+
+  Future<void> deleteChatPreviewsForUser(String userId) async {
+    await (delete(localChatPreviews)..where((t) => t.userId.equals(userId))).go();
+  }
+
+  Future<void> updateChatPreviewLastMessage({
+    required String chatId,
+    String? lastMessage,
+    required DateTime lastMessageTime,
+    String? resetUnreadForUser,
+    bool incrementUnread = false,
+  }) async {
+    final rows = await (select(localChatPreviews)..where((t) => t.chatId.equals(chatId))).get();
+    for (final row in rows) {
+      final int newUnread;
+      if (resetUnreadForUser == row.userId) {
+        newUnread = 0;
+      } else if (incrementUnread) {
+        newUnread = row.unreadCount + 1;
+      } else {
+        newUnread = row.unreadCount;
+      }
+      await (update(localChatPreviews)..where((t) => t.chatId.equals(chatId) & t.userId.equals(row.userId))).write(
+        LocalChatPreviewsCompanion(
+          lastMessage: Value(lastMessage),
+          lastMessageTime: Value(lastMessageTime),
+          chatUpdatedAt: Value(lastMessageTime),
+          unreadCount: Value(newUnread),
+        ),
+      );
+    }
   }
 }
 

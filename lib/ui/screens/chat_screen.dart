@@ -1,4 +1,6 @@
-﻿import 'package:edu_track/data/services/chat_service.dart';
+﻿import 'dart:async';
+
+import 'package:edu_track/data/repositories/chat_repository.dart';
 import 'package:edu_track/data/services/file_service.dart';
 import 'package:edu_track/models/message.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -22,37 +24,72 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _chatService = ChatService();
+  late final ChatRepository _chatRepo;
   final _fileService = FileService();
   final _messageController = TextEditingController();
 
   PlatformFile? _selectedFile;
   bool _isSending = false;
 
+  // Кэшированные сообщения для отображения пока стрим не подключился
+  List<Message> _cachedMessages = [];
+  bool _cacheLoaded = false;
+  StreamSubscription<List<Message>>? _streamSub;
+
   void _markChatAsRead() {
     final myId = Provider.of<UserProvider>(context, listen: false).userId;
-    if (myId != null) {
-      _chatService.markAsRead(widget.chatId, myId);
-    }
+    if (myId != null) unawaited(_chatRepo.markAsRead(widget.chatId, myId));
   }
 
   @override
   void initState() {
     super.initState();
+    _chatRepo = Provider.of<ChatRepository>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _markChatAsRead();
       _preloadMemberNames();
+      _loadCachedMessages();
+    });
+    _streamSub = _chatRepo.getMessagesStream(widget.chatId).listen((messages) {
+      if (mounted) {
+        setState(() {
+          _cachedMessages = messages;
+          _cacheLoaded = true;
+        });
+      }
+      unawaited(_chatRepo.cacheMessages(messages));
+      if (messages.isNotEmpty && mounted) {
+        final latest = messages.last;
+        final myId = Provider.of<UserProvider>(context, listen: false).userId;
+        unawaited(
+          _chatRepo.updatePreviewLastMessage(
+            chatId: widget.chatId,
+            lastMessage: latest.content ?? (latest.fileUrl != null ? '📎 Файл' : null),
+            lastMessageTime: latest.createdAt,
+            resetUnreadForUser: myId,
+          ),
+        );
+      }
     });
   }
 
+  Future<void> _loadCachedMessages() async {
+    if (_cacheLoaded) return;
+    final result = await _chatRepo.getMessages(widget.chatId);
+    if (result.isSuccess && result.data.isNotEmpty && mounted && !_cacheLoaded) {
+      setState(() => _cachedMessages = result.data);
+    }
+  }
+
   Future<void> _preloadMemberNames() async {
-    final members = await _chatService.getChatMembers(widget.chatId);
+    final members = await _chatRepo.getChatMembers(widget.chatId);
     await Future.wait(members.map((m) => _getUserName(m['user_id'] as String, m['user_role'] as String)));
     if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _streamSub?.cancel();
     _messageController.dispose();
     super.dispose();
   }
@@ -88,7 +125,7 @@ class _ChatScreenState extends State<ChatScreen> {
       fileName = _selectedFile!.name;
     }
 
-    final result = await _chatService.sendMessage(
+    final result = await _chatRepo.sendMessage(
       chatId: widget.chatId,
       senderId: userProvider.userId!,
       senderRole: userProvider.role!,
@@ -119,7 +156,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<String> _getUserName(String userId, String role) async {
     if (_userNameCache.containsKey(userId)) return _userNameCache[userId]!;
-    final details = await _chatService.getUserDetails(userId, role);
+    final details = await _chatRepo.getUserDetails(userId, role);
     final name = details['name'] ?? 'Неизвестный';
     _userNameCache[userId] = name;
     return name;
@@ -137,62 +174,51 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Column(
           children: [
             Expanded(
-              child: StreamBuilder<List<Message>>(
-                stream: _chatService.getMessagesStream(widget.chatId),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Ошибка: ${snapshot.error}'));
-                  }
-                  if (!snapshot.hasData) {
-                    return _buildMessagesSkeleton();
-                  }
-                  WidgetsBinding.instance.addPostFrameCallback((_) => _markChatAsRead());
-                  final messages = snapshot.data!;
-                  if (messages.isEmpty) {
-                    return Center(child: Text('Сообщений пока нет', style: TextStyle(color: colors.onSurfaceVariant)));
-                  }
-                  return ListView.builder(
-                    reverse: true,
-                    padding: const EdgeInsets.all(AppSpacing.l),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      final isMe = message.senderId == myId;
-                      bool showDateSeparator = false;
-                      if (index == messages.length - 1) {
-                        showDateSeparator = true;
-                      } else {
-                        final prevMessage = messages[index + 1];
-                        if (message.createdAt.day != prevMessage.createdAt.day) {
-                          showDateSeparator = true;
-                        }
-                      }
-                      return Column(
-                        children: [
-                          if (showDateSeparator)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    _formatSeparatorDate(message.createdAt),
-                                    style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+              child:
+                  _cachedMessages.isEmpty && !_cacheLoaded
+                      ? _buildMessagesSkeleton()
+                      : _cachedMessages.isEmpty
+                      ? Center(child: Text('Сообщений пока нет', style: TextStyle(color: colors.onSurfaceVariant)))
+                      : ListView.builder(
+                        reverse: true,
+                        padding: const EdgeInsets.all(AppSpacing.l),
+                        itemCount: _cachedMessages.length,
+                        itemBuilder: (context, index) {
+                          final message = _cachedMessages[index];
+                          final isMe = message.senderId == myId;
+                          bool showDateSeparator = false;
+                          if (index == _cachedMessages.length - 1) {
+                            showDateSeparator = true;
+                          } else {
+                            final prevMessage = _cachedMessages[index + 1];
+                            if (message.createdAt.day != prevMessage.createdAt.day) {
+                              showDateSeparator = true;
+                            }
+                          }
+                          return Column(
+                            children: [
+                              if (showDateSeparator)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        _formatSeparatorDate(message.createdAt),
+                                        style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          _buildMessageBubble(message, isMe, colors),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
+                              _buildMessageBubble(message, isMe, colors),
+                            ],
+                          );
+                        },
+                      ),
             ),
             _buildInputArea(colors),
           ],

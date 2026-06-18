@@ -192,6 +192,19 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
+    try {
+      await _doLoadJournal();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Не удалось загрузить журнал';
+        });
+      }
+    }
+  }
+
+  Future<void> _doLoadJournal() async {
     final period = Provider.of<UserProvider>(context, listen: false).selectedPeriod;
 
     final journalFuture = _gradeService.getJournalData(
@@ -281,7 +294,7 @@ class _TeacherJournalScreenState extends State<TeacherJournalScreen> {
       final pageCount = _pages.length;
       _pageIndex = pageCount > 0 ? pageCount - 1 : 0;
     });
-  }
+  } // _doLoadJournal
 
   Future<Lesson?> _ensureLessonCreated(Lesson lesson) async {
     if (lesson.id != null) return lesson;

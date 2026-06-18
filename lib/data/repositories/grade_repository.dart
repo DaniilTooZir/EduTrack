@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:edu_track/data/local/app_database.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/models/grade.dart';
+import 'package:edu_track/models/lesson.dart';
+import 'package:edu_track/models/lesson_attendance.dart';
+import 'package:edu_track/models/student.dart';
 import 'package:edu_track/models/subject_analytics.dart';
 import 'package:edu_track/utils/app_result.dart';
 
@@ -62,7 +65,93 @@ class GradeRepository {
     required String subjectId,
     DateTime? startDate,
     DateTime? endDate,
-  }) => _remote.getJournalData(groupId: groupId, subjectId: subjectId, startDate: startDate, endDate: endDate);
+  }) async {
+    final assembled = await _tryAssembleJournalFromCache(
+      groupId: groupId,
+      subjectId: subjectId,
+      startDate: startDate,
+      endDate: endDate,
+    );
+    if (assembled != null) {
+      unawaited(
+        _remote.getJournalData(groupId: groupId, subjectId: subjectId, startDate: startDate, endDate: endDate).then((
+          r,
+        ) {
+          if (r.isSuccess) _saveJournalToCache(r.data);
+        }),
+      );
+      return AppResult.success(assembled);
+    }
+    final result = await _remote.getJournalData(
+      groupId: groupId,
+      subjectId: subjectId,
+      startDate: startDate,
+      endDate: endDate,
+    );
+    if (result.isSuccess) await _saveJournalToCache(result.data);
+    return result;
+  }
+
+  Future<void> _saveJournalToCache(Map<String, dynamic> data) async {
+    final lessons = (data['lessons'] as List?)?.whereType<Lesson>().toList() ?? <Lesson>[];
+    final students = (data['students'] as List?)?.whereType<Student>().toList() ?? <Student>[];
+    final grades = (data['grades'] as List?)?.whereType<Grade>().toList() ?? <Grade>[];
+    final attendances = (data['attendances'] as List?)?.whereType<LessonAttendance>().toList() ?? <LessonAttendance>[];
+    await Future.wait([
+      if (lessons.isNotEmpty) _local.saveLessonsData(lessons),
+      if (students.isNotEmpty) _local.saveStudents(students),
+      if (grades.isNotEmpty) _local.saveGrades(grades),
+      if (attendances.isNotEmpty) _local.saveAttendances(attendances),
+    ]);
+  }
+
+  Future<Map<String, dynamic>?> _tryAssembleJournalFromCache({
+    required String groupId,
+    required String subjectId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final schedules = await _local.getSchedulesByGroupAndSubject(groupId, subjectId);
+    if (schedules.isEmpty) return null;
+    final students = await _local.getStudentsByGroupId(groupId);
+
+    final allScheduleIds = schedules.map((s) => s.id).toList();
+    final allLessons = await _local.getLessonsCachedByScheduleIds(allScheduleIds);
+    final lessonIds = allLessons.where((l) => l.id != null).map((l) => l.id!).toList();
+    final (grades, attendances) = await (
+      _local.getGradesByLessonIds(lessonIds),
+      _local.getAttendancesByLessonIds(lessonIds),
+    ).wait;
+
+    final filteredSchedules =
+        schedules.where((s) {
+          final date = s.date;
+          if (date == null) return true;
+          if (startDate != null && date.isBefore(startDate)) return false;
+          if (endDate != null && date.isAfter(endDate)) return false;
+          return true;
+        }).toList();
+    final filteredIds = filteredSchedules.map((s) => s.id).toSet();
+    final filteredLessons = allLessons.where((l) => filteredIds.contains(l.scheduleId)).toList();
+
+    final schedulesMaps =
+        filteredSchedules
+            .map<Map<String, dynamic>>(
+              (s) => {'id': s.id, 'date': s.date?.toIso8601String(), 'start_time': s.startTime, 'end_time': s.endTime},
+            )
+            .toList();
+
+    final filteredLessonIds = filteredLessons.where((l) => l.id != null).map((l) => l.id!).toSet();
+    final filteredAttendances = attendances.where((a) => filteredLessonIds.contains(a.lessonId)).toList();
+
+    return {
+      'lessons': filteredLessons,
+      'students': students,
+      'grades': grades,
+      'attendances': filteredAttendances,
+      'schedules': schedulesMaps,
+    };
+  }
 
   Future<AppResult<List<SubjectAnalytics>>> getStudentAnalytics(
     String studentId, {

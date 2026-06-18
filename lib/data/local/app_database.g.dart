@@ -6624,6 +6624,1942 @@ class LocalLessonsCompanion extends UpdateCompanion<LocalLesson> {
   }
 }
 
+class $LocalLessonAttendancesTable extends LocalLessonAttendances
+    with TableInfo<$LocalLessonAttendancesTable, LocalLessonAttendance> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalLessonAttendancesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lessonIdMeta = const VerificationMeta(
+    'lessonId',
+  );
+  @override
+  late final GeneratedColumn<String> lessonId = GeneratedColumn<String>(
+    'lesson_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _studentIdMeta = const VerificationMeta(
+    'studentId',
+  );
+  @override
+  late final GeneratedColumn<String> studentId = GeneratedColumn<String>(
+    'student_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, lessonId, studentId, status];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_lesson_attendances';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalLessonAttendance> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('lesson_id')) {
+      context.handle(
+        _lessonIdMeta,
+        lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lessonIdMeta);
+    }
+    if (data.containsKey('student_id')) {
+      context.handle(
+        _studentIdMeta,
+        studentId.isAcceptableOrUnknown(data['student_id']!, _studentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_studentIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {lessonId, studentId};
+  @override
+  LocalLessonAttendance map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalLessonAttendance(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      ),
+      lessonId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}lesson_id'],
+          )!,
+      studentId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}student_id'],
+          )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      ),
+    );
+  }
+
+  @override
+  $LocalLessonAttendancesTable createAlias(String alias) {
+    return $LocalLessonAttendancesTable(attachedDatabase, alias);
+  }
+}
+
+class LocalLessonAttendance extends DataClass
+    implements Insertable<LocalLessonAttendance> {
+  final String? id;
+  final String lessonId;
+  final String studentId;
+  final String? status;
+  const LocalLessonAttendance({
+    this.id,
+    required this.lessonId,
+    required this.studentId,
+    this.status,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (!nullToAbsent || id != null) {
+      map['id'] = Variable<String>(id);
+    }
+    map['lesson_id'] = Variable<String>(lessonId);
+    map['student_id'] = Variable<String>(studentId);
+    if (!nullToAbsent || status != null) {
+      map['status'] = Variable<String>(status);
+    }
+    return map;
+  }
+
+  LocalLessonAttendancesCompanion toCompanion(bool nullToAbsent) {
+    return LocalLessonAttendancesCompanion(
+      id: id == null && nullToAbsent ? const Value.absent() : Value(id),
+      lessonId: Value(lessonId),
+      studentId: Value(studentId),
+      status:
+          status == null && nullToAbsent ? const Value.absent() : Value(status),
+    );
+  }
+
+  factory LocalLessonAttendance.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalLessonAttendance(
+      id: serializer.fromJson<String?>(json['id']),
+      lessonId: serializer.fromJson<String>(json['lessonId']),
+      studentId: serializer.fromJson<String>(json['studentId']),
+      status: serializer.fromJson<String?>(json['status']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String?>(id),
+      'lessonId': serializer.toJson<String>(lessonId),
+      'studentId': serializer.toJson<String>(studentId),
+      'status': serializer.toJson<String?>(status),
+    };
+  }
+
+  LocalLessonAttendance copyWith({
+    Value<String?> id = const Value.absent(),
+    String? lessonId,
+    String? studentId,
+    Value<String?> status = const Value.absent(),
+  }) => LocalLessonAttendance(
+    id: id.present ? id.value : this.id,
+    lessonId: lessonId ?? this.lessonId,
+    studentId: studentId ?? this.studentId,
+    status: status.present ? status.value : this.status,
+  );
+  LocalLessonAttendance copyWithCompanion(
+    LocalLessonAttendancesCompanion data,
+  ) {
+    return LocalLessonAttendance(
+      id: data.id.present ? data.id.value : this.id,
+      lessonId: data.lessonId.present ? data.lessonId.value : this.lessonId,
+      studentId: data.studentId.present ? data.studentId.value : this.studentId,
+      status: data.status.present ? data.status.value : this.status,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalLessonAttendance(')
+          ..write('id: $id, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('studentId: $studentId, ')
+          ..write('status: $status')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, lessonId, studentId, status);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalLessonAttendance &&
+          other.id == this.id &&
+          other.lessonId == this.lessonId &&
+          other.studentId == this.studentId &&
+          other.status == this.status);
+}
+
+class LocalLessonAttendancesCompanion
+    extends UpdateCompanion<LocalLessonAttendance> {
+  final Value<String?> id;
+  final Value<String> lessonId;
+  final Value<String> studentId;
+  final Value<String?> status;
+  final Value<int> rowid;
+  const LocalLessonAttendancesCompanion({
+    this.id = const Value.absent(),
+    this.lessonId = const Value.absent(),
+    this.studentId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalLessonAttendancesCompanion.insert({
+    this.id = const Value.absent(),
+    required String lessonId,
+    required String studentId,
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : lessonId = Value(lessonId),
+       studentId = Value(studentId);
+  static Insertable<LocalLessonAttendance> custom({
+    Expression<String>? id,
+    Expression<String>? lessonId,
+    Expression<String>? studentId,
+    Expression<String>? status,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (lessonId != null) 'lesson_id': lessonId,
+      if (studentId != null) 'student_id': studentId,
+      if (status != null) 'status': status,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalLessonAttendancesCompanion copyWith({
+    Value<String?>? id,
+    Value<String>? lessonId,
+    Value<String>? studentId,
+    Value<String?>? status,
+    Value<int>? rowid,
+  }) {
+    return LocalLessonAttendancesCompanion(
+      id: id ?? this.id,
+      lessonId: lessonId ?? this.lessonId,
+      studentId: studentId ?? this.studentId,
+      status: status ?? this.status,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (lessonId.present) {
+      map['lesson_id'] = Variable<String>(lessonId.value);
+    }
+    if (studentId.present) {
+      map['student_id'] = Variable<String>(studentId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalLessonAttendancesCompanion(')
+          ..write('id: $id, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('studentId: $studentId, ')
+          ..write('status: $status, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalChatsTable extends LocalChats
+    with TableInfo<$LocalChatsTable, LocalChat> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalChatsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _groupIdMeta = const VerificationMeta(
+    'groupId',
+  );
+  @override
+  late final GeneratedColumn<String> groupId = GeneratedColumn<String>(
+    'group_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, type, name, groupId, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_chats';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalChat> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
+    if (data.containsKey('group_id')) {
+      context.handle(
+        _groupIdMeta,
+        groupId.isAcceptableOrUnknown(data['group_id']!, _groupIdMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalChat map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalChat(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      type:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}type'],
+          )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      ),
+      groupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group_id'],
+      ),
+      updatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}updated_at'],
+          )!,
+    );
+  }
+
+  @override
+  $LocalChatsTable createAlias(String alias) {
+    return $LocalChatsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalChat extends DataClass implements Insertable<LocalChat> {
+  final String id;
+  final String type;
+  final String? name;
+  final String? groupId;
+  final DateTime updatedAt;
+  const LocalChat({
+    required this.id,
+    required this.type,
+    this.name,
+    this.groupId,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['type'] = Variable<String>(type);
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
+    }
+    if (!nullToAbsent || groupId != null) {
+      map['group_id'] = Variable<String>(groupId);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LocalChatsCompanion toCompanion(bool nullToAbsent) {
+    return LocalChatsCompanion(
+      id: Value(id),
+      type: Value(type),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
+      groupId:
+          groupId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(groupId),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LocalChat.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalChat(
+      id: serializer.fromJson<String>(json['id']),
+      type: serializer.fromJson<String>(json['type']),
+      name: serializer.fromJson<String?>(json['name']),
+      groupId: serializer.fromJson<String?>(json['groupId']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'type': serializer.toJson<String>(type),
+      'name': serializer.toJson<String?>(name),
+      'groupId': serializer.toJson<String?>(groupId),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LocalChat copyWith({
+    String? id,
+    String? type,
+    Value<String?> name = const Value.absent(),
+    Value<String?> groupId = const Value.absent(),
+    DateTime? updatedAt,
+  }) => LocalChat(
+    id: id ?? this.id,
+    type: type ?? this.type,
+    name: name.present ? name.value : this.name,
+    groupId: groupId.present ? groupId.value : this.groupId,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LocalChat copyWithCompanion(LocalChatsCompanion data) {
+    return LocalChat(
+      id: data.id.present ? data.id.value : this.id,
+      type: data.type.present ? data.type.value : this.type,
+      name: data.name.present ? data.name.value : this.name,
+      groupId: data.groupId.present ? data.groupId.value : this.groupId,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChat(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('name: $name, ')
+          ..write('groupId: $groupId, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, type, name, groupId, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalChat &&
+          other.id == this.id &&
+          other.type == this.type &&
+          other.name == this.name &&
+          other.groupId == this.groupId &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LocalChatsCompanion extends UpdateCompanion<LocalChat> {
+  final Value<String> id;
+  final Value<String> type;
+  final Value<String?> name;
+  final Value<String?> groupId;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const LocalChatsCompanion({
+    this.id = const Value.absent(),
+    this.type = const Value.absent(),
+    this.name = const Value.absent(),
+    this.groupId = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalChatsCompanion.insert({
+    required String id,
+    required String type,
+    this.name = const Value.absent(),
+    this.groupId = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       type = Value(type),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalChat> custom({
+    Expression<String>? id,
+    Expression<String>? type,
+    Expression<String>? name,
+    Expression<String>? groupId,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (type != null) 'type': type,
+      if (name != null) 'name': name,
+      if (groupId != null) 'group_id': groupId,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalChatsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? type,
+    Value<String?>? name,
+    Value<String?>? groupId,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalChatsCompanion(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      name: name ?? this.name,
+      groupId: groupId ?? this.groupId,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (groupId.present) {
+      map['group_id'] = Variable<String>(groupId.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChatsCompanion(')
+          ..write('id: $id, ')
+          ..write('type: $type, ')
+          ..write('name: $name, ')
+          ..write('groupId: $groupId, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalMessagesTable extends LocalMessages
+    with TableInfo<$LocalMessagesTable, LocalMessage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<String> chatId = GeneratedColumn<String>(
+    'chat_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _senderIdMeta = const VerificationMeta(
+    'senderId',
+  );
+  @override
+  late final GeneratedColumn<String> senderId = GeneratedColumn<String>(
+    'sender_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _senderRoleMeta = const VerificationMeta(
+    'senderRole',
+  );
+  @override
+  late final GeneratedColumn<String> senderRole = GeneratedColumn<String>(
+    'sender_role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fileUrlMeta = const VerificationMeta(
+    'fileUrl',
+  );
+  @override
+  late final GeneratedColumn<String> fileUrl = GeneratedColumn<String>(
+    'file_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isReadMeta = const VerificationMeta('isRead');
+  @override
+  late final GeneratedColumn<bool> isRead = GeneratedColumn<bool>(
+    'is_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_read" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    chatId,
+    senderId,
+    senderRole,
+    content,
+    fileUrl,
+    fileName,
+    isRead,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_messages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalMessage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('chat_id')) {
+      context.handle(
+        _chatIdMeta,
+        chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chatIdMeta);
+    }
+    if (data.containsKey('sender_id')) {
+      context.handle(
+        _senderIdMeta,
+        senderId.isAcceptableOrUnknown(data['sender_id']!, _senderIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_senderIdMeta);
+    }
+    if (data.containsKey('sender_role')) {
+      context.handle(
+        _senderRoleMeta,
+        senderRole.isAcceptableOrUnknown(data['sender_role']!, _senderRoleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_senderRoleMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    }
+    if (data.containsKey('file_url')) {
+      context.handle(
+        _fileUrlMeta,
+        fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta),
+      );
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
+    }
+    if (data.containsKey('is_read')) {
+      context.handle(
+        _isReadMeta,
+        isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalMessage(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      chatId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}chat_id'],
+          )!,
+      senderId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sender_id'],
+          )!,
+      senderRole:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}sender_role'],
+          )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      ),
+      fileUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_url'],
+      ),
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      ),
+      isRead:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_read'],
+          )!,
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+    );
+  }
+
+  @override
+  $LocalMessagesTable createAlias(String alias) {
+    return $LocalMessagesTable(attachedDatabase, alias);
+  }
+}
+
+class LocalMessage extends DataClass implements Insertable<LocalMessage> {
+  final String id;
+  final String chatId;
+  final String senderId;
+  final String senderRole;
+  final String? content;
+  final String? fileUrl;
+  final String? fileName;
+  final bool isRead;
+  final DateTime createdAt;
+  const LocalMessage({
+    required this.id,
+    required this.chatId,
+    required this.senderId,
+    required this.senderRole,
+    this.content,
+    this.fileUrl,
+    this.fileName,
+    required this.isRead,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['chat_id'] = Variable<String>(chatId);
+    map['sender_id'] = Variable<String>(senderId);
+    map['sender_role'] = Variable<String>(senderRole);
+    if (!nullToAbsent || content != null) {
+      map['content'] = Variable<String>(content);
+    }
+    if (!nullToAbsent || fileUrl != null) {
+      map['file_url'] = Variable<String>(fileUrl);
+    }
+    if (!nullToAbsent || fileName != null) {
+      map['file_name'] = Variable<String>(fileName);
+    }
+    map['is_read'] = Variable<bool>(isRead);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  LocalMessagesCompanion toCompanion(bool nullToAbsent) {
+    return LocalMessagesCompanion(
+      id: Value(id),
+      chatId: Value(chatId),
+      senderId: Value(senderId),
+      senderRole: Value(senderRole),
+      content:
+          content == null && nullToAbsent
+              ? const Value.absent()
+              : Value(content),
+      fileUrl:
+          fileUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(fileUrl),
+      fileName:
+          fileName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(fileName),
+      isRead: Value(isRead),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory LocalMessage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalMessage(
+      id: serializer.fromJson<String>(json['id']),
+      chatId: serializer.fromJson<String>(json['chatId']),
+      senderId: serializer.fromJson<String>(json['senderId']),
+      senderRole: serializer.fromJson<String>(json['senderRole']),
+      content: serializer.fromJson<String?>(json['content']),
+      fileUrl: serializer.fromJson<String?>(json['fileUrl']),
+      fileName: serializer.fromJson<String?>(json['fileName']),
+      isRead: serializer.fromJson<bool>(json['isRead']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'chatId': serializer.toJson<String>(chatId),
+      'senderId': serializer.toJson<String>(senderId),
+      'senderRole': serializer.toJson<String>(senderRole),
+      'content': serializer.toJson<String?>(content),
+      'fileUrl': serializer.toJson<String?>(fileUrl),
+      'fileName': serializer.toJson<String?>(fileName),
+      'isRead': serializer.toJson<bool>(isRead),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  LocalMessage copyWith({
+    String? id,
+    String? chatId,
+    String? senderId,
+    String? senderRole,
+    Value<String?> content = const Value.absent(),
+    Value<String?> fileUrl = const Value.absent(),
+    Value<String?> fileName = const Value.absent(),
+    bool? isRead,
+    DateTime? createdAt,
+  }) => LocalMessage(
+    id: id ?? this.id,
+    chatId: chatId ?? this.chatId,
+    senderId: senderId ?? this.senderId,
+    senderRole: senderRole ?? this.senderRole,
+    content: content.present ? content.value : this.content,
+    fileUrl: fileUrl.present ? fileUrl.value : this.fileUrl,
+    fileName: fileName.present ? fileName.value : this.fileName,
+    isRead: isRead ?? this.isRead,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  LocalMessage copyWithCompanion(LocalMessagesCompanion data) {
+    return LocalMessage(
+      id: data.id.present ? data.id.value : this.id,
+      chatId: data.chatId.present ? data.chatId.value : this.chatId,
+      senderId: data.senderId.present ? data.senderId.value : this.senderId,
+      senderRole:
+          data.senderRole.present ? data.senderRole.value : this.senderRole,
+      content: data.content.present ? data.content.value : this.content,
+      fileUrl: data.fileUrl.present ? data.fileUrl.value : this.fileUrl,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      isRead: data.isRead.present ? data.isRead.value : this.isRead,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalMessage(')
+          ..write('id: $id, ')
+          ..write('chatId: $chatId, ')
+          ..write('senderId: $senderId, ')
+          ..write('senderRole: $senderRole, ')
+          ..write('content: $content, ')
+          ..write('fileUrl: $fileUrl, ')
+          ..write('fileName: $fileName, ')
+          ..write('isRead: $isRead, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    chatId,
+    senderId,
+    senderRole,
+    content,
+    fileUrl,
+    fileName,
+    isRead,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalMessage &&
+          other.id == this.id &&
+          other.chatId == this.chatId &&
+          other.senderId == this.senderId &&
+          other.senderRole == this.senderRole &&
+          other.content == this.content &&
+          other.fileUrl == this.fileUrl &&
+          other.fileName == this.fileName &&
+          other.isRead == this.isRead &&
+          other.createdAt == this.createdAt);
+}
+
+class LocalMessagesCompanion extends UpdateCompanion<LocalMessage> {
+  final Value<String> id;
+  final Value<String> chatId;
+  final Value<String> senderId;
+  final Value<String> senderRole;
+  final Value<String?> content;
+  final Value<String?> fileUrl;
+  final Value<String?> fileName;
+  final Value<bool> isRead;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const LocalMessagesCompanion({
+    this.id = const Value.absent(),
+    this.chatId = const Value.absent(),
+    this.senderId = const Value.absent(),
+    this.senderRole = const Value.absent(),
+    this.content = const Value.absent(),
+    this.fileUrl = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.isRead = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalMessagesCompanion.insert({
+    required String id,
+    required String chatId,
+    required String senderId,
+    required String senderRole,
+    this.content = const Value.absent(),
+    this.fileUrl = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.isRead = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       chatId = Value(chatId),
+       senderId = Value(senderId),
+       senderRole = Value(senderRole),
+       createdAt = Value(createdAt);
+  static Insertable<LocalMessage> custom({
+    Expression<String>? id,
+    Expression<String>? chatId,
+    Expression<String>? senderId,
+    Expression<String>? senderRole,
+    Expression<String>? content,
+    Expression<String>? fileUrl,
+    Expression<String>? fileName,
+    Expression<bool>? isRead,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (chatId != null) 'chat_id': chatId,
+      if (senderId != null) 'sender_id': senderId,
+      if (senderRole != null) 'sender_role': senderRole,
+      if (content != null) 'content': content,
+      if (fileUrl != null) 'file_url': fileUrl,
+      if (fileName != null) 'file_name': fileName,
+      if (isRead != null) 'is_read': isRead,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalMessagesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? chatId,
+    Value<String>? senderId,
+    Value<String>? senderRole,
+    Value<String?>? content,
+    Value<String?>? fileUrl,
+    Value<String?>? fileName,
+    Value<bool>? isRead,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return LocalMessagesCompanion(
+      id: id ?? this.id,
+      chatId: chatId ?? this.chatId,
+      senderId: senderId ?? this.senderId,
+      senderRole: senderRole ?? this.senderRole,
+      content: content ?? this.content,
+      fileUrl: fileUrl ?? this.fileUrl,
+      fileName: fileName ?? this.fileName,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (chatId.present) {
+      map['chat_id'] = Variable<String>(chatId.value);
+    }
+    if (senderId.present) {
+      map['sender_id'] = Variable<String>(senderId.value);
+    }
+    if (senderRole.present) {
+      map['sender_role'] = Variable<String>(senderRole.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (fileUrl.present) {
+      map['file_url'] = Variable<String>(fileUrl.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (isRead.present) {
+      map['is_read'] = Variable<bool>(isRead.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalMessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('chatId: $chatId, ')
+          ..write('senderId: $senderId, ')
+          ..write('senderRole: $senderRole, ')
+          ..write('content: $content, ')
+          ..write('fileUrl: $fileUrl, ')
+          ..write('fileName: $fileName, ')
+          ..write('isRead: $isRead, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalChatPreviewsTable extends LocalChatPreviews
+    with TableInfo<$LocalChatPreviewsTable, LocalChatPreview> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalChatPreviewsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<String> chatId = GeneratedColumn<String>(
+    'chat_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
+  @override
+  late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
+    'avatar_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastMessageMeta = const VerificationMeta(
+    'lastMessage',
+  );
+  @override
+  late final GeneratedColumn<String> lastMessage = GeneratedColumn<String>(
+    'last_message',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastMessageTimeMeta = const VerificationMeta(
+    'lastMessageTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastMessageTime =
+      GeneratedColumn<DateTime>(
+        'last_message_time',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _unreadCountMeta = const VerificationMeta(
+    'unreadCount',
+  );
+  @override
+  late final GeneratedColumn<int> unreadCount = GeneratedColumn<int>(
+    'unread_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _chatTypeMeta = const VerificationMeta(
+    'chatType',
+  );
+  @override
+  late final GeneratedColumn<String> chatType = GeneratedColumn<String>(
+    'chat_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chatNameMeta = const VerificationMeta(
+    'chatName',
+  );
+  @override
+  late final GeneratedColumn<String> chatName = GeneratedColumn<String>(
+    'chat_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _chatGroupIdMeta = const VerificationMeta(
+    'chatGroupId',
+  );
+  @override
+  late final GeneratedColumn<String> chatGroupId = GeneratedColumn<String>(
+    'chat_group_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _chatUpdatedAtMeta = const VerificationMeta(
+    'chatUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> chatUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'chat_updated_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    chatId,
+    userId,
+    title,
+    avatarUrl,
+    lastMessage,
+    lastMessageTime,
+    unreadCount,
+    chatType,
+    chatName,
+    chatGroupId,
+    chatUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_chat_previews';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalChatPreview> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chat_id')) {
+      context.handle(
+        _chatIdMeta,
+        chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chatIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('avatar_url')) {
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
+    }
+    if (data.containsKey('last_message')) {
+      context.handle(
+        _lastMessageMeta,
+        lastMessage.isAcceptableOrUnknown(
+          data['last_message']!,
+          _lastMessageMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_message_time')) {
+      context.handle(
+        _lastMessageTimeMeta,
+        lastMessageTime.isAcceptableOrUnknown(
+          data['last_message_time']!,
+          _lastMessageTimeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('unread_count')) {
+      context.handle(
+        _unreadCountMeta,
+        unreadCount.isAcceptableOrUnknown(
+          data['unread_count']!,
+          _unreadCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('chat_type')) {
+      context.handle(
+        _chatTypeMeta,
+        chatType.isAcceptableOrUnknown(data['chat_type']!, _chatTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chatTypeMeta);
+    }
+    if (data.containsKey('chat_name')) {
+      context.handle(
+        _chatNameMeta,
+        chatName.isAcceptableOrUnknown(data['chat_name']!, _chatNameMeta),
+      );
+    }
+    if (data.containsKey('chat_group_id')) {
+      context.handle(
+        _chatGroupIdMeta,
+        chatGroupId.isAcceptableOrUnknown(
+          data['chat_group_id']!,
+          _chatGroupIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('chat_updated_at')) {
+      context.handle(
+        _chatUpdatedAtMeta,
+        chatUpdatedAt.isAcceptableOrUnknown(
+          data['chat_updated_at']!,
+          _chatUpdatedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_chatUpdatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chatId, userId};
+  @override
+  LocalChatPreview map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalChatPreview(
+      chatId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}chat_id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      title:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}title'],
+          )!,
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
+      lastMessage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_message'],
+      ),
+      lastMessageTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_message_time'],
+      ),
+      unreadCount:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}unread_count'],
+          )!,
+      chatType:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}chat_type'],
+          )!,
+      chatName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chat_name'],
+      ),
+      chatGroupId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chat_group_id'],
+      ),
+      chatUpdatedAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}chat_updated_at'],
+          )!,
+    );
+  }
+
+  @override
+  $LocalChatPreviewsTable createAlias(String alias) {
+    return $LocalChatPreviewsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalChatPreview extends DataClass
+    implements Insertable<LocalChatPreview> {
+  final String chatId;
+  final String userId;
+  final String title;
+  final String? avatarUrl;
+  final String? lastMessage;
+  final DateTime? lastMessageTime;
+  final int unreadCount;
+  final String chatType;
+  final String? chatName;
+  final String? chatGroupId;
+  final DateTime chatUpdatedAt;
+  const LocalChatPreview({
+    required this.chatId,
+    required this.userId,
+    required this.title,
+    this.avatarUrl,
+    this.lastMessage,
+    this.lastMessageTime,
+    required this.unreadCount,
+    required this.chatType,
+    this.chatName,
+    this.chatGroupId,
+    required this.chatUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chat_id'] = Variable<String>(chatId);
+    map['user_id'] = Variable<String>(userId);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || avatarUrl != null) {
+      map['avatar_url'] = Variable<String>(avatarUrl);
+    }
+    if (!nullToAbsent || lastMessage != null) {
+      map['last_message'] = Variable<String>(lastMessage);
+    }
+    if (!nullToAbsent || lastMessageTime != null) {
+      map['last_message_time'] = Variable<DateTime>(lastMessageTime);
+    }
+    map['unread_count'] = Variable<int>(unreadCount);
+    map['chat_type'] = Variable<String>(chatType);
+    if (!nullToAbsent || chatName != null) {
+      map['chat_name'] = Variable<String>(chatName);
+    }
+    if (!nullToAbsent || chatGroupId != null) {
+      map['chat_group_id'] = Variable<String>(chatGroupId);
+    }
+    map['chat_updated_at'] = Variable<DateTime>(chatUpdatedAt);
+    return map;
+  }
+
+  LocalChatPreviewsCompanion toCompanion(bool nullToAbsent) {
+    return LocalChatPreviewsCompanion(
+      chatId: Value(chatId),
+      userId: Value(userId),
+      title: Value(title),
+      avatarUrl:
+          avatarUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(avatarUrl),
+      lastMessage:
+          lastMessage == null && nullToAbsent
+              ? const Value.absent()
+              : Value(lastMessage),
+      lastMessageTime:
+          lastMessageTime == null && nullToAbsent
+              ? const Value.absent()
+              : Value(lastMessageTime),
+      unreadCount: Value(unreadCount),
+      chatType: Value(chatType),
+      chatName:
+          chatName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(chatName),
+      chatGroupId:
+          chatGroupId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(chatGroupId),
+      chatUpdatedAt: Value(chatUpdatedAt),
+    );
+  }
+
+  factory LocalChatPreview.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalChatPreview(
+      chatId: serializer.fromJson<String>(json['chatId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      title: serializer.fromJson<String>(json['title']),
+      avatarUrl: serializer.fromJson<String?>(json['avatarUrl']),
+      lastMessage: serializer.fromJson<String?>(json['lastMessage']),
+      lastMessageTime: serializer.fromJson<DateTime?>(json['lastMessageTime']),
+      unreadCount: serializer.fromJson<int>(json['unreadCount']),
+      chatType: serializer.fromJson<String>(json['chatType']),
+      chatName: serializer.fromJson<String?>(json['chatName']),
+      chatGroupId: serializer.fromJson<String?>(json['chatGroupId']),
+      chatUpdatedAt: serializer.fromJson<DateTime>(json['chatUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chatId': serializer.toJson<String>(chatId),
+      'userId': serializer.toJson<String>(userId),
+      'title': serializer.toJson<String>(title),
+      'avatarUrl': serializer.toJson<String?>(avatarUrl),
+      'lastMessage': serializer.toJson<String?>(lastMessage),
+      'lastMessageTime': serializer.toJson<DateTime?>(lastMessageTime),
+      'unreadCount': serializer.toJson<int>(unreadCount),
+      'chatType': serializer.toJson<String>(chatType),
+      'chatName': serializer.toJson<String?>(chatName),
+      'chatGroupId': serializer.toJson<String?>(chatGroupId),
+      'chatUpdatedAt': serializer.toJson<DateTime>(chatUpdatedAt),
+    };
+  }
+
+  LocalChatPreview copyWith({
+    String? chatId,
+    String? userId,
+    String? title,
+    Value<String?> avatarUrl = const Value.absent(),
+    Value<String?> lastMessage = const Value.absent(),
+    Value<DateTime?> lastMessageTime = const Value.absent(),
+    int? unreadCount,
+    String? chatType,
+    Value<String?> chatName = const Value.absent(),
+    Value<String?> chatGroupId = const Value.absent(),
+    DateTime? chatUpdatedAt,
+  }) => LocalChatPreview(
+    chatId: chatId ?? this.chatId,
+    userId: userId ?? this.userId,
+    title: title ?? this.title,
+    avatarUrl: avatarUrl.present ? avatarUrl.value : this.avatarUrl,
+    lastMessage: lastMessage.present ? lastMessage.value : this.lastMessage,
+    lastMessageTime:
+        lastMessageTime.present ? lastMessageTime.value : this.lastMessageTime,
+    unreadCount: unreadCount ?? this.unreadCount,
+    chatType: chatType ?? this.chatType,
+    chatName: chatName.present ? chatName.value : this.chatName,
+    chatGroupId: chatGroupId.present ? chatGroupId.value : this.chatGroupId,
+    chatUpdatedAt: chatUpdatedAt ?? this.chatUpdatedAt,
+  );
+  LocalChatPreview copyWithCompanion(LocalChatPreviewsCompanion data) {
+    return LocalChatPreview(
+      chatId: data.chatId.present ? data.chatId.value : this.chatId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      title: data.title.present ? data.title.value : this.title,
+      avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
+      lastMessage:
+          data.lastMessage.present ? data.lastMessage.value : this.lastMessage,
+      lastMessageTime:
+          data.lastMessageTime.present
+              ? data.lastMessageTime.value
+              : this.lastMessageTime,
+      unreadCount:
+          data.unreadCount.present ? data.unreadCount.value : this.unreadCount,
+      chatType: data.chatType.present ? data.chatType.value : this.chatType,
+      chatName: data.chatName.present ? data.chatName.value : this.chatName,
+      chatGroupId:
+          data.chatGroupId.present ? data.chatGroupId.value : this.chatGroupId,
+      chatUpdatedAt:
+          data.chatUpdatedAt.present
+              ? data.chatUpdatedAt.value
+              : this.chatUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChatPreview(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId, ')
+          ..write('title: $title, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('lastMessage: $lastMessage, ')
+          ..write('lastMessageTime: $lastMessageTime, ')
+          ..write('unreadCount: $unreadCount, ')
+          ..write('chatType: $chatType, ')
+          ..write('chatName: $chatName, ')
+          ..write('chatGroupId: $chatGroupId, ')
+          ..write('chatUpdatedAt: $chatUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    chatId,
+    userId,
+    title,
+    avatarUrl,
+    lastMessage,
+    lastMessageTime,
+    unreadCount,
+    chatType,
+    chatName,
+    chatGroupId,
+    chatUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalChatPreview &&
+          other.chatId == this.chatId &&
+          other.userId == this.userId &&
+          other.title == this.title &&
+          other.avatarUrl == this.avatarUrl &&
+          other.lastMessage == this.lastMessage &&
+          other.lastMessageTime == this.lastMessageTime &&
+          other.unreadCount == this.unreadCount &&
+          other.chatType == this.chatType &&
+          other.chatName == this.chatName &&
+          other.chatGroupId == this.chatGroupId &&
+          other.chatUpdatedAt == this.chatUpdatedAt);
+}
+
+class LocalChatPreviewsCompanion extends UpdateCompanion<LocalChatPreview> {
+  final Value<String> chatId;
+  final Value<String> userId;
+  final Value<String> title;
+  final Value<String?> avatarUrl;
+  final Value<String?> lastMessage;
+  final Value<DateTime?> lastMessageTime;
+  final Value<int> unreadCount;
+  final Value<String> chatType;
+  final Value<String?> chatName;
+  final Value<String?> chatGroupId;
+  final Value<DateTime> chatUpdatedAt;
+  final Value<int> rowid;
+  const LocalChatPreviewsCompanion({
+    this.chatId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.avatarUrl = const Value.absent(),
+    this.lastMessage = const Value.absent(),
+    this.lastMessageTime = const Value.absent(),
+    this.unreadCount = const Value.absent(),
+    this.chatType = const Value.absent(),
+    this.chatName = const Value.absent(),
+    this.chatGroupId = const Value.absent(),
+    this.chatUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalChatPreviewsCompanion.insert({
+    required String chatId,
+    required String userId,
+    required String title,
+    this.avatarUrl = const Value.absent(),
+    this.lastMessage = const Value.absent(),
+    this.lastMessageTime = const Value.absent(),
+    this.unreadCount = const Value.absent(),
+    required String chatType,
+    this.chatName = const Value.absent(),
+    this.chatGroupId = const Value.absent(),
+    required DateTime chatUpdatedAt,
+    this.rowid = const Value.absent(),
+  }) : chatId = Value(chatId),
+       userId = Value(userId),
+       title = Value(title),
+       chatType = Value(chatType),
+       chatUpdatedAt = Value(chatUpdatedAt);
+  static Insertable<LocalChatPreview> custom({
+    Expression<String>? chatId,
+    Expression<String>? userId,
+    Expression<String>? title,
+    Expression<String>? avatarUrl,
+    Expression<String>? lastMessage,
+    Expression<DateTime>? lastMessageTime,
+    Expression<int>? unreadCount,
+    Expression<String>? chatType,
+    Expression<String>? chatName,
+    Expression<String>? chatGroupId,
+    Expression<DateTime>? chatUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chatId != null) 'chat_id': chatId,
+      if (userId != null) 'user_id': userId,
+      if (title != null) 'title': title,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (lastMessage != null) 'last_message': lastMessage,
+      if (lastMessageTime != null) 'last_message_time': lastMessageTime,
+      if (unreadCount != null) 'unread_count': unreadCount,
+      if (chatType != null) 'chat_type': chatType,
+      if (chatName != null) 'chat_name': chatName,
+      if (chatGroupId != null) 'chat_group_id': chatGroupId,
+      if (chatUpdatedAt != null) 'chat_updated_at': chatUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalChatPreviewsCompanion copyWith({
+    Value<String>? chatId,
+    Value<String>? userId,
+    Value<String>? title,
+    Value<String?>? avatarUrl,
+    Value<String?>? lastMessage,
+    Value<DateTime?>? lastMessageTime,
+    Value<int>? unreadCount,
+    Value<String>? chatType,
+    Value<String?>? chatName,
+    Value<String?>? chatGroupId,
+    Value<DateTime>? chatUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalChatPreviewsCompanion(
+      chatId: chatId ?? this.chatId,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageTime: lastMessageTime ?? this.lastMessageTime,
+      unreadCount: unreadCount ?? this.unreadCount,
+      chatType: chatType ?? this.chatType,
+      chatName: chatName ?? this.chatName,
+      chatGroupId: chatGroupId ?? this.chatGroupId,
+      chatUpdatedAt: chatUpdatedAt ?? this.chatUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chatId.present) {
+      map['chat_id'] = Variable<String>(chatId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (avatarUrl.present) {
+      map['avatar_url'] = Variable<String>(avatarUrl.value);
+    }
+    if (lastMessage.present) {
+      map['last_message'] = Variable<String>(lastMessage.value);
+    }
+    if (lastMessageTime.present) {
+      map['last_message_time'] = Variable<DateTime>(lastMessageTime.value);
+    }
+    if (unreadCount.present) {
+      map['unread_count'] = Variable<int>(unreadCount.value);
+    }
+    if (chatType.present) {
+      map['chat_type'] = Variable<String>(chatType.value);
+    }
+    if (chatName.present) {
+      map['chat_name'] = Variable<String>(chatName.value);
+    }
+    if (chatGroupId.present) {
+      map['chat_group_id'] = Variable<String>(chatGroupId.value);
+    }
+    if (chatUpdatedAt.present) {
+      map['chat_updated_at'] = Variable<DateTime>(chatUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChatPreviewsCompanion(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId, ')
+          ..write('title: $title, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('lastMessage: $lastMessage, ')
+          ..write('lastMessageTime: $lastMessageTime, ')
+          ..write('unreadCount: $unreadCount, ')
+          ..write('chatType: $chatType, ')
+          ..write('chatName: $chatName, ')
+          ..write('chatGroupId: $chatGroupId, ')
+          ..write('chatUpdatedAt: $chatUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6647,6 +8583,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalInstitutionsTable localInstitutions =
       $LocalInstitutionsTable(this);
   late final $LocalLessonsTable localLessons = $LocalLessonsTable(this);
+  late final $LocalLessonAttendancesTable localLessonAttendances =
+      $LocalLessonAttendancesTable(this);
+  late final $LocalChatsTable localChats = $LocalChatsTable(this);
+  late final $LocalMessagesTable localMessages = $LocalMessagesTable(this);
+  late final $LocalChatPreviewsTable localChatPreviews =
+      $LocalChatPreviewsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6667,6 +8609,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localAdminProfiles,
     localInstitutions,
     localLessons,
+    localLessonAttendances,
+    localChats,
+    localMessages,
+    localChatPreviews,
   ];
 }
 
@@ -11147,6 +13093,1056 @@ typedef $$LocalLessonsTableProcessedTableManager =
       LocalLesson,
       PrefetchHooks Function()
     >;
+typedef $$LocalLessonAttendancesTableCreateCompanionBuilder =
+    LocalLessonAttendancesCompanion Function({
+      Value<String?> id,
+      required String lessonId,
+      required String studentId,
+      Value<String?> status,
+      Value<int> rowid,
+    });
+typedef $$LocalLessonAttendancesTableUpdateCompanionBuilder =
+    LocalLessonAttendancesCompanion Function({
+      Value<String?> id,
+      Value<String> lessonId,
+      Value<String> studentId,
+      Value<String?> status,
+      Value<int> rowid,
+    });
+
+class $$LocalLessonAttendancesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalLessonAttendancesTable> {
+  $$LocalLessonAttendancesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get studentId => $composableBuilder(
+    column: $table.studentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalLessonAttendancesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalLessonAttendancesTable> {
+  $$LocalLessonAttendancesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get studentId => $composableBuilder(
+    column: $table.studentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalLessonAttendancesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalLessonAttendancesTable> {
+  $$LocalLessonAttendancesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get lessonId =>
+      $composableBuilder(column: $table.lessonId, builder: (column) => column);
+
+  GeneratedColumn<String> get studentId =>
+      $composableBuilder(column: $table.studentId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+}
+
+class $$LocalLessonAttendancesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalLessonAttendancesTable,
+          LocalLessonAttendance,
+          $$LocalLessonAttendancesTableFilterComposer,
+          $$LocalLessonAttendancesTableOrderingComposer,
+          $$LocalLessonAttendancesTableAnnotationComposer,
+          $$LocalLessonAttendancesTableCreateCompanionBuilder,
+          $$LocalLessonAttendancesTableUpdateCompanionBuilder,
+          (
+            LocalLessonAttendance,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalLessonAttendancesTable,
+              LocalLessonAttendance
+            >,
+          ),
+          LocalLessonAttendance,
+          PrefetchHooks Function()
+        > {
+  $$LocalLessonAttendancesTableTableManager(
+    _$AppDatabase db,
+    $LocalLessonAttendancesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$LocalLessonAttendancesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$LocalLessonAttendancesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$LocalLessonAttendancesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String?> id = const Value.absent(),
+                Value<String> lessonId = const Value.absent(),
+                Value<String> studentId = const Value.absent(),
+                Value<String?> status = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalLessonAttendancesCompanion(
+                id: id,
+                lessonId: lessonId,
+                studentId: studentId,
+                status: status,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String?> id = const Value.absent(),
+                required String lessonId,
+                required String studentId,
+                Value<String?> status = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalLessonAttendancesCompanion.insert(
+                id: id,
+                lessonId: lessonId,
+                studentId: studentId,
+                status: status,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalLessonAttendancesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalLessonAttendancesTable,
+      LocalLessonAttendance,
+      $$LocalLessonAttendancesTableFilterComposer,
+      $$LocalLessonAttendancesTableOrderingComposer,
+      $$LocalLessonAttendancesTableAnnotationComposer,
+      $$LocalLessonAttendancesTableCreateCompanionBuilder,
+      $$LocalLessonAttendancesTableUpdateCompanionBuilder,
+      (
+        LocalLessonAttendance,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalLessonAttendancesTable,
+          LocalLessonAttendance
+        >,
+      ),
+      LocalLessonAttendance,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalChatsTableCreateCompanionBuilder =
+    LocalChatsCompanion Function({
+      required String id,
+      required String type,
+      Value<String?> name,
+      Value<String?> groupId,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalChatsTableUpdateCompanionBuilder =
+    LocalChatsCompanion Function({
+      Value<String> id,
+      Value<String> type,
+      Value<String?> name,
+      Value<String?> groupId,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalChatsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalChatsTable> {
+  $$LocalChatsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalChatsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalChatsTable> {
+  $$LocalChatsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get groupId => $composableBuilder(
+    column: $table.groupId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalChatsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalChatsTable> {
+  $$LocalChatsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get groupId =>
+      $composableBuilder(column: $table.groupId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LocalChatsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalChatsTable,
+          LocalChat,
+          $$LocalChatsTableFilterComposer,
+          $$LocalChatsTableOrderingComposer,
+          $$LocalChatsTableAnnotationComposer,
+          $$LocalChatsTableCreateCompanionBuilder,
+          $$LocalChatsTableUpdateCompanionBuilder,
+          (
+            LocalChat,
+            BaseReferences<_$AppDatabase, $LocalChatsTable, LocalChat>,
+          ),
+          LocalChat,
+          PrefetchHooks Function()
+        > {
+  $$LocalChatsTableTableManager(_$AppDatabase db, $LocalChatsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$LocalChatsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$LocalChatsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalChatsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String?> name = const Value.absent(),
+                Value<String?> groupId = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalChatsCompanion(
+                id: id,
+                type: type,
+                name: name,
+                groupId: groupId,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String type,
+                Value<String?> name = const Value.absent(),
+                Value<String?> groupId = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalChatsCompanion.insert(
+                id: id,
+                type: type,
+                name: name,
+                groupId: groupId,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalChatsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalChatsTable,
+      LocalChat,
+      $$LocalChatsTableFilterComposer,
+      $$LocalChatsTableOrderingComposer,
+      $$LocalChatsTableAnnotationComposer,
+      $$LocalChatsTableCreateCompanionBuilder,
+      $$LocalChatsTableUpdateCompanionBuilder,
+      (LocalChat, BaseReferences<_$AppDatabase, $LocalChatsTable, LocalChat>),
+      LocalChat,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalMessagesTableCreateCompanionBuilder =
+    LocalMessagesCompanion Function({
+      required String id,
+      required String chatId,
+      required String senderId,
+      required String senderRole,
+      Value<String?> content,
+      Value<String?> fileUrl,
+      Value<String?> fileName,
+      Value<bool> isRead,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$LocalMessagesTableUpdateCompanionBuilder =
+    LocalMessagesCompanion Function({
+      Value<String> id,
+      Value<String> chatId,
+      Value<String> senderId,
+      Value<String> senderRole,
+      Value<String?> content,
+      Value<String?> fileUrl,
+      Value<String?> fileName,
+      Value<bool> isRead,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$LocalMessagesTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalMessagesTable> {
+  $$LocalMessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get senderId => $composableBuilder(
+    column: $table.senderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get senderRole => $composableBuilder(
+    column: $table.senderRole,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileUrl => $composableBuilder(
+    column: $table.fileUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRead => $composableBuilder(
+    column: $table.isRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalMessagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalMessagesTable> {
+  $$LocalMessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get senderId => $composableBuilder(
+    column: $table.senderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get senderRole => $composableBuilder(
+    column: $table.senderRole,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileUrl => $composableBuilder(
+    column: $table.fileUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRead => $composableBuilder(
+    column: $table.isRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalMessagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalMessagesTable> {
+  $$LocalMessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get chatId =>
+      $composableBuilder(column: $table.chatId, builder: (column) => column);
+
+  GeneratedColumn<String> get senderId =>
+      $composableBuilder(column: $table.senderId, builder: (column) => column);
+
+  GeneratedColumn<String> get senderRole => $composableBuilder(
+    column: $table.senderRole,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get fileUrl =>
+      $composableBuilder(column: $table.fileUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<bool> get isRead =>
+      $composableBuilder(column: $table.isRead, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$LocalMessagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalMessagesTable,
+          LocalMessage,
+          $$LocalMessagesTableFilterComposer,
+          $$LocalMessagesTableOrderingComposer,
+          $$LocalMessagesTableAnnotationComposer,
+          $$LocalMessagesTableCreateCompanionBuilder,
+          $$LocalMessagesTableUpdateCompanionBuilder,
+          (
+            LocalMessage,
+            BaseReferences<_$AppDatabase, $LocalMessagesTable, LocalMessage>,
+          ),
+          LocalMessage,
+          PrefetchHooks Function()
+        > {
+  $$LocalMessagesTableTableManager(_$AppDatabase db, $LocalMessagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$LocalMessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () =>
+                  $$LocalMessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$LocalMessagesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> chatId = const Value.absent(),
+                Value<String> senderId = const Value.absent(),
+                Value<String> senderRole = const Value.absent(),
+                Value<String?> content = const Value.absent(),
+                Value<String?> fileUrl = const Value.absent(),
+                Value<String?> fileName = const Value.absent(),
+                Value<bool> isRead = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalMessagesCompanion(
+                id: id,
+                chatId: chatId,
+                senderId: senderId,
+                senderRole: senderRole,
+                content: content,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                isRead: isRead,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String chatId,
+                required String senderId,
+                required String senderRole,
+                Value<String?> content = const Value.absent(),
+                Value<String?> fileUrl = const Value.absent(),
+                Value<String?> fileName = const Value.absent(),
+                Value<bool> isRead = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalMessagesCompanion.insert(
+                id: id,
+                chatId: chatId,
+                senderId: senderId,
+                senderRole: senderRole,
+                content: content,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                isRead: isRead,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalMessagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalMessagesTable,
+      LocalMessage,
+      $$LocalMessagesTableFilterComposer,
+      $$LocalMessagesTableOrderingComposer,
+      $$LocalMessagesTableAnnotationComposer,
+      $$LocalMessagesTableCreateCompanionBuilder,
+      $$LocalMessagesTableUpdateCompanionBuilder,
+      (
+        LocalMessage,
+        BaseReferences<_$AppDatabase, $LocalMessagesTable, LocalMessage>,
+      ),
+      LocalMessage,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalChatPreviewsTableCreateCompanionBuilder =
+    LocalChatPreviewsCompanion Function({
+      required String chatId,
+      required String userId,
+      required String title,
+      Value<String?> avatarUrl,
+      Value<String?> lastMessage,
+      Value<DateTime?> lastMessageTime,
+      Value<int> unreadCount,
+      required String chatType,
+      Value<String?> chatName,
+      Value<String?> chatGroupId,
+      required DateTime chatUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalChatPreviewsTableUpdateCompanionBuilder =
+    LocalChatPreviewsCompanion Function({
+      Value<String> chatId,
+      Value<String> userId,
+      Value<String> title,
+      Value<String?> avatarUrl,
+      Value<String?> lastMessage,
+      Value<DateTime?> lastMessageTime,
+      Value<int> unreadCount,
+      Value<String> chatType,
+      Value<String?> chatName,
+      Value<String?> chatGroupId,
+      Value<DateTime> chatUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalChatPreviewsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalChatPreviewsTable> {
+  $$LocalChatPreviewsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastMessage => $composableBuilder(
+    column: $table.lastMessage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastMessageTime => $composableBuilder(
+    column: $table.lastMessageTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get unreadCount => $composableBuilder(
+    column: $table.unreadCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chatType => $composableBuilder(
+    column: $table.chatType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chatName => $composableBuilder(
+    column: $table.chatName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chatGroupId => $composableBuilder(
+    column: $table.chatGroupId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get chatUpdatedAt => $composableBuilder(
+    column: $table.chatUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalChatPreviewsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalChatPreviewsTable> {
+  $$LocalChatPreviewsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chatId => $composableBuilder(
+    column: $table.chatId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastMessage => $composableBuilder(
+    column: $table.lastMessage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastMessageTime => $composableBuilder(
+    column: $table.lastMessageTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get unreadCount => $composableBuilder(
+    column: $table.unreadCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chatType => $composableBuilder(
+    column: $table.chatType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chatName => $composableBuilder(
+    column: $table.chatName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chatGroupId => $composableBuilder(
+    column: $table.chatGroupId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get chatUpdatedAt => $composableBuilder(
+    column: $table.chatUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalChatPreviewsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalChatPreviewsTable> {
+  $$LocalChatPreviewsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chatId =>
+      $composableBuilder(column: $table.chatId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get lastMessage => $composableBuilder(
+    column: $table.lastMessage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastMessageTime => $composableBuilder(
+    column: $table.lastMessageTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get unreadCount => $composableBuilder(
+    column: $table.unreadCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chatType =>
+      $composableBuilder(column: $table.chatType, builder: (column) => column);
+
+  GeneratedColumn<String> get chatName =>
+      $composableBuilder(column: $table.chatName, builder: (column) => column);
+
+  GeneratedColumn<String> get chatGroupId => $composableBuilder(
+    column: $table.chatGroupId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get chatUpdatedAt => $composableBuilder(
+    column: $table.chatUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalChatPreviewsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalChatPreviewsTable,
+          LocalChatPreview,
+          $$LocalChatPreviewsTableFilterComposer,
+          $$LocalChatPreviewsTableOrderingComposer,
+          $$LocalChatPreviewsTableAnnotationComposer,
+          $$LocalChatPreviewsTableCreateCompanionBuilder,
+          $$LocalChatPreviewsTableUpdateCompanionBuilder,
+          (
+            LocalChatPreview,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalChatPreviewsTable,
+              LocalChatPreview
+            >,
+          ),
+          LocalChatPreview,
+          PrefetchHooks Function()
+        > {
+  $$LocalChatPreviewsTableTableManager(
+    _$AppDatabase db,
+    $LocalChatPreviewsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$LocalChatPreviewsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer:
+              () => $$LocalChatPreviewsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$LocalChatPreviewsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> chatId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<String?> lastMessage = const Value.absent(),
+                Value<DateTime?> lastMessageTime = const Value.absent(),
+                Value<int> unreadCount = const Value.absent(),
+                Value<String> chatType = const Value.absent(),
+                Value<String?> chatName = const Value.absent(),
+                Value<String?> chatGroupId = const Value.absent(),
+                Value<DateTime> chatUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalChatPreviewsCompanion(
+                chatId: chatId,
+                userId: userId,
+                title: title,
+                avatarUrl: avatarUrl,
+                lastMessage: lastMessage,
+                lastMessageTime: lastMessageTime,
+                unreadCount: unreadCount,
+                chatType: chatType,
+                chatName: chatName,
+                chatGroupId: chatGroupId,
+                chatUpdatedAt: chatUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String chatId,
+                required String userId,
+                required String title,
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<String?> lastMessage = const Value.absent(),
+                Value<DateTime?> lastMessageTime = const Value.absent(),
+                Value<int> unreadCount = const Value.absent(),
+                required String chatType,
+                Value<String?> chatName = const Value.absent(),
+                Value<String?> chatGroupId = const Value.absent(),
+                required DateTime chatUpdatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalChatPreviewsCompanion.insert(
+                chatId: chatId,
+                userId: userId,
+                title: title,
+                avatarUrl: avatarUrl,
+                lastMessage: lastMessage,
+                lastMessageTime: lastMessageTime,
+                unreadCount: unreadCount,
+                chatType: chatType,
+                chatName: chatName,
+                chatGroupId: chatGroupId,
+                chatUpdatedAt: chatUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalChatPreviewsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalChatPreviewsTable,
+      LocalChatPreview,
+      $$LocalChatPreviewsTableFilterComposer,
+      $$LocalChatPreviewsTableOrderingComposer,
+      $$LocalChatPreviewsTableAnnotationComposer,
+      $$LocalChatPreviewsTableCreateCompanionBuilder,
+      $$LocalChatPreviewsTableUpdateCompanionBuilder,
+      (
+        LocalChatPreview,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalChatPreviewsTable,
+          LocalChatPreview
+        >,
+      ),
+      LocalChatPreview,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11181,4 +14177,15 @@ class $AppDatabaseManager {
       $$LocalInstitutionsTableTableManager(_db, _db.localInstitutions);
   $$LocalLessonsTableTableManager get localLessons =>
       $$LocalLessonsTableTableManager(_db, _db.localLessons);
+  $$LocalLessonAttendancesTableTableManager get localLessonAttendances =>
+      $$LocalLessonAttendancesTableTableManager(
+        _db,
+        _db.localLessonAttendances,
+      );
+  $$LocalChatsTableTableManager get localChats =>
+      $$LocalChatsTableTableManager(_db, _db.localChats);
+  $$LocalMessagesTableTableManager get localMessages =>
+      $$LocalMessagesTableTableManager(_db, _db.localMessages);
+  $$LocalChatPreviewsTableTableManager get localChatPreviews =>
+      $$LocalChatPreviewsTableTableManager(_db, _db.localChatPreviews);
 }

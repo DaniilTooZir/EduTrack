@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:edu_track/data/repositories/chat_repository.dart';
 import 'package:edu_track/data/services/chat_service.dart';
 import 'package:edu_track/data/services/users_fetch_service.dart';
 import 'package:edu_track/providers/user_provider.dart';
@@ -21,7 +22,8 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
-  final _chatService = ChatService();
+  late final ChatRepository _chatRepo;
+  String? _userId;
   bool _isLoading = true;
   List<ChatPreview> _chats = [];
   RealtimeChannel? _channel;
@@ -32,19 +34,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
   bool _onlyUnread = false;
 
   List<ChatPreview> get _filteredChats {
-    final list =
-        _chats.where((c) {
-          final q = _searchController.text.trim().toLowerCase();
-          if (q.isNotEmpty && !c.title.toLowerCase().contains(q)) return false;
-          if (_onlyUnread && c.isRead) return false;
-          return true;
-        }).toList();
-    return list;
+    return _chats.where((c) {
+      final q = _searchController.text.trim().toLowerCase();
+      if (q.isNotEmpty && !c.title.toLowerCase().contains(q)) return false;
+      if (_onlyUnread && c.isRead) return false;
+      return true;
+    }).toList();
   }
 
   @override
   void initState() {
     super.initState();
+    _chatRepo = Provider.of<ChatRepository>(context, listen: false);
     _loadChats();
     _searchController.addListener(() => setState(() {}));
   }
@@ -60,8 +61,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _loadChats() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId == null) return;
+    _userId = userId;
 
-    final result = await _chatService.getEnrichedUserChats(userId);
+    // Cache-first: сразу покажет кэш, в фоне обновится
+    final result = await _chatRepo.getEnrichedUserChats(userId);
     if (result.isFailure) {
       MessengerHelper.showError(result.errorMessage);
       if (mounted) setState(() => _isLoading = false);
@@ -74,6 +77,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
       });
       _syncSubscription(userId);
     }
+  }
+
+  Future<void> _reloadFromCache() async {
+    final userId = _userId;
+    if (userId == null || !mounted) return;
+    final previews = await _chatRepo.getCachedPreviews(userId);
+    if (mounted) setState(() => _chats = previews);
   }
 
   void _syncSubscription(String userId) {
@@ -94,11 +104,27 @@ class _ChatListScreenState extends State<ChatListScreen> {
               schema: 'public',
               table: 'messages',
               callback: (payload) {
-                final chatId = payload.newRecord['chat_id'] as String?;
-                if (chatId != null && newIds.contains(chatId)) {
-                  _debounce?.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 400), _loadChats);
-                }
+                final record = payload.newRecord;
+                final chatId = record['chat_id'] as String?;
+                if (chatId == null || !newIds.contains(chatId)) return;
+                final content = record['content'] as String?;
+                final fileUrl = record['file_url'] as String?;
+                final createdAtStr = record['created_at'] as String?;
+                final senderId = record['sender_id'] as String?;
+                final lastMessageTime = createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
+                if (lastMessageTime == null) return;
+
+                final isFromMe = senderId == userId;
+                unawaited(
+                  _chatRepo.updatePreviewLastMessage(
+                    chatId: chatId,
+                    lastMessage: content ?? (fileUrl != null ? '📎 Файл' : null),
+                    lastMessageTime: lastMessageTime,
+                    resetUnreadForUser: isFromMe ? userId : null,
+                    incrementUnread: !isFromMe,
+                  ),
+                );
+                unawaited(_reloadFromCache());
               },
             )
             .subscribe();

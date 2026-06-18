@@ -1,7 +1,7 @@
-import 'package:edu_track/data/services/group_service.dart';
-import 'package:edu_track/data/services/homework_service.dart';
-import 'package:edu_track/data/services/student_service.dart';
-import 'package:edu_track/data/services/subject_service.dart';
+import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/group_repository.dart';
+import 'package:edu_track/data/repositories/homework_repository.dart';
+import 'package:edu_track/data/repositories/subject_repository.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/homework_status.dart';
@@ -23,10 +23,9 @@ class TeacherHomeworkStatusScreen extends StatefulWidget {
 }
 
 class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScreen> {
-  final _homeworkService = HomeworkService();
-  final _subjectService = SubjectService();
-  final _groupService = GroupService();
-  final _studentService = StudentService();
+  late final HomeworkRepository _hwRepo;
+  late final SubjectRepository _subjectRepo;
+  late final AppDatabase _db;
 
   bool _isLoading = true;
   List<Homework> _allHomeworks = [];
@@ -40,6 +39,9 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
   @override
   void initState() {
     super.initState();
+    _hwRepo = Provider.of<HomeworkRepository>(context, listen: false);
+    _subjectRepo = Provider.of<SubjectRepository>(context, listen: false);
+    _db = Provider.of<AppDatabase>(context, listen: false);
     _loadData();
   }
 
@@ -51,37 +53,33 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final teacherId = userProvider.userId!;
-    final institutionId = userProvider.institutionId!;
-    final (subjectsResult, groupsResult, homeworksResult) =
+    final teacherId = Provider.of<UserProvider>(context, listen: false).userId!;
+    final (subjectsResult, homeworksResult, schedules) =
         await (
-          _subjectService.getSubjectsByTeacherId(teacherId),
-          _groupService.getGroups(institutionId),
-          _homeworkService.getHomeworkByTeacherId(teacherId),
+          _subjectRepo.getSubjectsByTeacherId(teacherId),
+          _hwRepo.getHomeworkByTeacherId(teacherId),
+          _db.getSchedulesForTeacher(teacherId),
         ).wait;
     if (!mounted) return;
-    if (subjectsResult.isFailure) {
-      setState(() => _isLoading = false);
-      MessengerHelper.showError(subjectsResult.errorMessage);
-      return;
+
+    final seenGroupIds = <String>{};
+    final allGroups = <Group>[];
+    for (final s in schedules) {
+      if (s.group != null && s.group!.id != null && seenGroupIds.add(s.group!.id!)) {
+        allGroups.add(s.group!);
+      }
     }
-    if (groupsResult.isFailure) {
-      setState(() => _isLoading = false);
-      MessengerHelper.showError(groupsResult.errorMessage);
-      return;
-    }
-    if (homeworksResult.isFailure) {
-      setState(() => _isLoading = false);
-      MessengerHelper.showError(homeworksResult.errorMessage);
-      return;
-    }
+    allGroups.sort((a, b) => a.name.compareTo(b.name));
+
     setState(() {
-      _subjects = subjectsResult.data;
-      _groups = groupsResult.data;
-      _allHomeworks = homeworksResult.data;
+      _subjects = subjectsResult.isSuccess ? subjectsResult.data : [];
+      _groups = allGroups;
+      _allHomeworks = homeworksResult.isSuccess ? homeworksResult.data : [];
       _isLoading = false;
     });
+    if (homeworksResult.isFailure && subjectsResult.isFailure) {
+      MessengerHelper.showError(homeworksResult.errorMessage);
+    }
   }
 
   List<Homework> get _filteredHomeworks {
@@ -97,8 +95,11 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
     showAppBottomSheet(
       context,
       builder:
-          (context) =>
-              _HomeworkDetailSheet(homework: hw, studentService: _studentService, homeworkService: _homeworkService),
+          (context) => _HomeworkDetailSheet(
+            homework: hw,
+            groupRepo: Provider.of<GroupRepository>(context, listen: false),
+            hwRepo: _hwRepo,
+          ),
     );
   }
 
@@ -218,9 +219,9 @@ class _TeacherHomeworkStatusScreenState extends State<TeacherHomeworkStatusScree
 
 class _HomeworkDetailSheet extends StatefulWidget {
   final Homework homework;
-  final StudentService studentService;
-  final HomeworkService homeworkService;
-  const _HomeworkDetailSheet({required this.homework, required this.studentService, required this.homeworkService});
+  final GroupRepository groupRepo;
+  final HomeworkRepository hwRepo;
+  const _HomeworkDetailSheet({required this.homework, required this.groupRepo, required this.hwRepo});
 
   @override
   State<_HomeworkDetailSheet> createState() => _HomeworkDetailSheetState();
@@ -240,8 +241,8 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
   Future<void> _loadDetails() async {
     final (studentsResult, statusesResult) =
         await (
-          widget.studentService.getStudentsByGroupId(widget.homework.groupId),
-          widget.homeworkService.getStatusesByHomeworkId(widget.homework.id),
+          widget.groupRepo.getStudentsByGroupId(widget.homework.groupId),
+          widget.hwRepo.getStatusesByHomeworkId(widget.homework.id),
         ).wait;
     if (!mounted) return;
     if (studentsResult.isFailure || statusesResult.isFailure) {
@@ -264,7 +265,7 @@ class _HomeworkDetailSheetState extends State<_HomeworkDetailSheet> {
             status: status,
             homework: widget.homework,
             onUpdate: (isCompleted, comment) async {
-              final result = await widget.homeworkService.evaluateHomework(
+              final result = await widget.hwRepo.evaluateHomework(
                 homeworkId: widget.homework.id,
                 studentId: student.id,
                 isCompleted: isCompleted,

@@ -164,11 +164,37 @@ class HomeworkRepository {
     return result;
   }
 
-  Future<AppResult<List<HomeworkStatus>>> getStatusesByHomeworkId(String homeworkId) =>
-      _remote.getStatusesByHomeworkId(homeworkId);
+  // Cache-first: статусы по конкретному ДЗ (для экрана проверки)
+  Future<AppResult<List<HomeworkStatus>>> getStatusesByHomeworkId(String homeworkId) async {
+    final cached = await _local.getHomeworkStatusesByHomeworkId(homeworkId);
+    if (cached.isNotEmpty) {
+      unawaited(
+        _remote.getStatusesByHomeworkId(homeworkId).then((result) {
+          if (result.isSuccess) _local.saveHomeworkStatuses(result.data);
+        }),
+      );
+      return AppResult.success(cached);
+    }
+    final result = await _remote.getStatusesByHomeworkId(homeworkId);
+    if (result.isSuccess) await _local.saveHomeworkStatuses(result.data);
+    return result;
+  }
 
-  Future<AppResult<List<Homework>>> getHomeworkByTeacherId(String teacherId) =>
-      _remote.getHomeworkByTeacherId(teacherId);
+  // Cache-first: ДЗ преподавателя через группы расписания
+  Future<AppResult<List<Homework>>> getHomeworkByTeacherId(String teacherId) async {
+    final cached = await _local.getHomeworksByTeacherGroups(teacherId);
+    if (cached.isNotEmpty) {
+      unawaited(
+        _remote.getHomeworkByTeacherId(teacherId).then((result) {
+          if (result.isSuccess) _local.saveHomeworks(result.data);
+        }),
+      );
+      return AppResult.success(cached);
+    }
+    final result = await _remote.getHomeworkByTeacherId(teacherId);
+    if (result.isSuccess) await _local.saveHomeworks(result.data);
+    return result;
+  }
 
   Future<AppResult<List<Homework>>> getHomeworksForStudent(String studentId) =>
       _remote.getHomeworksForStudent(studentId);

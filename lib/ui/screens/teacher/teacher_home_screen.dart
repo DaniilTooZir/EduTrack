@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/repositories/subject_repository.dart';
 import 'package:edu_track/models/schedule.dart';
@@ -525,48 +524,41 @@ class _JournalSelectorSheetState extends State<_JournalSelectorSheet> {
   }
 
   Future<void> _loadPairs() async {
-    try {
-      final response = await SupabaseConnection.client
-          .from('schedule')
-          .select('group_id, subject_id, group:groups(id, name), subject:subjects(id, name)')
-          .eq('teacher_id', widget.teacherId);
-      final seen = <String>{};
-      final pairs = <_SchedulePair>[];
-      for (final item in response as List) {
-        final groupId = item['group_id']?.toString() ?? '';
-        final subjectId = item['subject_id']?.toString() ?? '';
-        final key = '$groupId|$subjectId';
-        if (groupId.isEmpty || subjectId.isEmpty || !seen.add(key)) continue;
-        final groupData = item['group'] as Map<String, dynamic>?;
-        final subjectData = item['subject'] as Map<String, dynamic>?;
-        pairs.add(
-          _SchedulePair(
-            groupId: groupId,
-            groupName: groupData?['name'] as String? ?? groupId,
-            subjectId: subjectId,
-            subjectName: subjectData?['name'] as String? ?? subjectId,
-          ),
-        );
-      }
-
-      final uniqueSubjects = <String, ({String id, String name})>{};
-      for (final p in pairs) {
-        uniqueSubjects[p.subjectId] = (id: p.subjectId, name: p.subjectName);
-      }
-
-      setState(() {
-        _pairs = pairs;
-        _subjects = uniqueSubjects.values.toList()..sort((a, b) => a.name.compareTo(b.name));
-        _isLoading = false;
-      });
-      if (widget.initialSubjectId != null && _subjects.any((s) => s.id == widget.initialSubjectId)) {
-        _onSubjectChanged(widget.initialSubjectId);
-      }
-    } catch (_) {
+    final scheduleRepo = Provider.of<ScheduleRepository>(context, listen: false);
+    final result = await scheduleRepo.getScheduleForTeacher(widget.teacherId);
+    if (!mounted) return;
+    if (result.isFailure) {
       setState(() {
         _errorMessage = 'Не удалось загрузить данные расписания';
         _isLoading = false;
       });
+      return;
+    }
+    final seen = <String>{};
+    final pairs = <_SchedulePair>[];
+    for (final s in result.data) {
+      final key = '${s.groupId}|${s.subjectId}';
+      if (s.groupId.isEmpty || s.subjectId.isEmpty || !seen.add(key)) continue;
+      pairs.add(
+        _SchedulePair(
+          groupId: s.groupId,
+          groupName: s.group?.name ?? s.groupId,
+          subjectId: s.subjectId,
+          subjectName: s.subject?.name ?? s.subjectId,
+        ),
+      );
+    }
+    final uniqueSubjects = <String, ({String id, String name})>{};
+    for (final p in pairs) {
+      uniqueSubjects[p.subjectId] = (id: p.subjectId, name: p.subjectName);
+    }
+    setState(() {
+      _pairs = pairs;
+      _subjects = uniqueSubjects.values.toList()..sort((a, b) => a.name.compareTo(b.name));
+      _isLoading = false;
+    });
+    if (widget.initialSubjectId != null && _subjects.any((s) => s.id == widget.initialSubjectId)) {
+      _onSubjectChanged(widget.initialSubjectId);
     }
   }
 

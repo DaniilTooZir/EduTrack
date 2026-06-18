@@ -1,8 +1,7 @@
-import 'package:edu_track/data/database/connection_to_database.dart';
+import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/homework_repository.dart';
+import 'package:edu_track/data/repositories/subject_repository.dart';
 import 'package:edu_track/data/services/file_service.dart';
-import 'package:edu_track/data/services/group_service.dart';
-import 'package:edu_track/data/services/homework_service.dart';
-import 'package:edu_track/data/services/subject_service.dart';
 import 'package:edu_track/models/group.dart';
 import 'package:edu_track/models/homework.dart';
 import 'package:edu_track/models/subject.dart';
@@ -28,9 +27,9 @@ class TeacherHomeworkScreen extends StatefulWidget {
 
 class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _homeworkService = HomeworkService();
-  final _subjectService = SubjectService();
-  final _groupService = GroupService();
+  late final HomeworkRepository _hwRepo;
+  late final SubjectRepository _subjectRepo;
+  late final AppDatabase _db;
   final _fileService = FileService();
   PlatformFile? _selectedFile;
   bool _isLoading = true;
@@ -57,6 +56,9 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
   @override
   void initState() {
     super.initState();
+    _hwRepo = Provider.of<HomeworkRepository>(context, listen: false);
+    _subjectRepo = Provider.of<SubjectRepository>(context, listen: false);
+    _db = Provider.of<AppDatabase>(context, listen: false);
     _loadData();
     _searchController.addListener(() => setState(() {}));
   }
@@ -100,59 +102,46 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final userId = userProvider.userId!;
-    final institutionId = userProvider.institutionId!;
-    final (subjectsResult, groupsResult, homeworksResult) =
+    final userId = Provider.of<UserProvider>(context, listen: false).userId!;
+    final (subjectsResult, homeworksResult, schedules) =
         await (
-          _subjectService.getSubjectsByTeacherId(userId),
-          _groupService.getGroups(institutionId),
-          _homeworkService.getHomeworkByTeacherId(userId),
+          _subjectRepo.getSubjectsByTeacherId(userId),
+          _hwRepo.getHomeworkByTeacherId(userId),
+          _db.getSchedulesForTeacher(userId),
         ).wait;
     if (!mounted) return;
-    if (subjectsResult.isFailure) {
-      setState(() => _isLoading = false);
-      MessengerHelper.showError(subjectsResult.errorMessage);
-      return;
-    }
-    if (groupsResult.isFailure) {
-      setState(() => _isLoading = false);
-      MessengerHelper.showError(groupsResult.errorMessage);
-      return;
-    }
-    if (homeworksResult.isFailure) {
-      setState(() => _isLoading = false);
-      MessengerHelper.showError(homeworksResult.errorMessage);
-      return;
-    }
-    List<dynamic> schedulePairs = [];
-    try {
-      schedulePairs = await SupabaseConnection.client
-          .from('schedule')
-          .select('group_id, subject_id')
-          .eq('teacher_id', userId);
-    } catch (_) {}
-
-    if (!mounted) return;
-    final allGroups = groupsResult.data;
+    final seenGroupIds = <String>{};
+    final allGroups = <Group>[];
     final subjectGroupIds = <String, Set<String>>{};
-    for (final item in schedulePairs) {
-      final sId = item['subject_id']?.toString();
-      final gId = item['group_id']?.toString();
-      if (sId != null && gId != null) subjectGroupIds.putIfAbsent(sId, () => {}).add(gId);
+    for (final s in schedules) {
+      subjectGroupIds.putIfAbsent(s.subjectId, () => {}).add(s.groupId);
+      if (s.group != null && s.group!.id != null && seenGroupIds.add(s.group!.id!)) {
+        allGroups.add(s.group!);
+      }
     }
-    final subjectGroups = {
+    allGroups.sort((a, b) => a.name.compareTo(b.name));
+
+    final subjectGroups = <String, List<Group>>{
       for (final e in subjectGroupIds.entries) e.key: allGroups.where((g) => e.value.contains(g.id)).toList(),
     };
+    final subjects = subjectsResult.isSuccess ? subjectsResult.data : <Subject>[];
+    final homeworks = homeworksResult.isSuccess ? homeworksResult.data : <Homework>[];
+    if (subjectsResult.isFailure && homeworksResult.isFailure) {
+      MessengerHelper.showError(homeworksResult.errorMessage);
+    }
 
     setState(() {
-      _subjects = subjectsResult.data;
+      _subjects = subjects;
       _groups = allGroups;
       _subjectGroups = subjectGroups;
-      _homeworks = homeworksResult.data;
-      if (_selectedSubjectId == null && _subjects.isNotEmpty) _selectedSubjectId = _subjects.first.id;
+      _homeworks = homeworks;
+      if (_selectedSubjectId == null && _subjects.isNotEmpty) {
+        _selectedSubjectId = _subjects.first.id;
+      }
       final validGroups = _selectedSubjectId != null ? (subjectGroups[_selectedSubjectId] ?? []) : allGroups;
-      if (_selectedGroupId == null && validGroups.isNotEmpty) _selectedGroupId = validGroups.first.id;
+      if (_selectedGroupId == null && validGroups.isNotEmpty) {
+        _selectedGroupId = validGroups.first.id;
+      }
       _isLoading = false;
     });
   }
@@ -198,7 +187,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
       fileUrl = uploadResult.data;
       fileName = _selectedFile!.name;
     }
-    final addResult = await _homeworkService.addHomework(
+    final addResult = await _hwRepo.addHomework(
       institutionId: userProvider.institutionId!,
       subjectId: _selectedSubjectId!,
       groupId: _selectedGroupId!,
@@ -243,7 +232,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
           ),
     );
     if (confirmed == true) {
-      final result = await _homeworkService.deleteHomework(hw.id);
+      final result = await _hwRepo.deleteHomework(hw.id);
       if (!mounted) return;
       if (result.isFailure) {
         MessengerHelper.showError(result.errorMessage);
@@ -430,7 +419,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen> {
                               newFileUrl = uploadResult.data;
                               newFileName = editNewFile!.name;
                             }
-                            final updateResult = await _homeworkService.updateHomework(
+                            final updateResult = await _hwRepo.updateHomework(
                               id: hw.id,
                               title: editTitleController.text.trim(),
                               description: editDescriptionController.text.trim(),

@@ -1,5 +1,7 @@
 ﻿import 'package:edu_track/data/database/connection_to_database.dart';
 import 'package:edu_track/data/local/app_database.dart';
+import 'package:edu_track/data/repositories/chat_repository.dart';
+import 'package:edu_track/data/repositories/debt_repository.dart';
 import 'package:edu_track/data/repositories/grade_repository.dart';
 import 'package:edu_track/data/repositories/group_repository.dart';
 import 'package:edu_track/data/repositories/homework_repository.dart';
@@ -7,11 +9,14 @@ import 'package:edu_track/data/repositories/lesson_repository.dart';
 import 'package:edu_track/data/repositories/schedule_repository.dart';
 import 'package:edu_track/data/repositories/subject_repository.dart';
 import 'package:edu_track/data/repositories/user_repository.dart';
+import 'package:edu_track/data/services/chat_service.dart';
+import 'package:edu_track/data/services/debt_service.dart';
 import 'package:edu_track/data/services/grade_service.dart';
 import 'package:edu_track/data/services/group_service.dart';
 import 'package:edu_track/data/services/homework_service.dart';
 import 'package:edu_track/data/services/lesson_service.dart';
 import 'package:edu_track/data/services/notification_service.dart';
+import 'package:edu_track/data/services/prefetch_service.dart';
 import 'package:edu_track/data/services/schedule_service.dart';
 import 'package:edu_track/data/services/student_service.dart';
 import 'package:edu_track/data/services/subject_service.dart';
@@ -43,6 +48,8 @@ typedef _AppData =
       SubjectRepository subjectRepository,
       GroupRepository groupRepository,
       UserRepository userRepository,
+      DebtRepository debtRepository,
+      ChatRepository chatRepository,
     });
 
 class AppInitializer extends StatefulWidget {
@@ -82,7 +89,22 @@ class _AppInitializerState extends State<AppInitializer> {
     final homeworkRepository = HomeworkRepository(remote: HomeworkService(), local: db);
     final subjectRepository = SubjectRepository(remote: SubjectService(), local: db);
     final groupRepository = GroupRepository(groupService: GroupService(), studentService: StudentService(), local: db);
-    final userProvider = UserProvider(userRepository: userRepository, homeworkRepository: homeworkRepository);
+    final debtRepository = DebtRepository(remote: DebtService(), local: db);
+    final chatRepository = ChatRepository(remote: ChatService(), local: db);
+    final prefetchService = PrefetchService(
+      scheduleRepo: scheduleRepository,
+      hwRepo: homeworkRepository,
+      subjectRepo: subjectRepository,
+      groupRepo: groupRepository,
+      chatRepo: chatRepository,
+      gradeRepo: gradeRepository,
+      db: db,
+    );
+    final userProvider = UserProvider(
+      userRepository: userRepository,
+      homeworkRepository: homeworkRepository,
+      prefetchService: prefetchService,
+    );
     final themeProvider = ThemeProvider();
     await Future.wait([userProvider.loadSession(), themeProvider.loadTheme()]);
 
@@ -99,6 +121,8 @@ class _AppInitializerState extends State<AppInitializer> {
       subjectRepository: subjectRepository,
       groupRepository: groupRepository,
       userRepository: userRepository,
+      debtRepository: debtRepository,
+      chatRepository: chatRepository,
     );
   }
 
@@ -140,6 +164,8 @@ class _AppInitializerState extends State<AppInitializer> {
             Provider<HomeworkRepository>.value(value: data.homeworkRepository),
             Provider<SubjectRepository>.value(value: data.subjectRepository),
             Provider<GroupRepository>.value(value: data.groupRepository),
+            Provider<DebtRepository>.value(value: data.debtRepository),
+            Provider<ChatRepository>.value(value: data.chatRepository),
           ],
           child: MyApp(router: data.router),
         );

@@ -56,6 +56,23 @@ class ChatService {
     }
   }
 
+  Future<AppResult<List<Message>>> getMessagesSince(String chatId, DateTime since) async {
+    try {
+      final response = await _client
+          .from('messages')
+          .select()
+          .eq('chat_id', chatId)
+          .gte('created_at', since.toUtc().toIso8601String())
+          .order('created_at', ascending: true);
+      final List<dynamic> data = response as List<dynamic>;
+      return AppResult.success(data.map((e) => Message.fromMap(e as Map<String, dynamic>)).toList());
+    } on PostgrestException catch (e) {
+      return AppResult.failure('Ошибка при загрузке сообщений: ${e.message}');
+    } catch (e) {
+      return AppResult.failure('Не удалось загрузить сообщения.');
+    }
+  }
+
   Future<AppResult<void>> sendMessage({
     required String chatId,
     required String senderId,
